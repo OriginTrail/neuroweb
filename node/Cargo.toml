@@ -139,7 +139,6 @@ version = '3.0.0'
 [dependencies.sc-network]
 git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
-version = '3.0.0'
 
 [dependencies.sp-api]
 git = 'https://github.com/paritytech/substrate.git'
