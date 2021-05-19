@@ -5,6 +5,7 @@ use crate::{
 use codec::Encode;
 use cumulus_primitives_core::ParaId;
 use cumulus_client_service::genesis::generate_genesis_block;
+use cumulus_primitives_core::ParaId;
 use log::info;
 use parachain_runtime::{AccountId, Block};
 use polkadot_parachain::primitives::AccountIdConversion;
@@ -330,41 +331,54 @@ pub fn run() -> Result<()> {
 						return crate::service::new_dev(config, author_id, collator, cli.run);
 					}
 
-				let polkadot_cli = RelayChainCli::new(
-					&config,
-					[RelayChainCli::executable_name().to_string()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
-				);
+					let polkadot_cli = RelayChainCli::new(
+						&config,
+						[RelayChainCli::executable_name().to_string()]
+							.iter()
+							.chain(cli.relaychain_args.iter()),
+					);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(200));
+					let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(1000));
 
-				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
+					let parachain_account =
+						AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(
+							&id,
+						);
 
-				let block: Block =
-					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
-				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
+					let block: Block = generate_genesis_block(&config.chain_spec)
+						.map_err(|e| format!("{:?}", e))?;
+					let genesis_state =
+						format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-				let task_executor = config.task_executor.clone();
-				let polkadot_config = SubstrateCli::create_configuration(
-					&polkadot_cli,
-					&polkadot_cli,
-					task_executor,
-				)
-				.map_err(|err| format!("Relay chain argument error: {}", err))?;
-				let collator = cli.run.base.validator || cli.collator;
+					let task_executor = config.task_executor.clone();
+					let polkadot_config = SubstrateCli::create_configuration(
+						&polkadot_cli,
+						&polkadot_cli,
+						task_executor,
+					)
+					.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-				info!("Parachain id: {:?}", id);
-				info!("Parachain Account: {}", parachain_account);
-				info!("Parachain genesis state: {}", genesis_state);
-				info!("Is collating: {}", if collator { "yes" } else { "no" });
+					info!("Parachain id: {:?}", id);
+					info!("Parachain Account: {}", parachain_account);
+					info!("Parachain genesis state: {}", genesis_state);
+					info!("Is collating: {}", if collator { "yes" } else { "no" });
 
-				crate::service::start_node(config, key, polkadot_config, id, collator)
+					crate::service::start_node(
+						config,
+						key,
+						// The parachain service will now use the keystore for authoring info.
+						// TODO rip this wire out after stuff works
+						None,
+						polkadot_config,
+						id,
+						collator,
+						cli.run,
+					)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
-			})
+				})
+				.map_err(Into::into)
 		}
 	}
 }
