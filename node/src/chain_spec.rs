@@ -10,6 +10,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::collections::BTreeMap;
 use std::str::FromStr;
 use serde_json as json;
+use nimbus_primitives::NimbusId;
 
 const DEFAULT_PROPERTIES_TESTNET: &str = r#"
 {
@@ -65,14 +66,17 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 		ChainType::Local,
 		move || {
 			testnet_genesis(
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-				],
-				id,
+				AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
+				// Validator
+				vec![(
+					AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
+					None,
+					1_000 * GLMR,
+				)],
+				None,
+				accounts.clone(),
+				Default::default(), // para_id
+				2160,               //ChainId
 			)
 		},
 		vec![],
@@ -95,22 +99,17 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 		ChainType::Local,
 		move || {
 			testnet_genesis(
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-				],
-				id,
+				AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
+				// Validator
+				vec![(
+					AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
+					None,
+					1_000 * GLMR,
+				)],
+				moonbeam_inflation_config(),
+				vec![AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap()],
+				para_id,
+				2160, //ChainId
 			)
 		},
 		vec![],
@@ -122,27 +121,6 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 			para_id: id.into(),
 		},
 	)
-}
-
-pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
-	InflationInfo {
-		expect: Range {
-			min: 100_000 * GLMR,
-			ideal: 200_000 * GLMR,
-			max: 500_000 * GLMR,
-		},
-		annual: Range {
-			min: Perbill::from_percent(4),
-			ideal: Perbill::from_percent(5),
-			max: Perbill::from_percent(5),
-		},
-		// 8766 rounds (hours) in a year
-		round: Range {
-			min: Perbill::from_parts(Perbill::from_percent(4).deconstruct() / 8766),
-			ideal: Perbill::from_parts(Perbill::from_percent(5).deconstruct() / 8766),
-			max: Perbill::from_parts(Perbill::from_percent(5).deconstruct() / 8766),
-		},
-	}
 }
 
 fn testnet_genesis(
@@ -186,12 +164,12 @@ fn testnet_genesis(
 
 		},
 		pallet_ethereum: EthereumConfig {},
-		parachain_staking: ParachainStakingConfig {
+		parachain_staking: parachain_runtime::ParachainStakingConfig {
 			stakers: stakers.clone(),
-			inflation_config,
+			None, //inflation_config
 		},
-		pallet_author_slot_filter: AuthorFilterConfig { eligible_ratio: 50 },
-		pallet_author_mapping: AuthorMappingConfig {
+		pallet_author_slot_filter: parachain_runtime::AuthorFilterConfig { eligible_ratio: 50 },
+		pallet_author_mapping: parachain_runtime::AuthorMappingConfig {
 			// Pretty hacky. We just set the first staker to use alice's session keys.
 			// Maybe this is the moment we should finally make the `--alice` flags make sense.
 			// Which is to say, we should prefund the alice account. Actually, I think we already do that...
