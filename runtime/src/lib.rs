@@ -42,6 +42,7 @@ use pallet_evm::{
     Account as EVMAccount, EnsureAddressNever, EnsureAddressRoot, EnsureAddressSame, FeeCalculator, IdentityAddressMapping, Runner, EnsureAddressTruncated, HashedAddressMapping,
 };
 
+pub use parachain_staking::{InflationInfo, Range};
 use nimbus_primitives::{CanAuthor, NimbusId};
 
 use codec::{Decode, Encode};
