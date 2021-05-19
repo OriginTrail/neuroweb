@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR};
+use parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR, InflationInfo, Range, AuthorFilterConfig};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -8,6 +8,9 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Hash, IdentifyAccount, Verify},
 	Perbill,
 };
+
+use pallet_evm::GenesisAccount;
+
 
 use std::collections::BTreeMap;
 use std::str::FromStr;
@@ -128,7 +131,7 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 }
 
 
-pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
+pub fn moonbeam_inflation_config() -> InflationInfo<parachain_runtime::Balance> {
 	InflationInfo {
 		expect: Range {
 			min: 100_000 * GLMR,
@@ -152,11 +155,15 @@ pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
 fn testnet_genesis(
 	root_key: AccountId,
 	stakers: Vec<(AccountId, Option<AccountId>, parachain_runtime::Balance)>,
-	inflation_config: InflationInfo<Balance>,
+	inflation_config: InflationInfo<parachain_runtime::Balance>,
 	endowed_accounts: Vec<AccountId>,
 	para_id: ParaId,
 	chain_id: u64,
 ) -> parachain_runtime::GenesisConfig {
+	let precompile_addresses = vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 2048]
+		.into_iter()
+		.map(H160::from_low_u64_be);
+
 	parachain_runtime::GenesisConfig {
 		frame_system: parachain_runtime::SystemConfig {
 			code: parachain_runtime::WASM_BINARY
@@ -172,23 +179,21 @@ fn testnet_genesis(
 				.collect(),
 		},
 		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
-		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: para_id },
 		pallet_evm: EVMConfig {
-			accounts: {
-				let mut map = BTreeMap::new();
-				map.insert(
-					H160::from_str("8097c3C354652CB1EEed3E5B65fBa2576470678A")
-						.expect("internal H160 is valid; qed"),
-					pallet_evm::GenesisAccount {
-						balance: U256::from_str("0xffffffffffffffffffffffffffffffff")
-							.expect("internal U256 is valid; qed"),
-						code: Default::default(),
-						nonce: Default::default(),
-						storage: Default::default(),
-					}
-				);
-				map
-			}
+			accounts: precompile_addresses
+				.map(|a| {
+					(
+						a,
+						GenesisAccount {
+							nonce: Default::default(),
+							balance: Default::default(),
+							storage: Default::default(),
+							code: revert_bytecode.clone(),
+						},
+					)
+				})
+				.collect(),
 
 		},
 		pallet_ethereum: EthereumConfig {},
