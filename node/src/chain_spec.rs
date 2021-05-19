@@ -1,5 +1,7 @@
 use cumulus_primitives_core::ParaId;
-use parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR, InflationInfo, Range, AuthorFilterConfig};
+use parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR, InflationInfo, Range, AuthorFilterConfig, AuthorMappingConfig, Balance, BalancesConfig,
+						GenesisConfig, ParachainInfoConfig, SchedulerConfig, SudoConfig, SystemConfig, GLMR, WASM_BINARY};
+
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -25,7 +27,7 @@ const DEFAULT_PROPERTIES_TESTNET: &str = r#"
 "#;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -128,7 +130,7 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 }
 
 
-pub fn moonbeam_inflation_config() -> InflationInfo<parachain_runtime::Balance> {
+pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
 	InflationInfo {
 		expect: Range {
 			min: 100_000 * GLMR,
@@ -151,34 +153,34 @@ pub fn moonbeam_inflation_config() -> InflationInfo<parachain_runtime::Balance> 
 
 fn testnet_genesis(
 	root_key: AccountId,
-	stakers: Vec<(AccountId, Option<AccountId>, parachain_runtime::Balance)>,
-	inflation_config: InflationInfo<parachain_runtime::Balance>,
+	stakers: Vec<(AccountId, Option<AccountId>, Balance)>,
+	inflation_config: InflationInfo<Balance>,
 	endowed_accounts: Vec<AccountId>,
 	para_id: ParaId,
 	chain_id: u64,
-) -> parachain_runtime::GenesisConfig {
+) -> GenesisConfig {
 	let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
 
 	let precompile_addresses = vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 2048]
 		.into_iter()
 		.map(H160::from_low_u64_be);
 
-	parachain_runtime::GenesisConfig {
-		frame_system: parachain_runtime::SystemConfig {
-			code: parachain_runtime::WASM_BINARY
+	GenesisConfig {
+		frame_system: SystemConfig {
+			code: WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: parachain_runtime::BalancesConfig {
+		pallet_balances: BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
 				.map(|k| (k, 1 << 60))
 				.collect(),
 		},
-		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
-		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: para_id },
+		pallet_sudo: SudoConfig { key: root_key },
+		parachain_info: ParachainInfoConfig { parachain_id: para_id },
 		pallet_evm: EVMConfig {
 			accounts: precompile_addresses
 				.map(|a| {
@@ -196,12 +198,12 @@ fn testnet_genesis(
 
 		},
 		pallet_ethereum: EthereumConfig {},
-		parachain_staking: parachain_runtime::ParachainStakingConfig {
+		parachain_staking: ParachainStakingConfig {
 			stakers: stakers.clone(),
 			inflation_config,
 		},
-		pallet_author_slot_filter: parachain_runtime::AuthorFilterConfig { eligible_ratio: 50 },
-		pallet_author_mapping: parachain_runtime::AuthorMappingConfig {
+		pallet_author_slot_filter: AuthorFilterConfig { eligible_ratio: 50 },
+		pallet_author_mapping: AuthorMappingConfig {
 			// Pretty hacky. We just set the first staker to use alice's session keys.
 			// Maybe this is the moment we should finally make the `--alice` flags make sense.
 			// Which is to say, we should prefund the alice account. Actually, I think we already do that...
