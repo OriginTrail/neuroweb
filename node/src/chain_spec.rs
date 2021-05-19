@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig};
+use parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -57,7 +57,7 @@ where
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
-pub fn development_config(id: ParaId) -> ChainSpec {
+pub fn development_config(para_id: ParaId) -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -90,7 +90,7 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn local_testnet_config(id: ParaId) -> ChainSpec {
+pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
 		"Local Testnet",
@@ -106,7 +106,7 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 					None,
 					1_000 * GLMR,
 				)],
-				moonbeam_inflation_config(),
+				None,
 				vec![AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap()],
 				para_id,
 				2160, //ChainId
@@ -127,7 +127,8 @@ fn testnet_genesis(
 	root_key: AccountId,
 	stakers: Vec<(AccountId, Option<AccountId>, parachain_runtime::Balance)>,
 	endowed_accounts: Vec<AccountId>,
-	id: ParaId,
+	para_id: ParaId,
+	chain_id: u64,
 ) -> parachain_runtime::GenesisConfig {
 	parachain_runtime::GenesisConfig {
 		frame_system: parachain_runtime::SystemConfig {
