@@ -38,8 +38,16 @@ fc-mapping-sync = { git = "https://github.com/purestake/frontier", branch = "jos
 moonbeam-rpc-txpool = { path = "../client/rpc/txpool" }
 moonbeam-rpc-primitives-txpool = { path = "../primitives/rpc/txpool" }
 moonbeam-rpc-trace = { path = "../client/rpc/trace" }
+moonbeam-rpc-debug = { path = "../client/rpc/debug" }
+moonbeam-rpc-primitives-debug = { path = "../primitives/rpc/debug" }
+
+
 
 sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+
+cumulus-primitives-parachain-inherent = { git = "https://github.com/purestake/cumulus", branch = "nimbus" }
+cumulus-test-relay-sproof-builder = { git = "https://github.com/purestake/cumulus", branch = "nimbus" }
+
 
 [dependencies.frame-benchmarking]
 git = 'https://github.com/paritytech/substrate.git'
@@ -124,6 +132,11 @@ branch = 'rococo-v1'
 version = '3.0.0'
 
 [dependencies.sc-tracing]
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '3.0.0'
+
+[dependencies.sc-network]
 git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '3.0.0'
