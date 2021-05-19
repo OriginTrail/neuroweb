@@ -7,7 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{U256, crypto::KeyTypeId, OpaqueMetadata, H160, H256};
 use sp_runtime::traits::{
 	AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify,
 };
@@ -17,7 +17,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult, MultiSignature,
 };
 
-use sp_std::prelude::*;
+use sp_std::{convert::TryFrom, prelude::*};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -38,6 +38,17 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
+use pallet_evm::{
+    Account as EVMAccount, EnsureAddressNever, EnsureAddressRoot, EnsureAddressSame, FeeCalculator, IdentityAddressMapping, Runner, EnsureAddressTruncated, HashedAddressMapping,
+};
+
+use nimbus_primitives::{CanAuthor, NimbusId};
+
+use codec::{Decode, Encode};
+use fp_rpc::TransactionStatus;
+use evm_runtime::Config as EvmConfig;
+use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
+
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
@@ -54,14 +65,11 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill, Perquintill};
 
-/// Import the template pallet.
-pub use template;
-
 /// An index to a block.
 pub type BlockNumber = u32;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = MultiSignature;
+pub type Signature = account::EthereumSignature; //MultiSignature;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
@@ -98,13 +106,15 @@ pub mod opaque {
     pub type SessionHandlers = ();
 
     impl_opaque_keys! {
-        pub struct SessionKeys {}
+        pub struct SessionKeys {
+            pub author_inherent: AuthorInherent,
+        }
     }
 }
 
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("cumulus-test-parachain"),
-	impl_name: create_runtime_str!("cumulus-test-parachain"),
+	spec_name: create_runtime_str!("origintrail-parachain"),
+	impl_name: create_runtime_str!("origintrail-parachain"),
 	authoring_version: 1,
     spec_version: 1,
     impl_version: 1,
@@ -298,6 +308,46 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
+/// GLMR, the native token, uses 18 decimals of precision.
+pub const GLMR: Balance = 1_000_000_000_000_000_000;
+
+parameter_types! {
+	/// Minimum round length is 2 minutes (20 * 6 second block times)
+	pub const MinBlocksPerRound: u32 = 20;
+	/// Default BlocksPerRound is every hour (600 * 6 second block times)
+	pub const DefaultBlocksPerRound: u32 = 600;
+	/// Reward payments and collator exit requests are delayed by 2 hours (2 * 600 * block_time)
+	pub const BondDuration: u32 = 2;
+	/// Minimum 8 collators selected per round, default at genesis and minimum forever after
+	pub const MinSelectedCandidates: u32 = 8;
+	/// Maximum 10 nominators per collator
+	pub const MaxNominatorsPerCollator: u32 = 10;
+	/// Maximum 25 collators per nominator
+	pub const MaxCollatorsPerNominator: u32 = 25;
+	/// The fixed percent a collator takes off the top of due rewards is 20%
+	pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
+	/// Minimum stake required to be reserved to be a collator is 1_000
+	pub const MinCollatorStk: u128 = 1_000 * GLMR;
+	/// Minimum stake required to be reserved to be a nominator is 5
+	pub const MinNominatorStk: u128 = 5 * GLMR;
+}
+impl parachain_staking::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type MinBlocksPerRound = MinBlocksPerRound;
+    type DefaultBlocksPerRound = DefaultBlocksPerRound;
+    type BondDuration = BondDuration;
+    type MinSelectedCandidates = MinSelectedCandidates;
+    type MaxNominatorsPerCollator = MaxNominatorsPerCollator;
+    type MaxCollatorsPerNominator = MaxCollatorsPerNominator;
+    type DefaultCollatorCommission = DefaultCollatorCommission;
+    type MinCollatorStk = MinCollatorStk;
+    type MinCollatorCandidateStk = MinCollatorStk;
+    type MinNomination = MinNominatorStk;
+    type MinNominatorStk = MinNominatorStk;
+    type WeightInfo = parachain_staking::weights::SubstrateWeight<Runtime>;
+}
+
 parameter_types! {
 	pub const RococoLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
@@ -376,8 +426,8 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = LocalAssetTransactor;
-	type OriginConverter = XcmOriginToTransactDispatchOrigin;
+	type AssetTransactor = (); //LocalAssetTransactor;
+	type OriginConverter = (); //XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset;	// <- should be enough to allow teleportation of ROC
 	type LocationInverter = LocationInverter<Ancestry>;
@@ -419,9 +469,199 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 }
 
-/// Configure the pallet template in pallets/template.
-impl template::Config for Runtime {
-	type Event = Event;
+pub struct FixedGasPrice;
+
+impl FeeCalculator for FixedGasPrice {
+    fn min_gas_price() -> U256 {
+        // Gas price is always one token per gas.
+        1.into()
+    }
+}
+
+pub const GAS_PER_SECOND: u64 = 32_000_000;
+
+/// Approximate ratio of the amount of Weight per Gas.
+/// u64 works for approximations because Weight is a very small unit compared to gas.
+pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND / GAS_PER_SECOND;
+
+
+pub struct StarfleetGasWeightMapping;
+
+impl pallet_evm::GasWeightMapping for StarfleetGasWeightMapping {
+    fn gas_to_weight(gas: u64) -> Weight {
+        gas.saturating_mul(WEIGHT_PER_GAS)
+    }
+    fn weight_to_gas(weight: Weight) -> u64 {
+        u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u32::MAX as u64)
+    }
+}
+
+parameter_types! {
+    pub const StarfleetTestnetChainId: u64 = 2160;
+	pub BlockGasLimit: U256 = U256::from(u32::max_value());
+}
+
+static EVM_CONFIG: EvmConfig = EvmConfig {
+    gas_ext_code: 700,
+    gas_ext_code_hash: 700,
+    gas_balance: 700,
+    gas_sload: 800,
+    gas_sstore_set: 20000,
+    gas_sstore_reset: 5000,
+    refund_sstore_clears: 15000,
+    gas_suicide: 5000,
+    gas_suicide_new_account: 25000,
+    gas_call: 700,
+    gas_expbyte: 50,
+    gas_transaction_create: 53000,
+    gas_transaction_call: 21000,
+    gas_transaction_zero_data: 4,
+    gas_transaction_non_zero_data: 16,
+    sstore_gas_metering: true,
+    sstore_revert_under_stipend: true,
+    err_on_call_with_more_gas: false,
+    empty_considered_exists: false,
+    create_increase_nonce: true,
+    call_l64_after_gas: true,
+    stack_limit: 1024,
+    memory_limit: usize::max_value(),
+    call_stack_limit: 1024,
+    // raise create_contract_limit
+    create_contract_limit: None,
+    call_stipend: 2300,
+    has_delegate_call: true,
+    has_create2: true,
+    has_revert: true,
+    has_return_data: true,
+    has_bitwise_shifting: true,
+    has_chain_id: true,
+    has_self_balance: true,
+    has_ext_code_hash: true,
+    estimate: false,
+};
+
+impl pallet_evm::Config for Runtime {
+
+    type FeeCalculator = FixedGasPrice;
+    type GasWeightMapping = StarfleetGasWeightMapping;
+
+    type CallOrigin = EnsureAddressRoot<AccountId>;
+    type WithdrawOrigin = EnsureAddressNever<AccountId>;
+    type AddressMapping = IdentityAddressMapping;
+
+    // type CallOrigin = EnsureAddressTruncated;
+    // type WithdrawOrigin = EnsureAddressTruncated;
+    // type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+    type Currency = Balances;
+    type Event = Event;
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
+    type Precompiles = (
+        pallet_evm_precompile_simple::ECRecover,
+        pallet_evm_precompile_simple::Sha256,
+        pallet_evm_precompile_simple::Ripemd160,
+        pallet_evm_precompile_simple::Identity,
+    );
+    type ChainId = StarfleetTestnetChainId;
+    type BlockGasLimit = BlockGasLimit;
+    type OnChargeTransaction = ();
+    /// EVM config used in the module.
+    fn config() -> &'static EvmConfig {
+        &EVM_CONFIG
+    }
+}
+pub struct TransactionConverter;
+
+impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
+    fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
+        UncheckedExtrinsic::new_unsigned(
+            pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+        )
+    }
+}
+
+impl fp_rpc::ConvertTransaction<opaque::UncheckedExtrinsic> for TransactionConverter {
+    fn convert_transaction(
+        &self,
+        transaction: pallet_ethereum::Transaction,
+    ) -> opaque::UncheckedExtrinsic {
+        let extrinsic = UncheckedExtrinsic::new_unsigned(
+            pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+        );
+        let encoded = extrinsic.encode();
+        opaque::UncheckedExtrinsic::decode(&mut &encoded[..])
+            .expect("Encoded extrinsic is always valid")
+    }
+}
+
+impl pallet_ethereum::Config for Runtime {
+    type Event = Event;
+    type FindAuthor = pallet_author_mapping::MappedFindAuthor<Self, AuthorInherent>;
+    type StateRoot = pallet_ethereum::IntermediateStateRoot;
+}
+
+parameter_types! {
+    pub MaximumSchedulerWeight: Weight = 10_000_000;
+    pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+/// Configure the runtime's implementation of the Scheduler pallet.
+impl pallet_scheduler::Config for Runtime {
+    type Event = Event;
+    type Origin = Origin;
+    type PalletsOrigin = OriginCaller;
+    type Call = Call;
+    type MaximumWeight = MaximumSchedulerWeight;
+    type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
+    type MaxScheduledPerBlock = MaxScheduledPerBlock;
+    type WeightInfo = ();
+}
+
+// Implementation of multisig pallet
+
+pub const MILLICENTS: Balance = 1_000_000_000;
+pub const CENTS: Balance = 1_000 * MILLICENTS;
+pub const DOLLARS: Balance = 100 * CENTS;
+
+parameter_types! {
+	pub const DepositBase: Balance = 5 * CENTS;
+	pub const DepositFactor: Balance = 10 * CENTS;
+	pub const MaxSignatories: u16 = 20;
+}
+
+impl pallet_multisig::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type Currency = Balances;
+    type DepositBase = DepositBase;
+    type DepositFactor = DepositFactor;
+    type MaxSignatories = MaxSignatories;
+    type WeightInfo = ();
+}
+
+
+impl pallet_author_inherent::Config for Runtime {
+    type AuthorId = NimbusId;
+    type SlotBeacon = pallet_author_inherent::RelayChainBeacon<Self>;
+    //TODO This is making me think the mapping should just happen in the author inherent pallet
+    // Or maybe the sessions pallet will interface really naturally with the author inherent pallet?
+    type EventHandler = pallet_author_mapping::MappedEventHandler<Self, ParachainStaking>;
+    type PreliminaryCanAuthor = pallet_author_mapping::MappedCanAuthor<Self, ParachainStaking>;
+    type FullCanAuthor = pallet_author_mapping::MappedCanAuthor<Self, AuthorFilter>;
+}
+
+impl pallet_author_slot_filter::Config for Runtime {
+    // All of our filtering is going to happen in the runtime's accountId type (same as staking.)
+    // Maybe I should remove this associated type entirely
+    type AuthorId = AccountId;
+    type Event = Event;
+    type RandomnessSource = RandomnessCollectiveFlip;
+    type PotentialAuthors = ParachainStaking;
+}
+
+// This is a simple session key manager. It should probably either work with, or be replaced
+// entirely by pallet sessions
+impl pallet_author_mapping::Config for Runtime {
+    type AuthorId = NimbusId;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -441,8 +681,15 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Origin},
+		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-		TemplatePallet: template::{Pallet, Call, Storage, Event<T>},
+		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
+		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
+		AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent},
+		AuthorMapping: pallet_author_mapping::{Pallet, Config<T>, Storage},
+        AuthorFilter: pallet_author_slot_filter::{Pallet, Storage, Event, Config},
+        ParachainStaking: parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>},
 	}
 );
 
@@ -557,6 +804,117 @@ impl_runtime_apis! {
             System::account_nonce(account)
         }
     }
+
+
+	impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
+		fn chain_id() -> u64 {
+			<Runtime as pallet_evm::Config>::ChainId::get()
+		}
+
+		fn account_basic(address: H160) -> EVMAccount {
+			EVM::account_basic(&address)
+		}
+
+		fn gas_price() -> U256 {
+			<Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
+		}
+
+		fn account_code_at(address: H160) -> Vec<u8> {
+			EVM::account_codes(address)
+		}
+
+		fn author() -> H160 {
+			<pallet_ethereum::Module<Runtime>>::find_author()
+		}
+
+		fn storage_at(address: H160, index: U256) -> H256 {
+			let mut tmp = [0u8; 32];
+			index.to_big_endian(&mut tmp);
+			EVM::account_storages(address, H256::from_slice(&tmp[..]))
+		}
+
+		fn call(
+			from: H160,
+			to: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
+			let config = if estimate {
+				let mut config = <Runtime as pallet_evm::Config>::config().clone();
+				config.estimate = true;
+				Some(config)
+			} else {
+				None
+			};
+
+			<Runtime as pallet_evm::Config>::Runner::call(
+				from,
+				to,
+				data,
+				value,
+				gas_limit.low_u64(),
+				gas_price,
+				nonce,
+				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
+			).map_err(|err| err.into())
+		}
+
+		fn create(
+			from: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
+			let config = if estimate {
+				let mut config = <Runtime as pallet_evm::Config>::config().clone();
+				config.estimate = true;
+				Some(config)
+			} else {
+				None
+			};
+
+			<Runtime as pallet_evm::Config>::Runner::create(
+				from,
+				data,
+				value,
+				gas_limit.low_u64(),
+				gas_price,
+				nonce,
+				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
+			).map_err(|err| err.into())
+		}
+
+		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
+			Ethereum::current_transaction_statuses()
+		}
+
+		fn current_block() -> Option<pallet_ethereum::Block> {
+			Ethereum::current_block()
+		}
+
+		fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
+			Ethereum::current_receipts()
+		}
+
+		fn current_all() -> (
+			Option<pallet_ethereum::Block>,
+			Option<Vec<pallet_ethereum::Receipt>>,
+			Option<Vec<TransactionStatus>>
+		) {
+			(
+				Ethereum::current_block(),
+				Ethereum::current_receipts(),
+				Ethereum::current_transaction_statuses()
+			)
+		}
+	}
 
     impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
         fn query_info(

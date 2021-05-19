@@ -6,7 +6,8 @@ use codec::Encode;
 use cumulus_primitives_core::ParaId;
 use cumulus_client_service::genesis::generate_genesis_block;
 use log::info;
-use parachain_runtime::Block;
+use parachain_runtime::{AccountId, Block};
+use codec::Encode;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -17,8 +18,9 @@ use sc_service::{
 	PartialComponents,
 };
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::Block as BlockT;
-use std::{io::Write, net::SocketAddr};
+use sp_core::H160;
+use sp_runtime::traits::Block as _;
+use std::{io::Write, net::SocketAddr, str::FromStr};
 
 fn load_spec(
 	id: &str,
@@ -61,11 +63,11 @@ impl SubstrateCli for Cli {
 	}
 
 	fn copyright_start_year() -> i32 {
-		2017
+		2021
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(200).into())
+		load_spec(id, self.run.parachain_id.unwrap_or(1000).into())
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -112,6 +114,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 }
 
+#[allow(clippy::borrowed_box)]
 fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
 	let mut storage = chain_spec.build_storage()?;
 
@@ -126,19 +129,37 @@ pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
 	match &cli.subcommand {
-		Some(Subcommand::BuildSpec(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
+		Some(Subcommand::BuildSpec(params)) => {
+			let runner = cli.create_runner(&params.base)?;
+			runner.sync_run(|config| {
+				if params.mnemonic.is_some() || params.accounts.is_some() {
+					params.base.run(
+						Box::new(chain_spec::development_chain_spec(
+							params.mnemonic.clone(),
+							params.accounts,
+						)),
+						config.network,
+					)
+				} else {
+					params.base.run(config.chain_spec, config.network)
+				}
+			})
 		}
 		Some(Subcommand::CheckBlock(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
+				// maybe these three lines could be a helper function is_dev(config) -> bool
+				let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
+				let relay_chain_id = extension.map(|e| e.relay_chain.clone());
+				let dev_service =
+					cli.run.dev_service || relay_chain_id == Some("dev-service".to_string());
+
 				let PartialComponents {
 					client,
 					task_manager,
 					import_queue,
 					..
-				} = crate::service::new_partial(&config)?;
+				} = crate::service::new_partial(&config, None, dev_service)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		}
@@ -149,7 +170,7 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = crate::service::new_partial(&config)?;
+				} = crate::service::new_partial(&config, None, false)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
 		}
@@ -160,19 +181,29 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = crate::service::new_partial(&config)?;
+				} = crate::service::new_partial(&config, None, false)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
 		}
 		Some(Subcommand::ImportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
+				let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
+				let relay_chain_id = extension.map(|e| e.relay_chain.clone());
+				let dev_service =
+					cli.run.dev_service || relay_chain_id == Some("dev-service".to_string());
+
+				let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
+				let relay_chain_id = extension.map(|e| e.relay_chain.clone());
+				let dev_service =
+					cli.run.dev_service || relay_chain_id == Some("dev-service".to_string());
+
 				let PartialComponents {
 					client,
 					task_manager,
 					import_queue,
 					..
-				} = crate::service::new_partial(&config)?;
+				} = crate::service::new_partial(&config, None, dev_service)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		}
@@ -180,6 +211,30 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(cmd)?;
 
 			runner.sync_run(|config| {
+				// Although the cumulus_client_cli::PurgeCommand will extract the relay chain id,
+				// we need to extract it here to determine whether we are running the dev service.
+				let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
+				let relay_chain_id = extension.map(|e| e.relay_chain.clone());
+				let dev_service =
+					cli.run.dev_service || relay_chain_id == Some("dev-service".to_string());
+
+				if dev_service {
+					// base refers to the encapsulated "regular" sc_cli::PurgeChain command
+					return cmd.base.run(config.database);
+				}
+
+				// Although the cumulus_client_cli::PurgeCommand will extract the relay chain id,
+				// we need to extract it here to determine whether we are running the dev service.
+				let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
+				let relay_chain_id = extension.map(|e| e.relay_chain.clone());
+				let dev_service =
+					cli.run.dev_service || relay_chain_id == Some("dev-service".to_string());
+
+				if dev_service {
+					// base refers to the encapsulated "regular" sc_cli::PurgeChain command
+					return cmd.base.run(config.database);
+				}
+
 				let polkadot_cli = RelayChainCli::new(
 					&config,
 					[RelayChainCli::executable_name().to_string()]
@@ -205,7 +260,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					backend,
 					..
-				} = crate::service::new_partial(&config)?;
+				} = crate::service::new_partial(&config, None, false)?;
 				Ok((cmd.run(client, backend), task_manager))
 			})
 		}
@@ -216,7 +271,7 @@ pub fn run() -> Result<()> {
 
 			let block: Block = generate_genesis_block(&load_spec(
 				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.unwrap_or(200).into(),
+				params.parachain_id.into(),
 			)?)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
@@ -256,13 +311,37 @@ pub fn run() -> Result<()> {
 		}
 		None => {
 			let runner = cli.create_runner(&*cli.run)?;
+			let collator = cli.run.base.validator || cli.collator;
 
-			runner.run_node_until_exit(|config| async move {
-				// TODO
-				let key = sp_core::Pair::generate().0;
+			runner
+				.run_node_until_exit(|config| async move {
+					let key = sp_core::Pair::generate().0;
 
-				let para_id =
-					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+					let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
+					let relay_chain_id = extension.map(|e| e.relay_chain.clone());
+					let dev_service =
+						cli.run.dev_service || relay_chain_id == Some("dev-service".to_string());
+					let para_id = extension.map(|e| e.para_id);
+
+					// If dev service was requested, start up manual or instant seal.
+					// Otherwise continue with the normal parachain node.
+					// Dev service can be requested in two ways.
+					// 1. by providing the --dev-service flag to the CLI
+					// 2. by specifying "dev-service" in the chain spec's "relay-chain" field.
+					// NOTE: the --dev flag triggers the dev service by way of number 2
+					if dev_service {
+						// --dev implies --collator
+						let collator = collator || cli.run.shared_params.dev;
+
+						// When running the dev service, just use Alice's author inherent
+						//TODO maybe make the --alice etc flags work here, and consider bringing back
+						// the author-id flag. For now, this will work.
+						let author_id = Some(crate::chain_spec::get_from_seed::<
+							nimbus_primitives::NimbusId,
+						>("Alice"));
+
+						return crate::service::new_dev(config, author_id, collator, cli.run);
+					}
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,

@@ -15,6 +15,8 @@ version = '2.0.0'
 
 [dependencies]
 smallvec = "1.6.1"
+log = "0.4.8"
+evm-runtime = { version = "0.26.0", default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -174,36 +176,96 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '3.0.0'
 
+# Frontier dependencies
+[dependencies.pallet-ethereum]
+default-features = false
+git = "https://github.com/purestake/frontier"
+branch = "joshy-substrate-2be8fcc4"
+
+[dependencies.pallet-evm]
+default-features = false
+git = "https://github.com/purestake/frontier"
+branch = "joshy-substrate-2be8fcc4"
+
+[dependencies.pallet-evm-precompile-simple]
+default-features = false
+git = "https://github.com/purestake/frontier"
+branch = "joshy-substrate-2be8fcc4"
+
+[dependencies.fp-rpc]
+default-features = false
+git = "https://github.com/purestake/frontier"
+branch = "joshy-substrate-2be8fcc4"
+
+[dependencies.pallet-multisig]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '3.0.0'
+
+[dependencies.pallet-scheduler]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '3.0.0'
+
+[dependencies.pallet-author-mapping]
+default-features = false
+path = "../pallets/author-mapping"
+
+[dependencies.parachain-staking]
+default-features = false
+path = "../pallets/parachain-staking"
+
+[dependencies.pallet-author-inherent]
+default-features = false
+git = "https://github.com/purestake/cumulus"
+branch = "nimbus"
+
+[dependencies.pallet-author-slot-filter]
+default-features = false
+git = "https://github.com/purestake/cumulus"
+branch = "nimbus"
+
+[dependencies.nimbus-primitives]
+default-features = false
+git = "https://github.com/purestake/cumulus"
+branch = "nimbus"
+
+[dependencies.account]
+default-features = false
+path = "../primitives/account/"
+
 # Cumulus dependencies
 [dependencies.parachain-info]
 default-features = false
-git = 'https://github.com/paritytech/cumulus.git'
-branch = 'rococo-v1'
+git = 'https://github.com/purestake/cumulus.git'
+branch = 'nimbus'
 version = '0.1.0'
 
 [dependencies.cumulus-pallet-parachain-system]
-git = 'https://github.com/paritytech/cumulus.git'
-branch = 'rococo-v1'
+git = 'https://github.com/purestake/cumulus.git'
+branch = 'nimbus'
 default-features = false
 
 [dependencies.cumulus-primitives-core]
-git = 'https://github.com/paritytech/cumulus.git'
-branch = 'rococo-v1'
+git = 'https://github.com/purestake/cumulus.git'
+branch = 'nimbus'
 default-features = false
 
 [dependencies.cumulus-pallet-xcm]
-git = 'https://github.com/paritytech/cumulus.git'
-branch = 'rococo-v1'
+git = 'https://github.com/purestake/cumulus.git'
+branch = 'nimbus'
 default-features = false
 
 [dependencies.cumulus-pallet-xcmp-queue]
-git = 'https://github.com/paritytech/cumulus.git'
-branch = 'rococo-v1'
+git = 'https://github.com/purestake/cumulus.git'
+branch = 'nimbus'
 default-features = false
 
 [dependencies.cumulus-primitives-utility]
-git = 'https://github.com/paritytech/cumulus.git'
-branch = 'rococo-v1'
+git = 'https://github.com/purestake/cumulus.git'
+branch = 'nimbus'
 default-features = false
 
 # Polkadot dependencies
@@ -232,11 +294,6 @@ git = 'https://github.com/paritytech/polkadot'
 branch = 'rococo-v1'
 default-features = false
 
-[dependencies.template]
-default-features = false
-package = 'pallet-template'
-path = '../pallets/template'
-
 [features]
 default = ['std']
 runtime-benchmarks = [
@@ -248,7 +305,6 @@ runtime-benchmarks = [
 	'frame-system/runtime-benchmarks',
 	'pallet-balances/runtime-benchmarks',
 	'pallet-timestamp/runtime-benchmarks',
-	'template/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
@@ -282,5 +338,17 @@ std = [
 	'cumulus-pallet-xcm/std',
 	'cumulus-pallet-xcmp-queue/std',
 	'cumulus-primitives-utility/std',
-	'template/std',
+
+	"pallet-ethereum/std",
+	"pallet-evm/std",
+	"pallet-evm-precompile-simple/std",
+
+	"pallet-multisig/std",
+	"pallet-scheduler/std",
+
+	"account/std",
+	"parachain-staking/std",
+	"pallet-author-slot-filter/std",
+	"nimbus-primitives/std",
+	"pallet-author-mapping/std",
 ]

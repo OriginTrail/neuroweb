@@ -7,6 +7,22 @@ serde = { version = "1.0.119", features = ["derive"] }
 hex-literal = "0.2.1"
 # RPC related dependencies
 jsonrpc-core = "15.1.0"
+serde_json = "1.0"
+
+
+jsonrpc-pubsub = "15.1.0"
+ethereum-types = "0.11.0"
+ethereum = { version = "0.7.1", features = ["with-codec"] }
+
+pallet-evm = '3.0.0'
+pallet-ethereum = '1.0.0'
+
+fc-consensus = '1.0.0'
+fp-consensus = '1.0.0'
+fc-rpc = '1.0.0'
+fp-rpc = '1.0.0'
+fc-rpc-core = '1.0.0'
+
 
 [dependencies.frame-benchmarking]
 git = 'https://github.com/paritytech/substrate.git'
@@ -154,6 +170,8 @@ version = '3.0.0'
 git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '3.0.0'
+
+# Frontier dependencies
 
 # Cumulus dependencies
 [dependencies.cumulus-client-consensus-relay-chain]
