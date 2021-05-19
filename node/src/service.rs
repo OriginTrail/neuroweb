@@ -5,16 +5,20 @@ use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
+use crate::cli::EthApi as EthApiCmd;
 use cumulus_primitives_core::ParaId;
+use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
 use polkadot_primitives::v0::CollatorPair;
 use parachain_runtime::{RuntimeApi, opaque::Block};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
-use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
+
+use tokio::sync::Semaphore;
+
 
 // Native executor instance.
 native_executor_instance!(
@@ -23,7 +27,6 @@ native_executor_instance!(
 	parachain_runtime::native_version,
 	frame_benchmarking::benchmarking::HostFunctions,
 );
-use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
 
 type FullClient = TFullClient<Block, RuntimeApi, Executor>;
 type FullBackend = TFullBackend<Block>;

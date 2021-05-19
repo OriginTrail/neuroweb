@@ -8,6 +8,8 @@ hex-literal = "0.2.1"
 # RPC related dependencies
 jsonrpc-core = "15.1.0"
 serde_json = "1.0"
+tokio = { version = "0.2.13", features = ["macros", "sync"] }
+
 
 
 jsonrpc-pubsub = "15.1.0"
@@ -29,6 +31,11 @@ fc-rpc = { git = "https://github.com/purestake/frontier", branch = "joshy-substr
 fp-rpc = { git = "https://github.com/purestake/frontier", branch = "joshy-substrate-2be8fcc4" }
 fc-db = { git = "https://github.com/purestake/frontier", branch = "joshy-substrate-2be8fcc4" }
 fc-mapping-sync = { git = "https://github.com/purestake/frontier", branch = "joshy-substrate-2be8fcc4" }
+
+moonbeam-rpc-txpool = { path = "../client/rpc/txpool" }
+moonbeam-rpc-primitives-txpool = { path = "../primitives/rpc/txpool" }
+moonbeam-rpc-trace = { path = "../client/rpc/trace" }
+
 
 [dependencies.frame-benchmarking]
 git = 'https://github.com/paritytech/substrate.git'
