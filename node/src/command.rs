@@ -7,7 +7,6 @@ use cumulus_primitives_core::ParaId;
 use cumulus_client_service::genesis::generate_genesis_block;
 use log::info;
 use parachain_runtime::{AccountId, Block};
-use codec::Encode;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -129,21 +128,9 @@ pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
 	match &cli.subcommand {
-		Some(Subcommand::BuildSpec(params)) => {
-			let runner = cli.create_runner(&params.base)?;
-			runner.sync_run(|config| {
-				if params.mnemonic.is_some() || params.accounts.is_some() {
-					params.base.run(
-						Box::new(chain_spec::development_chain_spec(
-							params.mnemonic.clone(),
-							params.accounts,
-						)),
-						config.network,
-					)
-				} else {
-					params.base.run(config.chain_spec, config.network)
-				}
-			})
+		Some(Subcommand::BuildSpec(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
 		}
 		Some(Subcommand::CheckBlock(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
