@@ -4,13 +4,17 @@ use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, U256, Pair, Public, sr25519};
-use sp_runtime::traits::{IdentifyAccount, Verify};
-
+use sp_runtime::{
+	traits::{BlakeTwo256, Hash, IdentifyAccount, Verify},
+	Perbill,
+};
 
 use std::collections::BTreeMap;
 use std::str::FromStr;
 use serde_json as json;
 use nimbus_primitives::NimbusId;
+
+use std::convert::TryInto;
 
 const DEFAULT_PROPERTIES_TESTNET: &str = r#"
 {
@@ -73,8 +77,8 @@ pub fn development_config(para_id: ParaId) -> ChainSpec {
 					None,
 					1_000 * GLMR,
 				)],
-				None,
-				accounts.clone(),
+				moonbeam_inflation_config(),
+				vec![AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap()],
 				Default::default(), // para_id
 				2160,               //ChainId
 			)
@@ -85,7 +89,7 @@ pub fn development_config(para_id: ParaId) -> ChainSpec {
 		Some(json::from_str(DEFAULT_PROPERTIES_TESTNET).unwrap()),
 		Extensions {
 			relay_chain: "rococo-dev".into(),
-			para_id: id.into(),
+			para_id: para_id.into(),
 		},
 	)
 }
@@ -106,7 +110,7 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 					None,
 					1_000 * GLMR,
 				)],
-				None,
+				moonbeam_inflation_config(),
 				vec![AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap()],
 				para_id,
 				2160, //ChainId
@@ -118,14 +122,37 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 		Some(json::from_str(DEFAULT_PROPERTIES_TESTNET).unwrap()),
 		Extensions {
 			relay_chain: "rococo-local".into(),
-			para_id: id.into(),
+			para_id: para_id.into(),
 		},
 	)
+}
+
+
+pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
+	InflationInfo {
+		expect: Range {
+			min: 100_000 * GLMR,
+			ideal: 200_000 * GLMR,
+			max: 500_000 * GLMR,
+		},
+		annual: Range {
+			min: Perbill::from_percent(4),
+			ideal: Perbill::from_percent(5),
+			max: Perbill::from_percent(5),
+		},
+		// 8766 rounds (hours) in a year
+		round: Range {
+			min: Perbill::from_parts(Perbill::from_percent(4).deconstruct() / 8766),
+			ideal: Perbill::from_parts(Perbill::from_percent(5).deconstruct() / 8766),
+			max: Perbill::from_parts(Perbill::from_percent(5).deconstruct() / 8766),
+		},
+	}
 }
 
 fn testnet_genesis(
 	root_key: AccountId,
 	stakers: Vec<(AccountId, Option<AccountId>, parachain_runtime::Balance)>,
+	inflation_config: InflationInfo<Balance>,
 	endowed_accounts: Vec<AccountId>,
 	para_id: ParaId,
 	chain_id: u64,
@@ -167,7 +194,7 @@ fn testnet_genesis(
 		pallet_ethereum: EthereumConfig {},
 		parachain_staking: parachain_runtime::ParachainStakingConfig {
 			stakers: stakers.clone(),
-			None, //inflation_config
+			inflation_config,
 		},
 		pallet_author_slot_filter: parachain_runtime::AuthorFilterConfig { eligible_ratio: 50 },
 		pallet_author_mapping: parachain_runtime::AuthorMappingConfig {
