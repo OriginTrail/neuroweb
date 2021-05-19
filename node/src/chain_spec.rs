@@ -1,6 +1,6 @@
 use cumulus_primitives_core::ParaId;
 use parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR, InflationInfo, Range, AuthorFilterConfig, AuthorMappingConfig, Balance, BalancesConfig,
-						GenesisConfig, ParachainInfoConfig, SchedulerConfig, SudoConfig, SystemConfig, WASM_BINARY, ParachainStakingConfig};
+						GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig, WASM_BINARY, ParachainStakingConfig};
 
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -198,7 +198,6 @@ fn testnet_genesis(
 
 		},
 		pallet_ethereum: EthereumConfig {},
-		pallet_scheduler: SchedulerConfig {},
 		parachain_staking: ParachainStakingConfig {
 			stakers: stakers.clone(),
 			inflation_config,
