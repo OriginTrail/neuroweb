@@ -1,5 +1,4 @@
 use crate::chain_spec;
-use sc_cli;
 use sp_core::H160;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -74,7 +73,7 @@ pub struct ExportGenesisStateCommand {
 	pub raw: bool,
 
 	/// The name of the chain for that the genesis state should be exported.
-	#[structopt(long, conflicts_with = "parachain-id")]
+	#[structopt(long)]
 	pub chain: Option<String>,
 }
 

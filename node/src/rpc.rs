@@ -26,7 +26,7 @@ use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use moonbeam_rpc_debug::DebugRequester;
 use moonbeam_rpc_trace::CacheRequester as TraceFilterCacheRequester;
-use moonbeam_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
+use parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 use sc_client_api::{
 	backend::{AuxStore, Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
@@ -154,7 +154,7 @@ where
 	io.extend_with(EthApiServer::to_delegate(EthApi::new(
 		client.clone(),
 		pool.clone(),
-		moonbeam_runtime::TransactionConverter,
+		parachain_runtime::TransactionConverter,
 		network.clone(),
 		pending_transactions,
 		signers,

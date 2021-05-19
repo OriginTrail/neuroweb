@@ -32,6 +32,10 @@ use futures::{Stream, StreamExt};
 
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
 
+use nimbus_consensus::{
+	build_filtering_consensus as build_nimbus_consensus,
+	BuildFilteringConsensusParams as BuildNimbusConsensusParams,
+};
 
 use crate::cli::EthApi as EthApiCmd;
 use crate::{
