@@ -26,13 +26,13 @@ fn load_spec(
 	id: &str,
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-	Ok(match id {
+	match id {
 		"dev" => Box::new(chain_spec::development_config(para_id)),
 		"" | "local" => Box::new(chain_spec::local_testnet_config(para_id)),
 		path => Ok(Box::new(chain_spec::ChainSpec::from_json_file(
 			path.into(),
 		)?)),
-	})
+	}
 }
 
 impl SubstrateCli for Cli {
@@ -105,8 +105,12 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter())
-			.load_spec(id)
+		match id {
+			// If we are not using a moonbeam-centric pre-baked relay spec, then fall back to the
+			// Polkadot service to interpret the id.
+			_ => polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter())
+				.load_spec(id),
+		}
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -296,6 +300,17 @@ pub fn run() -> Result<()> {
 			}
 
 			Ok(())
+		}
+		Some(Subcommand::Benchmark(cmd)) => {
+			if cfg!(feature = "runtime-benchmarks") {
+				let runner = cli.create_runner(cmd)?;
+
+				runner.sync_run(|config| cmd.run::<Block, crate::service::Executor>(config))
+			} else {
+				Err("Benchmarking wasn't enabled when building the node. \
+				You can enable it with `--features runtime-benchmarks`."
+					.into())
+			}
 		}
 		None => {
 			let runner = cli.create_runner(&*cli.run)?;
