@@ -10,9 +10,6 @@ use sp_runtime::{
 };
 
 use pallet_evm::GenesisAccount;
-
-
-use std::collections::BTreeMap;
 use std::str::FromStr;
 use serde_json as json;
 use nimbus_primitives::NimbusId;
@@ -160,6 +157,8 @@ fn testnet_genesis(
 	para_id: ParaId,
 	chain_id: u64,
 ) -> parachain_runtime::GenesisConfig {
+	let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
+
 	let precompile_addresses = vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 2048]
 		.into_iter()
 		.map(H160::from_low_u64_be);
