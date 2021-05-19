@@ -10,6 +10,8 @@ jsonrpc-core = "15.1.0"
 serde_json = "1.0"
 tokio = { version = "0.2.13", features = ["macros", "sync"] }
 
+async-io = "1.3"
+
 
 
 jsonrpc-pubsub = "15.1.0"
@@ -36,6 +38,7 @@ moonbeam-rpc-txpool = { path = "../client/rpc/txpool" }
 moonbeam-rpc-primitives-txpool = { path = "../primitives/rpc/txpool" }
 moonbeam-rpc-trace = { path = "../client/rpc/trace" }
 
+sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 
 [dependencies.frame-benchmarking]
 git = 'https://github.com/paritytech/substrate.git'
