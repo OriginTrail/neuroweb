@@ -27,8 +27,11 @@ native_executor_instance!(
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
+#[allow(clippy::type_complexity)]
 pub fn new_partial(
 	config: &Configuration,
+	author: Option<nimbus_primitives::NimbusId>,
+	dev_service: bool,
 ) -> Result<
 	PartialComponents<
 		TFullClient<Block, RuntimeApi, Executor>,
@@ -40,7 +43,7 @@ pub fn new_partial(
 	>,
 	sc_service::Error,
 > {
-	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
+	let inherent_data_providers = build_inherent_data_providers(author, dev_service)?;
 
 	let telemetry = config
 		.telemetry_endpoints
@@ -80,15 +83,38 @@ pub fn new_partial(
 		client.clone(),
 	);
 
-	let import_queue = cumulus_client_consensus_relay_chain::import_queue(
-		client.clone(),
-		client.clone(),
-		inherent_data_providers.clone(),
-		&task_manager.spawn_essential_handle(),
-		registry.clone(),
-	)?;
+	let pending_transactions: PendingTransactions = Some(Arc::new(Mutex::new(HashMap::new())));
 
-	let params = PartialComponents {
+	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
+
+	let frontier_backend = open_frontier_backend(config)?;
+
+	let frontier_block_import =
+		FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
+
+	// Depending whether we are
+	let import_queue = if dev_service {
+		// There is a bug in this import queue where it doesn't properly check inherents:
+		// https://github.com/paritytech/substrate/issues/8164
+		sc_consensus_manual_seal::import_queue(
+			Box::new(frontier_block_import.clone()),
+			&task_manager.spawn_essential_handle(),
+			config.prometheus_registry(),
+		)
+	} else {
+		// It would be nice if we could just use this one in either case, but
+		// it doesn't properly follow the longest chain rule.
+		// https://github.com/PureStake/moonbeam/pull/266
+		nimbus_consensus::import_queue(
+			client.clone(),
+			frontier_block_import.clone(),
+			inherent_data_providers.clone(),
+			&task_manager.spawn_essential_handle(),
+			config.prometheus_registry(),
+		)?
+	};
+
+	Ok(PartialComponents {
 		backend,
 		client,
 		import_queue,
@@ -96,11 +122,16 @@ pub fn new_partial(
 		task_manager,
 		transaction_pool,
 		inherent_data_providers,
-		select_chain: (),
-		other: (telemetry, telemetry_worker_handle),
-	};
-
-	Ok(params)
+		select_chain: maybe_select_chain,
+		other: (
+			frontier_block_import,
+			pending_transactions,
+			filter_pool,
+			telemetry,
+			telemetry_worker_handle,
+			frontier_backend,
+		),
+	})
 }
 
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
@@ -110,15 +141,16 @@ pub fn new_partial(
 async fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
-	polkadot_config: Configuration,
-	id: ParaId,
-	validator: bool,
-	rpc_ext_builder: RB,
-) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)>
+	author_id: Option<H160>,
+	id: polkadot_primitives::v0::Id,
+	collator: bool,
+	cmd: RunCmd,
+	_rpc_ext_builder: RB,
+) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)>
 where
 	RB: Fn(
-			Arc<TFullClient<Block, RuntimeApi, Executor>>,
-		) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+		Arc<TFullClient<Block, RuntimeApi, Executor>>,
+	) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 		+ Send
 		+ 'static,
 {
@@ -128,23 +160,25 @@ where
 
 	let parachain_config = prepare_node_config(parachain_config);
 
-	let params = new_partial(&parachain_config)?;
-	params
-		.inherent_data_providers
-		.register_provider(sp_timestamp::InherentDataProvider)
-		.unwrap();
-	let (mut telemetry, telemetry_worker_handle) = params.other;
+	let params = new_partial(&parachain_config, None, false)?;
+	let (
+		block_import,
+		pending_transactions,
+		filter_pool,
+		mut telemetry,
+		telemetry_worker_handle,
+		frontier_backend,
+	) = params.other;
 
-	let polkadot_full_node =
-		cumulus_client_service::build_polkadot_full_node(
-			polkadot_config,
-			collator_key.clone(),
-			telemetry_worker_handle,
-		)
-		.map_err(|e| match e {
-			polkadot_service::Error::Sub(x) => x,
-			s => format!("{}", s).into(),
-		})?;
+	let polkadot_full_node = cumulus_client_service::build_polkadot_full_node(
+		polkadot_config,
+		collator_key.clone(),
+		telemetry_worker_handle,
+	)
+	.map_err(|e| match e {
+		polkadot_service::Error::Sub(x) => x,
+		s => format!("{}", s).into(),
+	})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
