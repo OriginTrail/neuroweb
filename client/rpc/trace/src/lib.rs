@@ -233,11 +233,11 @@ where
 }
 
 impl<B, C> TraceT for Trace<B, C>
-where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	B::Header: HeaderT<Number = u32>,
-	C: HeaderMetadata<B, Error = BlockChainError> + HeaderBackend<B>,
-	C: Send + Sync + 'static,
+	where
+		B: BlockT<Hash = H256> + Send + Sync + 'static,
+		B::Header: HeaderT<Number = u32>,
+		C: HeaderMetadata<B, Error = BlockChainError> + HeaderBackend<B>,
+		C: Send + Sync + 'static,
 {
 	fn filter(
 		&self,

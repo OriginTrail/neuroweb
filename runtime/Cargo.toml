@@ -17,6 +17,12 @@ version = '2.0.0'
 smallvec = "1.6.1"
 log = "0.4.8"
 evm-runtime = { version = "0.26.0", default-features = false }
+sha3 = { version = "0.9", default-features = false }
+
+moonbeam-rpc-primitives-debug = { path = "../primitives/rpc/debug", default-features = false }
+moonbeam-rpc-primitives-txpool = { path = "../primitives/rpc/txpool", default-features = false }
+moonbeam-extensions-evm = { path = "extensions/evm", default-features = false }
+
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -342,7 +348,7 @@ std = [
 	"pallet-ethereum/std",
 	"pallet-evm/std",
 	"pallet-evm-precompile-simple/std",
-
+	"sha3/std",
 	"pallet-multisig/std",
 	"pallet-scheduler/std",
 
