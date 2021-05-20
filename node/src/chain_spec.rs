@@ -19,13 +19,6 @@ use nimbus_primitives::NimbusId;
 
 use std::convert::TryInto;
 
-const DEFAULT_PROPERTIES_TESTNET: &str = r#"
-{
-"tokenSymbol": "TTRAC",
-"tokenDecimals": 18,
-"ss58Format": 42
-}
-"#;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
@@ -89,7 +82,7 @@ pub fn development_config(para_id: ParaId) -> ChainSpec {
 		vec![],
 		None,
 		None,
-		Some(json::from_str(DEFAULT_PROPERTIES_TESTNET).unwrap()),
+		Some(serde_json::from_str("{\"tokenDecimals\": 18}").expect("Provided valid json map")),
 		Extensions {
 			relay_chain: "rococo-dev".into(),
 			para_id: para_id.into(),
@@ -122,7 +115,7 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 		vec![],
 		None,
 		None,
-		Some(json::from_str(DEFAULT_PROPERTIES_TESTNET).unwrap()),
+		Some(serde_json::from_str("{\"tokenDecimals\": 18}").expect("Provided valid json map")),
 		Extensions {
 			relay_chain: "rococo-local".into(),
 			para_id: para_id.into(),
