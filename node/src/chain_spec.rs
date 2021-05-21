@@ -197,7 +197,7 @@ fn testnet_genesis(
 			stakers: stakers.clone(),
 			inflation_config,
 		},
-		pallet_author_slot_filter: AuthorFilterConfig { eligible_ratio: 50, },
+		pallet_author_slot_filter: AuthorFilterConfig { eligible_ratio: Percent::from_percent(50), },
 		pallet_author_mapping: AuthorMappingConfig {
 			// Pretty hacky. We just set the first staker to use alice's session keys.
 			// Maybe this is the moment we should finally make the `--alice` flags make sense.
