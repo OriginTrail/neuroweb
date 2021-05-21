@@ -1,6 +1,6 @@
 use cumulus_primitives_core::ParaId;
 use parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR, InflationInfo, Range, AuthorFilterConfig, AuthorMappingConfig, Balance, BalancesConfig,
-						GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig, WASM_BINARY, ParachainStakingConfig, SchedulerConfig};
+						GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig, WASM_BINARY, ParachainStakingConfig};
 
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -117,7 +117,7 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 		None,
 		Some(serde_json::from_str("{\"tokenDecimals\": 18}").expect("Provided valid json map")),
 		Extensions {
-			relay_chain: "rococo-local".into(),
+			relay_chain: "local_testnet".into(),
 			para_id: para_id.into(),
 		},
 	)
@@ -192,7 +192,6 @@ fn testnet_genesis(
 
 		},
 		pallet_ethereum: EthereumConfig {},
-		pallet_scheduler: SchedulerConfig {},
 		parachain_staking: ParachainStakingConfig {
 			stakers: stakers.clone(),
 			inflation_config,
