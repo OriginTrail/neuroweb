@@ -47,16 +47,6 @@ impl Extensions {
 	}
 }
 
-type AccountPublic = <Signature as Verify>::Signer;
-
-/// Helper function to generate an account ID from seed
-pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-where
-	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
-{
-	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
-}
-
 pub fn development_config(para_id: ParaId) -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
@@ -123,7 +113,6 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 	)
 }
 
-
 pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
 	InflationInfo {
 		expect: Range {
@@ -145,7 +134,7 @@ pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
 	}
 }
 
-fn testnet_genesis(
+pub fn testnet_genesis(
 	root_key: AccountId,
 	stakers: Vec<(AccountId, Option<AccountId>, Balance)>,
 	inflation_config: InflationInfo<Balance>,
@@ -189,7 +178,6 @@ fn testnet_genesis(
 					)
 				})
 				.collect(),
-
 		},
 		pallet_ethereum: EthereumConfig {},
 		parachain_staking: ParachainStakingConfig {
