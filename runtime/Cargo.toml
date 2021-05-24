@@ -1,17 +1,16 @@
+[package]
+authors = ['TraceLabs']
+edition = '2018'
+homepage = 'https://substrate.dev'
+license = 'Unlicense'
+name = 'origintrail-parachain-runtime'
+repository = 'https://github.com/OriginTrail/starfleet-parachain'
+version = '2.0.0'
+
 [build-dependencies.substrate-wasm-builder]
 git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '4.0.0'
-
-[package]
-authors = ['Anonymous']
-edition = '2018'
-homepage = 'https://substrate.dev'
-license = 'Unlicense'
-name = 'parachain-runtime'
-repository = 'https://github.com/substrate-developer-hub/substrate-parachain-template'
-
-version = '2.0.0'
 
 [dependencies]
 smallvec = "1.6.1"

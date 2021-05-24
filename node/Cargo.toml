@@ -55,7 +55,7 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '3.0.0'
 
-[dependencies.parachain-runtime]
+[dependencies.origintrail-parachain-runtime]
 path = '../runtime'
 version = '2.0.0'
 
@@ -248,18 +248,18 @@ branch = 'rococo-v1'
 name = 'parachain-collator'
 
 [package]
-authors = ['Anonymous']
+authors = ['TraceLabs']
 build = 'build.rs'
 description = 'A new Cumulus FRAME-based Substrate node, ready for hacking.'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Unlicense'
-name = 'parachain-collator'
-repository = 'https://github.com/substrate-developer-hub/substrate-parachain-template'
+name = 'origintrail-parachain'
+repository = 'https://github.com/OriginTrail/starfleet-parachain'
 version = '2.0.0'
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [features]
 default = []
-runtime-benchmarks = ['parachain-runtime/runtime-benchmarks']
+runtime-benchmarks = ['origintrail-parachain-runtime/runtime-benchmarks']
