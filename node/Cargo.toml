@@ -245,7 +245,7 @@ git = "https://github.com/paritytech/polkadot"
 branch = 'rococo-v1'
 
 [[bin]]
-name = 'parachain-collator'
+name = 'origintrail-parachain'
 
 [package]
 authors = ['TraceLabs']
