@@ -6,7 +6,7 @@ use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
-use parachain_runtime::{AccountId, Block};
+use origintrail_parachain_runtime::{AccountId, Block};
 use polkadot_parachain::primitives::AccountIdConversion;
 use polkadot_service::RococoChainSpec;
 use sc_cli::{
@@ -71,7 +71,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&parachain_runtime::VERSION
+		&origintrail_parachain_runtime::VERSION
 	}
 }
 

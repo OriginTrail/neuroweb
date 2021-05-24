@@ -14,7 +14,7 @@ use fc_rpc::EthTask;
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use futures::{Stream, StreamExt};
 use moonbeam_rpc_debug::DebugHandler;
-use parachain_runtime::{opaque::Block, RuntimeApi};
+use origintrail_parachain_runtime::{opaque::Block, RuntimeApi};
 use nimbus_consensus::{
 	build_filtering_consensus as build_nimbus_consensus,
 	BuildFilteringConsensusParams as BuildNimbusConsensusParams,
@@ -41,8 +41,8 @@ use tokio::sync::Semaphore;
 // Native executor instance.
 native_executor_instance!(
 	pub Executor,
-	parachain_runtime::api::dispatch,
-	parachain_runtime::native_version,
+	origintrail_parachain_runtime::api::dispatch,
+	origintrail_parachain_runtime::native_version,
 	frame_benchmarking::benchmarking::HostFunctions,
 );
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
