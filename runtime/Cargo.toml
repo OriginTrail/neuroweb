@@ -15,7 +15,7 @@ version = '4.0.0'
 [dependencies]
 smallvec = "1.6.1"
 log = "0.4.8"
-evm-runtime = { version = "0.26.0", default-features = false }
+evm = { version = "0.27.0", default-features = false, features = ["with-codec"] }
 sha3 = { version = "0.9", default-features = false }
 
 moonbeam-rpc-primitives-debug = { path = "../primitives/rpc/debug", default-features = false }
@@ -350,7 +350,7 @@ std = [
 	"sha3/std",
 	"pallet-multisig/std",
 	"pallet-scheduler/std",
-
+	"evm/std",
 	"account/std",
 	"parachain-staking/std",
 	"pallet-author-slot-filter/std",
