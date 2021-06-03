@@ -52,12 +52,12 @@ use nimbus_primitives::{CanAuthor, NimbusId};
 
 use codec::{Decode, Encode};
 use fp_rpc::TransactionStatus;
-use evm_runtime::Config as EvmConfig;
+use evm::Config as EvmConfig;
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime, parameter_types, match_type,
 	traits::{Randomness, IsInVec, All},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -413,7 +413,7 @@ parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 1_000_000;
 	// One UNIT buys 1 second of weight.
-	pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), UNIT);
+	pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), 1_000_000_000_000);
 }
 
 match_type! {
@@ -423,9 +423,10 @@ match_type! {
 }
 
 pub type Barrier = (
-	TakeWeightCredit,
-	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
-	AllowUnpaidExecutionFrom<IsInVec<AllowUnpaidFrom>>,	// <- Parent gets free execution
+    TakeWeightCredit,
+    AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
+    AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
+    // ^^^ Parent & its unit plurality gets free execution
 );
 
 
