@@ -17,8 +17,10 @@ use moonbeam_rpc_debug::DebugHandler;
 use origintrail_parachain_runtime::{opaque::Block, RuntimeApi};
 use nimbus_consensus::{
 	build_filtering_consensus as build_nimbus_consensus,
-	BuildFilteringConsensusParams as BuildNimbusConsensusParams,
+	BuildNimbusConsensusParams,
 };
+use nimbus_primitives::NimbusId;
+
 use polkadot_primitives::v0::CollatorPair;
 use sc_cli::SubstrateCli;
 use sc_client_api::BlockchainEvents;
@@ -231,23 +233,23 @@ where
 		frontier_backend,
 	) = params.other;
 
-	let polkadot_full_node = cumulus_client_service::build_polkadot_full_node(
+	let relay_chain_full_node = cumulus_client_service::build_polkadot_full_node(
 		polkadot_config,
 		collator_key.clone(),
 		telemetry_worker_handle,
 	)
-	.map_err(|e| match e {
-		polkadot_service::Error::Sub(x) => x,
-		s => format!("{}", s).into(),
-	})?;
+		.map_err(|e| match e {
+			polkadot_service::Error::Sub(x) => x,
+			s => format!("{}", s).into(),
+		})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 	let block_announce_validator = build_block_announce_validator(
-		polkadot_full_node.client.clone(),
+		relay_chain_full_node.client.clone(),
 		id,
-		Box::new(polkadot_full_node.network.clone()),
-		polkadot_full_node.backend.clone(),
+		Box::new(relay_chain_full_node.network.clone()),
+		relay_chain_full_node.backend.clone(),
 	);
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -408,6 +410,9 @@ where
 		);
 		let spawner = task_manager.spawn_handle();
 
+		let relay_chain_backend = relay_chain_full_node.backend.clone();
+		let relay_chain_client = relay_chain_full_node.client.clone();
+
 		let parachain_consensus = build_nimbus_consensus(BuildNimbusConsensusParams {
 			para_id: id,
 			proposer_factory,
@@ -450,9 +455,9 @@ where
 			task_manager: &mut task_manager,
 			collator_key,
 			spawner,
-			backend,
-			relay_chain_full_node: polkadot_full_node,
+			relay_chain_full_node,
 			parachain_consensus,
+			import_queue,
 		};
 
 		start_collator(params).await?;
@@ -462,7 +467,7 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id: id,
-			polkadot_full_node,
+			relay_chain_full_node,
 		};
 
 		start_full_node(params)?;
