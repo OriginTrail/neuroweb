@@ -19,8 +19,6 @@ use sp_runtime::{
 use sha3::{Digest, Keccak256};
 use pallet_ethereum::Call::transact;
 use pallet_ethereum::{Transaction as EthereumTransaction, TransactionAction};
-use moonbeam_extensions_evm::runner::stack::TraceRunner as TraceRunnerT;
-
 
 use sp_std::{convert::TryFrom, prelude::*};
 #[cfg(feature = "std")]
@@ -39,7 +37,7 @@ use xcm_builder::{
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation, FixedRateOfConcreteFungible, EnsureXcmOrigin,
 	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, IsConcrete, NativeAsset,
-	AllowUnpaidExecutionFrom, ParentAsSuperuser,
+	AllowUnpaidExecutionFrom, ParentAsSuperuser, UsingComponents
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -65,6 +63,7 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
+use moonbeam_rpc_primitives_txpool::TxPoolResponse;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
@@ -299,17 +298,14 @@ parameter_types! {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-	type Event = Event;
-	type OnValidationData = ();
-	type SelfParaId = parachain_info::Module<Runtime>;
-	type DownwardMessageHandlers = cumulus_primitives_utility::UnqueuedDmpAsParent<
-		MaxDownwardMessageWeight,
-		XcmExecutor<XcmConfig>,
-		Call,
-	>;
-	type OutboundXcmpMessageSource = XcmpQueue;
-	type XcmpMessageHandler = XcmpQueue;
-	type ReservedXcmpWeight = ReservedXcmpWeight;
+    type Event = Event;
+    type OnValidationData = ();
+    type SelfParaId = ParachainInfo;
+    type DmpMessageHandler = ();
+    type ReservedDmpWeight = ();
+    type OutboundXcmpMessageSource = ();
+    type XcmpMessageHandler = ();
+    type ReservedXcmpWeight = ReservedXcmpWeight;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -377,14 +373,16 @@ pub type LocationToAccountId = (
 
 /// Means for transacting assets on this chain.
 pub type LocalAssetTransactor = CurrencyAdapter<
-	// Use this currency:
-	Balances,
-	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RococoLocation>,
-	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-	LocationToAccountId,
-	// Our chain's account ID type (we can't get away without mentioning it explicitly):
-	AccountId,
+    // Use this currency:
+    Balances,
+    // Use this currency when it is a fungible asset matching the given location or name:
+    IsConcrete<RelayLocation>,
+    // Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+    LocationToAccountId,
+    // Our chain's account ID type (we can't get away without mentioning it explicitly):
+    AccountId,
+    // We don't track any teleports.
+    (),
 >;
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
@@ -439,7 +437,7 @@ impl Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = FixedRateOfConcreteFungible<WeightPrice>;
+	type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
 	type ResponseHandler = ();	// Don't handle responses for now.
 }
 
@@ -601,7 +599,7 @@ impl fp_rpc::ConvertTransaction<opaque::UncheckedExtrinsic> for TransactionConve
 
 impl pallet_ethereum::Config for Runtime {
     type Event = Event;
-    type FindAuthor = pallet_author_mapping::MappedFindAuthor<Self, AuthorInherent>;
+    type FindAuthor = AuthorInherent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot;
 }
 
@@ -648,26 +646,30 @@ impl pallet_multisig::Config for Runtime {
 impl pallet_author_inherent::Config for Runtime {
     type AuthorId = NimbusId;
     type SlotBeacon = pallet_author_inherent::RelayChainBeacon<Self>;
-    //TODO This is making me think the mapping should just happen in the author inherent pallet
-    // Or maybe the sessions pallet will interface really naturally with the author inherent pallet?
-    type EventHandler = pallet_author_mapping::MappedEventHandler<Self, ParachainStaking>;
-    type PreliminaryCanAuthor = pallet_author_mapping::MappedCanAuthor<Self, ParachainStaking>;
-    type FullCanAuthor = pallet_author_mapping::MappedCanAuthor<Self, AuthorFilter>;
+    type AccountLookup = AuthorMapping;
+    type EventHandler = ParachainStaking;
+    type CanAuthor = AuthorFilter;
 }
 
 impl pallet_author_slot_filter::Config for Runtime {
-    // All of our filtering is going to happen in the runtime's accountId type (same as staking.)
-    // Maybe I should remove this associated type entirely
-    type AuthorId = AccountId;
     type Event = Event;
     type RandomnessSource = RandomnessCollectiveFlip;
     type PotentialAuthors = ParachainStaking;
 }
 
+parameter_types! {
+	pub const DepositAmount: Balance = 100 * currency::GLMR;
+}
 // This is a simple session key manager. It should probably either work with, or be replaced
 // entirely by pallet sessions
 impl pallet_author_mapping::Config for Runtime {
+    type Event = Event;
     type AuthorId = NimbusId;
+    type DepositCurrency = Balances;
+    type DepositAmount = DepositAmount;
+    fn can_register(account: &AccountId) -> bool {
+        ParachainStaking::is_candidate(account)
+    }
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -693,7 +695,8 @@ construct_runtime!(
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
 		AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent},
-        AuthorMapping: pallet_author_mapping::{Pallet, Call, Config<T>, Storage, Event<T>},        AuthorFilter: pallet_author_slot_filter::{Pallet, Storage, Event, Config},
+        AuthorMapping: pallet_author_mapping::{Pallet, Call, Config<T>, Storage, Event<T>},
+        AuthorFilter: pallet_author_slot_filter::{Pallet, Storage, Event, Config},
         ParachainStaking: parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>},
 	}
 );
@@ -772,9 +775,6 @@ impl_runtime_apis! {
             data.check_extrinsics(&block)
         }
 
-        fn random_seed() -> <Block as BlockT>::Hash {
-            RandomnessCollectiveFlip::random_seed().0
-        }
     }
 
     impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
