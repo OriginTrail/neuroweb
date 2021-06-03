@@ -693,8 +693,7 @@ construct_runtime!(
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
 		AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent},
-		AuthorMapping: pallet_author_mapping::{Pallet, Config<T>, Storage},
-        AuthorFilter: pallet_author_slot_filter::{Pallet, Storage, Event, Config},
+        AuthorMapping: pallet_author_mapping::{Pallet, Call, Config<T>, Storage, Event<T>},        AuthorFilter: pallet_author_slot_filter::{Pallet, Storage, Event, Config},
         ParachainStaking: parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>},
 	}
 );
@@ -820,22 +819,8 @@ impl_runtime_apis! {
 			moonbeam_rpc_primitives_debug::single::TransactionTrace,
 			sp_runtime::DispatchError
 		> {
-			// Get the caller;
-			let mut sig = [0u8; 65];
-			let mut msg = [0u8; 32];
-			sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-			sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-			sig[64] = transaction.signature.standard_v();
-			msg.copy_from_slice(
-				&pallet_ethereum::TransactionMessage::from(transaction.clone()).hash()[..]
-			);
-
-			let from = match sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg) {
-				Ok(pk) => H160::from(
-					H256::from_slice(Keccak256::digest(&pk).as_slice())
-				),
-				_ => H160::default()
-			};
+			use moonbeam_rpc_primitives_debug::single::TraceType;
+			use moonbeam_evm_tracer::{RawTracer, CallListTracer};
 
 			// Apply the a subset of extrinsics: all the substrate-specific or ethereum transactions
 			// that preceded the requested transaction.
@@ -843,51 +828,40 @@ impl_runtime_apis! {
 				let _ = match &ext.function {
 					Call::Ethereum(transact(t)) => {
 						if t == transaction {
-							break;
+							return match trace_type {
+								TraceType::Raw {
+									disable_storage,
+									disable_memory,
+									disable_stack,
+								} => {
+									Ok(RawTracer::new(disable_storage,
+										disable_memory,
+										disable_stack,)
+										.trace(|| Executive::apply_extrinsic(ext))
+										.0
+										.into_tx_trace()
+									)
+								},
+								TraceType::CallList => {
+									Ok(CallListTracer::new()
+										.trace(|| Executive::apply_extrinsic(ext))
+										.0
+										.into_tx_trace()
+									)
+								}
+							}
+
+						} else {
+							Executive::apply_extrinsic(ext)
 						}
-						Executive::apply_extrinsic(ext)
 					},
 					_ => Executive::apply_extrinsic(ext)
 				};
 			}
 
-			let mut c = <Runtime as pallet_evm::Config>::config().clone();
-			c.estimate = true;
-			let config = Some(c);
-
-			// Use the runner extension to interface with our evm's trace executor and return the
-			// TraceExecutorResult.
-			match transaction.action {
-				TransactionAction::Call(to) => {
-					if let Ok(res) = <Runtime as pallet_evm::Config>::Runner::trace_call(
-						from,
-						to,
-						transaction.input.clone(),
-						transaction.value,
-						transaction.gas_limit.low_u64(),
-						config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
-						trace_type,
-					) {
-						return Ok(res);
-					} else {
-						return Err(sp_runtime::DispatchError::Other("Evm error"));
-					}
-				},
-				TransactionAction::Create => {
-					if let Ok(res) = <Runtime as pallet_evm::Config>::Runner::trace_create(
-						from,
-						transaction.input.clone(),
-						transaction.value,
-						transaction.gas_limit.low_u64(),
-						config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
-						trace_type,
-					) {
-						return Ok(res);
-					} else {
-						return Err(sp_runtime::DispatchError::Other("Evm error"));
-					}
-				}
-			}
+			Err(sp_runtime::DispatchError::Other(
+				"Failed to find Ethereum transaction among the extrinsics."
+			))
 		}
 
 		fn trace_block(
@@ -898,6 +872,7 @@ impl_runtime_apis! {
 				sp_runtime::DispatchError
 			> {
 			use moonbeam_rpc_primitives_debug::{single, block, CallResult, CreateResult, CreateType};
+			use moonbeam_evm_tracer::CallListTracer;
 
 			let mut config = <Runtime as pallet_evm::Config>::config().clone();
 			config.estimate = true;
@@ -908,51 +883,11 @@ impl_runtime_apis! {
 			// Apply all extrinsics. Ethereum extrinsics are traced.
 			for ext in extrinsics.into_iter() {
 				match &ext.function {
-					Call::Ethereum(transact(transaction)) => {
-						// Get the caller;
-						let mut sig = [0u8; 65];
-						let mut msg = [0u8; 32];
-						sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-						sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-						sig[64] = transaction.signature.standard_v();
-						msg.copy_from_slice(
-							&pallet_ethereum::TransactionMessage::from(transaction.clone())
-								.hash()[..]
-						);
-
-						let from = match sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg) {
-							Ok(pk) => H160::from(
-								H256::from_slice(Keccak256::digest(&pk).as_slice())
-							),
-							_ => H160::default()
-						};
-
-						// Use the runner extension to interface with our evm's trace executor and
-						// return the TraceExecutorResult.
-						let tx_traces = match transaction.action {
-							TransactionAction::Call(to) => {
-								<Runtime as pallet_evm::Config>::Runner::trace_call(
-									from,
-									to,
-									transaction.input.clone(),
-									transaction.value,
-									transaction.gas_limit.low_u64(),
-									&config,
-									single::TraceType::CallList,
-								).map_err(|_| sp_runtime::DispatchError::Other("Evm error"))?
-
-							},
-							TransactionAction::Create => {
-								<Runtime as pallet_evm::Config>::Runner::trace_create(
-									from,
-									transaction.input.clone(),
-									transaction.value,
-									transaction.gas_limit.low_u64(),
-									&config,
-									single::TraceType::CallList,
-								).map_err(|_| sp_runtime::DispatchError::Other("Evm error"))?
-							}
-						};
+					Call::Ethereum(transact(_transaction)) => {
+						let tx_traces = CallListTracer::new()
+							.trace(|| Executive::apply_extrinsic(ext))
+							.0
+							.into_tx_trace();
 
 						let tx_traces = match tx_traces {
 							single::TransactionTrace::CallList(t) => t,
@@ -1035,7 +970,7 @@ impl_runtime_apis! {
 									refund_address
 								} => block::TransactionTrace {
 									action: block::TransactionTraceAction::Suicide {
-										address: from,
+										address: trace.from,
 										balance,
 										refund_address,
 									},
@@ -1070,12 +1005,19 @@ impl_runtime_apis! {
 
 	impl moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block> for Runtime {
 		fn extrinsic_filter(
-			xts: Vec<<Block as BlockT>::Extrinsic>
-		) -> Vec<pallet_ethereum::Transaction> {
-			xts.into_iter().filter_map(|xt| match xt.function {
-				Call::Ethereum(transact(t)) => Some(t),
-				_ => None
-			}).collect()
+			xts_ready: Vec<<Block as BlockT>::Extrinsic>,
+			xts_future: Vec<<Block as BlockT>::Extrinsic>
+		) -> TxPoolResponse {
+			TxPoolResponse {
+				ready: xts_ready.into_iter().filter_map(|xt| match xt.function {
+					Call::Ethereum(transact(t)) => Some(t),
+					_ => None
+				}).collect(),
+				future: xts_future.into_iter().filter_map(|xt| match xt.function {
+					Call::Ethereum(transact(t)) => Some(t),
+					_ => None
+				}).collect(),
+			}
 		}
 	}
 
@@ -1207,6 +1149,12 @@ impl_runtime_apis! {
     impl nimbus_primitives::AuthorFilterAPI<Block, nimbus_primitives::NimbusId> for Runtime {
 		fn can_author(author: nimbus_primitives::NimbusId, slot: u32) -> bool {
 			<Runtime as pallet_author_inherent::Config>::FullCanAuthor::can_author(&author, &slot)
+		}
+	}
+
+	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
+		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info()
 		}
 	}
 
