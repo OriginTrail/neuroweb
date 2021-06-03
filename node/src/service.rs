@@ -411,12 +411,35 @@ where
 		let parachain_consensus = build_nimbus_consensus(BuildNimbusConsensusParams {
 			para_id: id,
 			proposer_factory,
-			inherent_data_providers: params.inherent_data_providers,
 			block_import,
-			relay_chain_client: polkadot_full_node.client.clone(),
-			relay_chain_backend: polkadot_full_node.backend.clone(),
+			relay_chain_client: relay_chain_full_node.client.clone(),
+			relay_chain_backend: relay_chain_full_node.backend.clone(),
 			parachain_client: client.clone(),
 			keystore: params.keystore_container.sync_keystore(),
+			create_inherent_data_providers: move |_, (relay_parent, validation_data, author_id)| {
+				let parachain_inherent =
+					cumulus_primitives_parachain_inherent::ParachainInherentData::
+					create_at_with_client(
+						relay_parent,
+						&relay_chain_client,
+						&*relay_chain_backend,
+						&validation_data,
+						id,
+					);
+				async move {
+					let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+					let parachain_inherent = parachain_inherent.ok_or_else(|| {
+						Box::<dyn std::error::Error + Send + Sync>::from(
+							"Failed to create parachain inherent",
+						)
+					})?;
+
+					let author = nimbus_primitives::InherentDataProvider::<NimbusId>(author_id);
+
+					Ok((time, parachain_inherent, author))
+				}
+			},
 		});
 
 		let params = StartCollatorParams {
