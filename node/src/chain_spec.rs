@@ -1,6 +1,6 @@
 use cumulus_primitives_core::ParaId;
 use origintrail_parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR, InflationInfo, Range, AuthorFilterConfig, AuthorMappingConfig, Balance, BalancesConfig,
-						GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig, WASM_BINARY, ParachainStakingConfig};
+									GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig, WASM_BINARY, ParachainStakingConfig};
 
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -60,7 +60,7 @@ pub fn development_config(para_id: ParaId) -> ChainSpec {
 				// Validator
 				vec![(
 					AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
-					None,
+					get_from_seed::<NimbusId>("Alice"),
 					1_000 * GLMR,
 				)],
 				moonbeam_inflation_config(),
@@ -93,7 +93,7 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 				// Validator
 				vec![(
 					AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
-					None,
+					get_from_seed::<NimbusId>("Alice"),
 					1_000 * GLMR,
 				)],
 				moonbeam_inflation_config(),
@@ -181,28 +181,19 @@ pub fn testnet_genesis(
 		},
 		pallet_ethereum: EthereumConfig {},
 		parachain_staking: ParachainStakingConfig {
-			stakers: stakers.clone(),
+			stakers: stakers
+				.iter()
+				.cloned()
+				.map(|(account, _, bond)| (account, bond))
+				.collect(),
 			inflation_config,
 		},
 		pallet_author_slot_filter: AuthorFilterConfig { eligible_ratio: Percent::from_percent(50), },
 		pallet_author_mapping: AuthorMappingConfig {
-			// Pretty hacky. We just set the first staker to use alice's session keys.
-			// Maybe this is the moment we should finally make the `--alice` flags make sense.
-			// Which is to say, we should prefund the alice account. Actually, I think we already do that...
-			author_ids: stakers
+			mappings: stakers
 				.iter()
-				.take(1)
-				.map(|staker| {
-					let author_id = get_from_seed::<NimbusId>("Alice");
-					let account_id = staker.0;
-					// This println confirmed that I mapped Alice's session key to Gerald's account ID
-					// Now I'm disabling it because it also showed up in my parachain genesis state file
-					// println!(
-					// 	"Initializing author -> account mapping: ({:?}, {:?})",
-					// 	author_id, account_id
-					// );
-					(author_id, account_id)
-				})
+				.cloned()
+				.map(|(account_id, author_id, _)| (author_id, account_id))
 				.collect(),
 		},
 	}
