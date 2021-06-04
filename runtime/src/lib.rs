@@ -19,8 +19,6 @@ use sp_runtime::{
 use sha3::{Digest, Keccak256};
 use pallet_ethereum::Call::transact;
 use pallet_ethereum::{Transaction as EthereumTransaction, TransactionAction};
-use moonbeam_extensions_evm::runner::stack::TraceRunner as TraceRunnerT;
-
 
 use sp_std::{convert::TryFrom, prelude::*};
 #[cfg(feature = "std")]
@@ -33,15 +31,17 @@ use frame_system::{
 
 // Polkadot imports
 use polkadot_parachain::primitives::Sibling;
-use xcm::v0::{Junction, MultiLocation, NetworkId};
+use xcm::v0::{MultiAsset, MultiLocation, MultiLocation::*, Junction::*, BodyId, NetworkId};
 use xcm_builder::{
 	AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation, FixedRateOfConcreteFungible, EnsureXcmOrigin,
 	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, IsConcrete, NativeAsset,
-	AllowUnpaidExecutionFrom, ParentAsSuperuser,
+	AllowUnpaidExecutionFrom, ParentAsSuperuser, UsingComponents
 };
 use xcm_executor::{Config, XcmExecutor};
+use pallet_xcm::XcmPassthrough;
+use xcm::v0::Xcm;
 
 use pallet_evm::{
     Account as EVMAccount, Runner, EnsureAddressNever, EnsureAddressRoot, EnsureAddressSame, FeeCalculator, IdentityAddressMapping, EnsureAddressTruncated, HashedAddressMapping,
@@ -52,12 +52,12 @@ use nimbus_primitives::{CanAuthor, NimbusId};
 
 use codec::{Decode, Encode};
 use fp_rpc::TransactionStatus;
-use evm_runtime::Config as EvmConfig;
+use evm::Config as EvmConfig;
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime, parameter_types, match_type,
 	traits::{Randomness, IsInVec, All},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -65,6 +65,7 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
+use moonbeam_rpc_primitives_txpool::TxPoolResponse;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
@@ -299,17 +300,14 @@ parameter_types! {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-	type Event = Event;
-	type OnValidationData = ();
-	type SelfParaId = parachain_info::Module<Runtime>;
-	type DownwardMessageHandlers = cumulus_primitives_utility::UnqueuedDmpAsParent<
-		MaxDownwardMessageWeight,
-		XcmExecutor<XcmConfig>,
-		Call,
-	>;
-	type OutboundXcmpMessageSource = XcmpQueue;
-	type XcmpMessageHandler = XcmpQueue;
-	type ReservedXcmpWeight = ReservedXcmpWeight;
+    type Event = Event;
+    type OnValidationData = ();
+    type SelfParaId = ParachainInfo;
+    type DmpMessageHandler = ();
+    type ReservedDmpWeight = ();
+    type OutboundXcmpMessageSource = ();
+    type XcmpMessageHandler = ();
+    type ReservedXcmpWeight = ReservedXcmpWeight;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -355,12 +353,10 @@ impl parachain_staking::Config for Runtime {
 }
 
 parameter_types! {
-	pub const RococoLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
-	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
-	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub Ancestry: MultiLocation = Junction::Parachain {
-		id: ParachainInfo::parachain_id().into()
-	}.into();
+	pub const RelayLocation: MultiLocation = X1(Parent);
+	pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
+	pub RelayOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
+	pub Ancestry: MultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -372,58 +368,65 @@ pub type LocationToAccountId = (
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
-	AccountId32Aliases<RococoNetwork, AccountId>,
+	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
 /// Means for transacting assets on this chain.
 pub type LocalAssetTransactor = CurrencyAdapter<
-	// Use this currency:
-	Balances,
-	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RococoLocation>,
-	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-	LocationToAccountId,
-	// Our chain's account ID type (we can't get away without mentioning it explicitly):
-	AccountId,
+    // Use this currency:
+    Balances,
+    // Use this currency when it is a fungible asset matching the given location or name:
+    IsConcrete<RelayLocation>,
+    // Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+    LocationToAccountId,
+    // Our chain's account ID type (we can't get away without mentioning it explicitly):
+    AccountId,
+    // We don't track any teleports.
+    (),
 >;
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
 /// biases the kind of local `Origin` it will become.
 pub type XcmOriginToTransactDispatchOrigin = (
-	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
-	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
-	// foreign chains who want to have a local sovereign account on this chain which they control.
-	SovereignSignedViaLocation<LocationToAccountId, Origin>,
-	// Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
-	// recognised.
-	RelayChainAsNative<RelayChainOrigin, Origin>,
-	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
-	// recognised.
-	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
-	// Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
-	// transaction from the Root origin.
-	ParentAsSuperuser<Origin>,
-	// Native signed account converter; this just converts an `AccountId32` origin into a normal
-	// `Origin::Signed` origin of the same 32-byte value.
-	SignedAccountId32AsNative<RococoNetwork, Origin>,
+    // Sovereign account converter; this attempts to derive an `AccountId` from the origin location
+    // using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
+    // foreign chains who want to have a local sovereign account on this chain which they control.
+    SovereignSignedViaLocation<LocationToAccountId, Origin>,
+    // Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
+    // recognised.
+    RelayChainAsNative<RelayOrigin, Origin>,
+    // Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
+    // recognised.
+    SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
+    // Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
+    // transaction from the Root origin.
+    ParentAsSuperuser<Origin>,
+    // Native signed account converter; this just converts an `AccountId32` origin into a normal
+    // `Origin::Signed` origin of the same 32-byte value.
+    SignedAccountId32AsNative<RelayNetwork, Origin>,
+    // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
+    XcmPassthrough<Origin>,
 );
 
 parameter_types! {
-	pub UnitWeightCost: Weight = 1_000;
+	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
+	pub UnitWeightCost: Weight = 1_000_000;
+	// One UNIT buys 1 second of weight.
+	pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), 1_000_000_000_000);
 }
 
-parameter_types! {
-	// 1_000_000_000_000 => 1 unit of asset for 1 unit of Weight.
-	// TODO: Should take the actual weight price. This is just 1_000 ROC per second of weight.
-	pub const WeightPrice: (MultiLocation, u128) = (MultiLocation::X1(Junction::Parent), 1_000);
-	pub AllowUnpaidFrom: Vec<MultiLocation> = vec![ MultiLocation::X1(Junction::Parent) ];
+match_type! {
+	pub type ParentOrParentsUnitPlurality: impl Contains<MultiLocation> = {
+		X1(Parent) | X2(Parent, Plurality { id: BodyId::Unit, .. })
+	};
 }
 
 pub type Barrier = (
-	TakeWeightCredit,
-	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
-	AllowUnpaidExecutionFrom<IsInVec<AllowUnpaidFrom>>,	// <- Parent gets free execution
+    TakeWeightCredit,
+    AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
+    AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
+    // ^^^ Parent & its unit plurality gets free execution
 );
 
 
@@ -439,7 +442,7 @@ impl Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = FixedRateOfConcreteFungible<WeightPrice>;
+	type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
 	type ResponseHandler = ();	// Don't handle responses for now.
 }
 
@@ -460,14 +463,21 @@ pub type XcmRouter = (
 );
 
 impl pallet_xcm::Config for Runtime {
-	type Event = Event;
-	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type XcmRouter = XcmRouter;
-	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+    type Event = Event;
+    type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type XcmRouter = XcmRouter;
+    type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type XcmExecuteFilter = All<(MultiLocation, Xcm<Call>)>;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+    type XcmTeleportFilter = All<(MultiLocation, Vec<MultiAsset>)>;
+    type XcmReserveTransferFilter = ();
+    type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
 }
 
-impl cumulus_pallet_xcm::Config for Runtime {}
+impl cumulus_pallet_xcm::Config for Runtime {
+    type Event = Event;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+}
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type Event = Event;
@@ -601,7 +611,7 @@ impl fp_rpc::ConvertTransaction<opaque::UncheckedExtrinsic> for TransactionConve
 
 impl pallet_ethereum::Config for Runtime {
     type Event = Event;
-    type FindAuthor = pallet_author_mapping::MappedFindAuthor<Self, AuthorInherent>;
+    type FindAuthor = AuthorInherent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot;
 }
 
@@ -648,26 +658,30 @@ impl pallet_multisig::Config for Runtime {
 impl pallet_author_inherent::Config for Runtime {
     type AuthorId = NimbusId;
     type SlotBeacon = pallet_author_inherent::RelayChainBeacon<Self>;
-    //TODO This is making me think the mapping should just happen in the author inherent pallet
-    // Or maybe the sessions pallet will interface really naturally with the author inherent pallet?
-    type EventHandler = pallet_author_mapping::MappedEventHandler<Self, ParachainStaking>;
-    type PreliminaryCanAuthor = pallet_author_mapping::MappedCanAuthor<Self, ParachainStaking>;
-    type FullCanAuthor = pallet_author_mapping::MappedCanAuthor<Self, AuthorFilter>;
+    type AccountLookup = AuthorMapping;
+    type EventHandler = ParachainStaking;
+    type CanAuthor = AuthorFilter;
 }
 
 impl pallet_author_slot_filter::Config for Runtime {
-    // All of our filtering is going to happen in the runtime's accountId type (same as staking.)
-    // Maybe I should remove this associated type entirely
-    type AuthorId = AccountId;
     type Event = Event;
     type RandomnessSource = RandomnessCollectiveFlip;
     type PotentialAuthors = ParachainStaking;
 }
 
+parameter_types! {
+	pub const DepositAmount: Balance = 100 * GLMR;
+}
 // This is a simple session key manager. It should probably either work with, or be replaced
 // entirely by pallet sessions
 impl pallet_author_mapping::Config for Runtime {
+    type Event = Event;
     type AuthorId = NimbusId;
+    type DepositCurrency = Balances;
+    type DepositAmount = DepositAmount;
+    fn can_register(account: &AccountId) -> bool {
+        ParachainStaking::is_candidate(account)
+    }
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -686,14 +700,14 @@ construct_runtime!(
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Origin},
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin},
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
 		AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent},
-		AuthorMapping: pallet_author_mapping::{Pallet, Config<T>, Storage},
+        AuthorMapping: pallet_author_mapping::{Pallet, Call, Config<T>, Storage, Event<T>},
         AuthorFilter: pallet_author_slot_filter::{Pallet, Storage, Event, Config},
         ParachainStaking: parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>},
 	}
@@ -773,9 +787,6 @@ impl_runtime_apis! {
             data.check_extrinsics(&block)
         }
 
-        fn random_seed() -> <Block as BlockT>::Hash {
-            RandomnessCollectiveFlip::random_seed().0
-        }
     }
 
     impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
@@ -820,22 +831,8 @@ impl_runtime_apis! {
 			moonbeam_rpc_primitives_debug::single::TransactionTrace,
 			sp_runtime::DispatchError
 		> {
-			// Get the caller;
-			let mut sig = [0u8; 65];
-			let mut msg = [0u8; 32];
-			sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-			sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-			sig[64] = transaction.signature.standard_v();
-			msg.copy_from_slice(
-				&pallet_ethereum::TransactionMessage::from(transaction.clone()).hash()[..]
-			);
-
-			let from = match sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg) {
-				Ok(pk) => H160::from(
-					H256::from_slice(Keccak256::digest(&pk).as_slice())
-				),
-				_ => H160::default()
-			};
+			use moonbeam_rpc_primitives_debug::single::TraceType;
+			use moonbeam_evm_tracer::{RawTracer, CallListTracer};
 
 			// Apply the a subset of extrinsics: all the substrate-specific or ethereum transactions
 			// that preceded the requested transaction.
@@ -843,51 +840,40 @@ impl_runtime_apis! {
 				let _ = match &ext.function {
 					Call::Ethereum(transact(t)) => {
 						if t == transaction {
-							break;
+							return match trace_type {
+								TraceType::Raw {
+									disable_storage,
+									disable_memory,
+									disable_stack,
+								} => {
+									Ok(RawTracer::new(disable_storage,
+										disable_memory,
+										disable_stack,)
+										.trace(|| Executive::apply_extrinsic(ext))
+										.0
+										.into_tx_trace()
+									)
+								},
+								TraceType::CallList => {
+									Ok(CallListTracer::new()
+										.trace(|| Executive::apply_extrinsic(ext))
+										.0
+										.into_tx_trace()
+									)
+								}
+							}
+
+						} else {
+							Executive::apply_extrinsic(ext)
 						}
-						Executive::apply_extrinsic(ext)
 					},
 					_ => Executive::apply_extrinsic(ext)
 				};
 			}
 
-			let mut c = <Runtime as pallet_evm::Config>::config().clone();
-			c.estimate = true;
-			let config = Some(c);
-
-			// Use the runner extension to interface with our evm's trace executor and return the
-			// TraceExecutorResult.
-			match transaction.action {
-				TransactionAction::Call(to) => {
-					if let Ok(res) = <Runtime as pallet_evm::Config>::Runner::trace_call(
-						from,
-						to,
-						transaction.input.clone(),
-						transaction.value,
-						transaction.gas_limit.low_u64(),
-						config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
-						trace_type,
-					) {
-						return Ok(res);
-					} else {
-						return Err(sp_runtime::DispatchError::Other("Evm error"));
-					}
-				},
-				TransactionAction::Create => {
-					if let Ok(res) = <Runtime as pallet_evm::Config>::Runner::trace_create(
-						from,
-						transaction.input.clone(),
-						transaction.value,
-						transaction.gas_limit.low_u64(),
-						config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
-						trace_type,
-					) {
-						return Ok(res);
-					} else {
-						return Err(sp_runtime::DispatchError::Other("Evm error"));
-					}
-				}
-			}
+			Err(sp_runtime::DispatchError::Other(
+				"Failed to find Ethereum transaction among the extrinsics."
+			))
 		}
 
 		fn trace_block(
@@ -898,6 +884,7 @@ impl_runtime_apis! {
 				sp_runtime::DispatchError
 			> {
 			use moonbeam_rpc_primitives_debug::{single, block, CallResult, CreateResult, CreateType};
+			use moonbeam_evm_tracer::CallListTracer;
 
 			let mut config = <Runtime as pallet_evm::Config>::config().clone();
 			config.estimate = true;
@@ -908,51 +895,11 @@ impl_runtime_apis! {
 			// Apply all extrinsics. Ethereum extrinsics are traced.
 			for ext in extrinsics.into_iter() {
 				match &ext.function {
-					Call::Ethereum(transact(transaction)) => {
-						// Get the caller;
-						let mut sig = [0u8; 65];
-						let mut msg = [0u8; 32];
-						sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-						sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-						sig[64] = transaction.signature.standard_v();
-						msg.copy_from_slice(
-							&pallet_ethereum::TransactionMessage::from(transaction.clone())
-								.hash()[..]
-						);
-
-						let from = match sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg) {
-							Ok(pk) => H160::from(
-								H256::from_slice(Keccak256::digest(&pk).as_slice())
-							),
-							_ => H160::default()
-						};
-
-						// Use the runner extension to interface with our evm's trace executor and
-						// return the TraceExecutorResult.
-						let tx_traces = match transaction.action {
-							TransactionAction::Call(to) => {
-								<Runtime as pallet_evm::Config>::Runner::trace_call(
-									from,
-									to,
-									transaction.input.clone(),
-									transaction.value,
-									transaction.gas_limit.low_u64(),
-									&config,
-									single::TraceType::CallList,
-								).map_err(|_| sp_runtime::DispatchError::Other("Evm error"))?
-
-							},
-							TransactionAction::Create => {
-								<Runtime as pallet_evm::Config>::Runner::trace_create(
-									from,
-									transaction.input.clone(),
-									transaction.value,
-									transaction.gas_limit.low_u64(),
-									&config,
-									single::TraceType::CallList,
-								).map_err(|_| sp_runtime::DispatchError::Other("Evm error"))?
-							}
-						};
+					Call::Ethereum(transact(_transaction)) => {
+						let tx_traces = CallListTracer::new()
+							.trace(|| Executive::apply_extrinsic(ext))
+							.0
+							.into_tx_trace();
 
 						let tx_traces = match tx_traces {
 							single::TransactionTrace::CallList(t) => t,
@@ -1035,7 +982,7 @@ impl_runtime_apis! {
 									refund_address
 								} => block::TransactionTrace {
 									action: block::TransactionTraceAction::Suicide {
-										address: from,
+										address: trace.from,
 										balance,
 										refund_address,
 									},
@@ -1070,12 +1017,19 @@ impl_runtime_apis! {
 
 	impl moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block> for Runtime {
 		fn extrinsic_filter(
-			xts: Vec<<Block as BlockT>::Extrinsic>
-		) -> Vec<pallet_ethereum::Transaction> {
-			xts.into_iter().filter_map(|xt| match xt.function {
-				Call::Ethereum(transact(t)) => Some(t),
-				_ => None
-			}).collect()
+			xts_ready: Vec<<Block as BlockT>::Extrinsic>,
+			xts_future: Vec<<Block as BlockT>::Extrinsic>
+		) -> TxPoolResponse {
+			TxPoolResponse {
+				ready: xts_ready.into_iter().filter_map(|xt| match xt.function {
+					Call::Ethereum(transact(t)) => Some(t),
+					_ => None
+				}).collect(),
+				future: xts_future.into_iter().filter_map(|xt| match xt.function {
+					Call::Ethereum(transact(t)) => Some(t),
+					_ => None
+				}).collect(),
+			}
 		}
 	}
 
@@ -1206,7 +1160,13 @@ impl_runtime_apis! {
 
     impl nimbus_primitives::AuthorFilterAPI<Block, nimbus_primitives::NimbusId> for Runtime {
 		fn can_author(author: nimbus_primitives::NimbusId, slot: u32) -> bool {
-			<Runtime as pallet_author_inherent::Config>::FullCanAuthor::can_author(&author, &slot)
+			AuthorInherent::can_author(&author, &slot)
+		}
+	}
+
+	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
+		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info()
 		}
 	}
 
