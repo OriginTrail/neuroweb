@@ -49,6 +49,8 @@ pub struct FullDeps<C, P, BE> {
 	pub client: Arc<C>,
 	/// Transaction pool instance.
 	pub pool: Arc<P>,
+	/// Graph pool instance.
+	pub graph: Arc<Pool<A>>,
 	/// Whether to deny unsafe calls
 	pub deny_unsafe: DenyUnsafe,
 	/// The Node authority flag
@@ -112,6 +114,7 @@ where
 	let FullDeps {
 		client,
 		pool,
+		graph,
 		deny_unsafe,
 		is_authority,
 		network,
@@ -192,7 +195,7 @@ where
 	if ethapi_cmd.contains(&EthApiCmd::Txpool) {
 		io.extend_with(TxPoolServer::to_delegate(TxPool::new(
 			Arc::clone(&client),
-			pool,
+			graph,
 		)));
 	}
 
