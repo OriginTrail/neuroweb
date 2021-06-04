@@ -314,6 +314,7 @@ where
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
+				graph: pool.pool().clone(),
 				deny_unsafe,
 				is_authority: collator,
 				network: network.clone(),
@@ -687,6 +688,7 @@ pub fn new_dev(
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
+				graph: pool.pool().clone(),
 				deny_unsafe,
 				is_authority: collator,
 				network: network.clone(),
