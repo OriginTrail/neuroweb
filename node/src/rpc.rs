@@ -42,9 +42,10 @@ use sp_blockchain::{
 };
 use sp_runtime::traits::BlakeTwo256;
 use sp_transaction_pool::TransactionPool;
+use sc_transaction_graph::{ChainApi, Pool};
 
 /// Full client dependencies.
-pub struct FullDeps<C, P, BE> {
+pub struct FullDeps<C, P, A: ChainApi, BE> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
@@ -80,8 +81,8 @@ pub struct FullDeps<C, P, BE> {
 }
 
 /// Instantiate all Full RPC extensions.
-pub fn create_full<C, P, BE>(
-	deps: FullDeps<C, P, BE>,
+pub fn create_full<C, P, BE, A>(
+	deps: FullDeps<C, P, A, BE>,
 	subscription_task_executor: SubscriptionTaskExecutor,
 ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 where
@@ -92,6 +93,7 @@ where
 	C: BlockchainEvents<Block>,
 	C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
 	C: Send + Sync + 'static,
+	A: ChainApi<Block = Block> + 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
@@ -180,6 +182,7 @@ where
 	io.extend_with(NetApiServer::to_delegate(NetApi::new(
 		client.clone(),
 		network.clone(),
+		true,
 	)));
 	io.extend_with(Web3ApiServer::to_delegate(Web3Api::new(client.clone())));
 	io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
