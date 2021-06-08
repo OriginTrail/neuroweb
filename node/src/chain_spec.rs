@@ -136,7 +136,7 @@ pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
 
 pub fn testnet_genesis(
 	root_key: AccountId,
-	stakers: Vec<(AccountId, Option<AccountId>, Balance)>,
+	stakers: Vec<(AccountId, NimbusId, Balance)>,
 	inflation_config: InflationInfo<Balance>,
 	endowed_accounts: Vec<AccountId>,
 	para_id: ParaId,
