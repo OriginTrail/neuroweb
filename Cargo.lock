@@ -12409,11 +12409,7 @@ dependencies = [
 [[package]]
 name = "structopt-derive"
 version = "0.4.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"ng`.
-... required by package `polkadot-node-subsystem v0.1.0 (https://github.com/paritytech/polkadot?branch=release-v0.9.4#2f28561a)`
-... which is depended on by `cumulus-client-collator v0.1.0 (https://github.com/purestake/cumulus?branch=nimbus-polkadot-v0.9.4#51adcf4d)`
-... which is depended on by `cumulus-client-service v0.1.0 (https://github.com/purestake/cumulus?branch=nimbus-polkadot-v0.9.4#51adcf4d)`
-... which is depended on by `origintrail-pa
+source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ba9cdfda491b814720b6b06e0cac513d922fc407582032e8706e9f137976f90"
 dependencies = [
  "heck",
