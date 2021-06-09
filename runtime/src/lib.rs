@@ -14,7 +14,7 @@ use sp_runtime::traits::{
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature,
+	ApplyExtrinsicResult, MultiSignature, Percent,
 };
 use sha3::{Digest, Keccak256};
 use pallet_ethereum::Call::transact;
@@ -330,6 +330,8 @@ parameter_types! {
 	pub const MaxCollatorsPerNominator: u32 = 25;
 	/// The fixed percent a collator takes off the top of due rewards is 20%
 	pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
+	/// Default percent of inflation set aside for parachain bond every round
+	pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
 	/// Minimum stake required to be reserved to be a collator is 1_000
 	pub const MinCollatorStk: u128 = 1_000 * GLMR;
 	/// Minimum stake required to be reserved to be a nominator is 5
@@ -345,6 +347,7 @@ impl parachain_staking::Config for Runtime {
     type MaxNominatorsPerCollator = MaxNominatorsPerCollator;
     type MaxCollatorsPerNominator = MaxCollatorsPerNominator;
     type DefaultCollatorCommission = DefaultCollatorCommission;
+    type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
     type MinCollatorStk = MinCollatorStk;
     type MinCollatorCandidateStk = MinCollatorStk;
     type MinNomination = MinNominatorStk;
