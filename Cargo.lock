@@ -5478,20 +5478,6 @@ dependencies = [
 [[package]]
 name = "pallet-balances"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.4#c94e0cdfe5556680dca1996004751eeb114755d7"
-dependencies = [
- "frame-benchmarking 3.1.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.4)",
- "frame-support 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.4)",
- "frame-system 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.4)",
- "log",
- "parity-scale-codec",
- "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.4)",
- "sp-std 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.4)",
-]
-
-[[package]]
-name = "pallet-balances"
-version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.4#c94e0cdfe5556680dca1996004751eeb114755d7"
 dependencies = [
  "frame-benchmarking 3.1.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.4)",
