@@ -276,27 +276,27 @@ default-features = false
 # Polkadot dependencies
 [dependencies.polkadot-parachain]
 git = 'https://github.com/paritytech/polkadot'
-branch = 'release-v0.9.3'
+branch = 'release-v0.9.4'
 default-features = false
 
 [dependencies.xcm]
 git = 'https://github.com/paritytech/polkadot'
-branch = 'release-v0.9.3'
+branch = 'release-v0.9.4'
 default-features = false
 
 [dependencies.xcm-builder]
 git = 'https://github.com/paritytech/polkadot'
-branch = 'release-v0.9.3'
+branch = 'release-v0.9.4'
 default-features = false
 
 [dependencies.xcm-executor]
 git = 'https://github.com/paritytech/polkadot'
-branch = 'release-v0.9.3'
+branch = 'release-v0.9.4'
 default-features = false
 
 [dependencies.pallet-xcm]
 git = 'https://github.com/paritytech/polkadot'
-branch = 'release-v0.9.3'
+branch = 'release-v0.9.4'
 default-features = false
 
 [features]

@@ -228,23 +228,23 @@ branch = "nimbus-polkadot-v0.9.4"
 # Polkadot dependencies
 [dependencies.polkadot-primitives]
 git = "https://github.com/paritytech/polkadot"
-branch = 'release-v0.9.3'
+branch = 'release-v0.9.4'
 
 [dependencies.polkadot-service]
 git = "https://github.com/paritytech/polkadot"
-branch = 'release-v0.9.3'
+branch = 'release-v0.9.4'
 
 [dependencies.polkadot-cli]
 git = "https://github.com/paritytech/polkadot"
-branch = 'release-v0.9.3'
+branch = 'release-v0.9.4'
 
 [dependencies.polkadot-test-service]
 git = "https://github.com/paritytech/polkadot"
-branch = 'release-v0.9.3'
+branch = 'release-v0.9.4'
 
 [dependencies.polkadot-parachain]
 git = "https://github.com/paritytech/polkadot"
-branch = 'release-v0.9.3'
+branch = 'release-v0.9.4'
 
 [[bin]]
 name = 'origintrail-parachain'
