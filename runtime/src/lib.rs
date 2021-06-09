@@ -14,7 +14,7 @@ use sp_runtime::traits::{
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature,
+	ApplyExtrinsicResult, MultiSignature, Percent,
 };
 use sha3::{Digest, Keccak256};
 use pallet_ethereum::Call::transact;
