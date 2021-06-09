@@ -63,6 +63,8 @@ pub fn development_config(para_id: ParaId) -> ChainSpec {
 					get_from_seed::<NimbusId>("Alice"),
 					1_000 * GLMR,
 				)],
+				// Nominations
+				vec![],
 				moonbeam_inflation_config(),
 				vec![AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap()],
 				Default::default(), // para_id
@@ -96,6 +98,8 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 					get_from_seed::<NimbusId>("Alice"),
 					1_000 * GLMR,
 				)],
+				// Nominations
+				vec![],
 				moonbeam_inflation_config(),
 				vec![AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap()],
 				para_id,
@@ -137,6 +141,7 @@ pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
 pub fn testnet_genesis(
 	root_key: AccountId,
 	stakers: Vec<(AccountId, NimbusId, Balance)>,
+	nominations: Vec<(AccountId, AccountId, Balance)>,
 	inflation_config: InflationInfo<Balance>,
 	endowed_accounts: Vec<AccountId>,
 	para_id: ParaId,
@@ -186,6 +191,7 @@ pub fn testnet_genesis(
 				.cloned()
 				.map(|(account, _, bond)| (account, bond))
 				.collect(),
+			nominations,
 			inflation_config,
 		},
 		pallet_author_slot_filter: AuthorFilterConfig { eligible_ratio: Percent::from_percent(50), },
