@@ -2353,13 +2353,6 @@ dependencies = [
  "parity-scale-codec",
 ]
 
-[[package]]
-name = "fork-tree"
-version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.4#c94e0cdfe5556680dca1996004751eeb114755d7"
-dependencies = [
- "parity-scale-codec",
-]
 
 [[package]]
 name = "form_urlencoded"
