@@ -639,7 +639,7 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		pub stakers: Vec<(T::AccountId, Option<T::AccountId>, BalanceOf<T>)>,
+		pub stakers: Vec<(T::AccountId, BalanceOf<T>)>,
 		pub nominations: Vec<(T::AccountId, T::AccountId, BalanceOf<T>)>,
 		pub inflation_config: InflationInfo<BalanceOf<T>>,
 	}
