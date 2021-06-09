@@ -354,6 +354,7 @@ std = [
 	"pallet-evm/std",
 	"moonbeam-rpc-primitives-debug/std",
 	"moonbeam-rpc-primitives-txpool/std",
+	"fp-rpc/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-evm-precompile-simple/std",
 	"sha3/std",
