@@ -8741,7 +8741,7 @@ dependencies = [
  "sc-consensus 0.9.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.4)",
  "sp-blockchain 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.4)",
  "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.4)",
-]=
+]
 
 [[package]]
 name = "sc-consensus-manual-seal"
