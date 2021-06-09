@@ -345,6 +345,7 @@ impl parachain_staking::Config for Runtime {
     type MaxNominatorsPerCollator = MaxNominatorsPerCollator;
     type MaxCollatorsPerNominator = MaxCollatorsPerNominator;
     type DefaultCollatorCommission = DefaultCollatorCommission;
+    type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
     type MinCollatorStk = MinCollatorStk;
     type MinCollatorCandidateStk = MinCollatorStk;
     type MinNomination = MinNominatorStk;
