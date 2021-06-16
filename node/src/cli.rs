@@ -39,6 +39,9 @@ pub enum Subcommand {
 	/// The custom benchmark subcommmand benchmarking runtime pallets.
 	#[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
+
+	/// Key management cli utilities
+	Key(sc_cli::KeySubcommand),
 }
 
 #[derive(Debug, StructOpt)]
@@ -65,7 +68,7 @@ pub struct ExportGenesisStateCommand {
 	pub output: Option<PathBuf>,
 
 	/// Id of the parachain this state is for.
-	#[structopt(long, default_value = "200")]
+	#[structopt(long, default_value = "1000")]
 	pub parachain_id: u32,
 
 	/// Write output in binary. Default is to write in hex.
@@ -96,7 +99,7 @@ pub struct ExportGenesisWasmCommand {
 #[derive(Debug, StructOpt)]
 pub struct RunCmd {
 	#[structopt(flatten)]
-	pub base: sc_cli::RunCmd,
+	pub base: cumulus_client_cli::RunCmd,
 
 	/// Id of the parachain this collator collates for.
 	#[structopt(long)]
@@ -153,7 +156,7 @@ fn parse_h160(input: &str) -> Result<H160, String> {
 }
 
 impl std::ops::Deref for RunCmd {
-	type Target = sc_cli::RunCmd;
+	type Target = cumulus_client_cli::RunCmd;
 
 	fn deref(&self) -> &Self::Target {
 		&self.base
@@ -266,4 +269,12 @@ impl FromStr for EthApi {
 			}
 		})
 	}
+}
+
+pub struct RpcConfig {
+	pub ethapi: Vec<EthApi>,
+	pub ethapi_max_permits: u32,
+	pub ethapi_trace_max_count: u32,
+	pub ethapi_trace_cache_duration: u64,
+	pub max_past_logs: u32,
 }
