@@ -76,7 +76,7 @@ pub fn development_config(para_id: ParaId) -> ChainSpec {
 		None,
 		Some(serde_json::from_str("{\"tokenDecimals\": 18}").expect("Provided valid json map")),
 		Extensions {
-			relay_chain: "rococo-dev".into(),
+			relay_chain: "dev-service".into(),
 			para_id: para_id.into(),
 		},
 	)

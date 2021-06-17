@@ -1,6 +1,6 @@
 use crate::{
 	chain_spec,
-	cli::{Cli, RelayChainCli, Subcommand},
+	cli::{Cli, RelayChainCli, RunCmd, Subcommand, RpcConfig},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -37,7 +37,7 @@ fn load_spec(
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Parachain Collator Template".into()
+		"OriginTrail Parachain Collator".into()
 	}
 
 	fn impl_version() -> String {
@@ -46,7 +46,7 @@ impl SubstrateCli for Cli {
 
 	fn description() -> String {
 		format!(
-			"Parachain Collator Template\n\nThe command-line arguments provided first will be \
+			"OriginTrail Parachain Collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
@@ -59,7 +59,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/substrate-developer-hub/substrate-parachain-template/issues/new".into()
+		"https://github.com/OriginTrail/starfleet-parachain/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -77,7 +77,7 @@ impl SubstrateCli for Cli {
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"Parachain Collator Template".into()
+		"OriginTrail Parachain Collator".into()
 	}
 
 	fn impl_version() -> String {
@@ -85,7 +85,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn description() -> String {
-		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
+		"OriginTrail Parachain Collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		rococo-collator [parachain-args] -- [relaychain-args]"
@@ -97,7 +97,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/substrate-developer-hub/substrate-parachain-template/issues/new".into()
+		"https://github.com/OriginTrail/starfleet-parachain/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -294,12 +294,12 @@ pub fn run() -> Result<()> {
 					.into())
 			}
 		}
+		Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
 		None => {
-			let runner = cli.create_runner(&*cli.run)?;
-			let collator = cli.run.base.validator || cli.collator;
+			let runner = cli.create_runner(&(*cli.run).normalize())?;
+			let collator = cli.run.base.base.validator || cli.collator;
 
-			runner
-				.run_node_until_exit(|config| async move {
+			runner.run_node_until_exit(|config| async move {
 					let key = sp_core::Pair::generate().0;
 
 					let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
@@ -308,6 +308,13 @@ pub fn run() -> Result<()> {
 						cli.run.dev_service || relay_chain_id == Some("dev-service".to_string());
 					let para_id = extension.map(|e| e.para_id);
 
+					let rpc_config = RpcConfig {
+						ethapi: cli.run.ethapi,
+						ethapi_max_permits: cli.run.ethapi_max_permits,
+						ethapi_trace_max_count: cli.run.ethapi_trace_max_count,
+						ethapi_trace_cache_duration: cli.run.ethapi_trace_cache_duration,
+						max_past_logs: cli.run.max_past_logs,
+					};
 					// If dev service was requested, start up manual or instant seal.
 					// Otherwise continue with the normal parachain node.
 					// Dev service can be requested in two ways.
@@ -315,9 +322,6 @@ pub fn run() -> Result<()> {
 					// 2. by specifying "dev-service" in the chain spec's "relay-chain" field.
 					// NOTE: the --dev flag triggers the dev service by way of number 2
 					if dev_service {
-						// --dev implies --collator
-						let collator = collator || cli.run.shared_params.dev;
-
 						// When running the dev service, just use Alice's author inherent
 						//TODO maybe make the --alice etc flags work here, and consider bringing back
 						// the author-id flag. For now, this will work.
@@ -325,7 +329,8 @@ pub fn run() -> Result<()> {
 							nimbus_primitives::NimbusId,
 						>("Alice"));
 
-						return crate::service::new_dev(config, author_id, collator, cli.run);
+						return crate::service::new_dev(config, author_id, cli.run.sealing, rpc_config)
+							.map_err(Into::into);
 					}
 
 					let polkadot_cli = RelayChainCli::new(
@@ -369,13 +374,12 @@ pub fn run() -> Result<()> {
 						polkadot_config,
 						id,
 						collator,
-						cli.run,
+						rpc_config
 					)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
 				})
-				.map_err(Into::into)
 		}
 	}
 }

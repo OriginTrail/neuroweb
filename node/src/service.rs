@@ -1,6 +1,6 @@
 use crate::cli::EthApi as EthApiCmd;
 use crate::{
-	cli::{RunCmd, Sealing},
+	cli::{RunCmd, Sealing, RpcConfig},
 	inherents::MockValidationDataInherentDataProvider,
 	chain_spec::get_from_seed,
 };
@@ -209,7 +209,7 @@ async fn start_node_impl<RB>(
 	polkadot_config: Configuration,
 	id: polkadot_primitives::v0::Id,
 	collator: bool,
-	cmd: RunCmd,
+	rpc_config: RpcConfig,
 	_rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)>
 where
@@ -269,13 +269,13 @@ where
 	let subscription_task_executor =
 		sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
-	let permit_pool = Arc::new(Semaphore::new(cmd.ethapi_max_permits as usize));
+	let permit_pool = Arc::new(Semaphore::new(rpc_config.ethapi_max_permits as usize));
 
-	let (trace_filter_task, trace_filter_requester) = if cmd.ethapi.contains(&EthApiCmd::Trace) {
+	let (trace_filter_task, trace_filter_requester) = if rpc_config.ethapi.contains(&EthApiCmd::Trace) {
 		let (trace_filter_task, trace_filter_requester) = moonbeam_rpc_trace::CacheTask::create(
 			Arc::clone(&client),
 			Arc::clone(&backend),
-			Duration::from_secs(cmd.ethapi_trace_cache_duration),
+			Duration::from_secs(rpc_config.ethapi_trace_cache_duration),
 			Arc::clone(&permit_pool),
 		);
 		(Some(trace_filter_task), Some(trace_filter_requester))
@@ -283,7 +283,7 @@ where
 		(None, None)
 	};
 
-	let (debug_task, debug_requester) = if cmd.ethapi.contains(&EthApiCmd::Debug) {
+	let (debug_task, debug_requester) = if rpc_config.ethapi.contains(&EthApiCmd::Debug) {
 		let (debug_task, debug_requester) = DebugHandler::task(
 			Arc::clone(&client),
 			Arc::clone(&backend),
@@ -303,8 +303,8 @@ where
 		let filter_pool = filter_pool.clone();
 		let frontier_backend = frontier_backend.clone();
 		let backend = backend.clone();
-		let ethapi_cmd = cmd.ethapi.clone();
-		let max_past_logs = cmd.max_past_logs;
+		let ethapi_cmd = rpc_config.ethapi.clone();
+		let max_past_logs = rpc_config.max_past_logs;
 
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
@@ -322,7 +322,7 @@ where
 				backend: backend.clone(),
 				debug_requester: debug_requester.clone(),
 				trace_filter_requester: trace_filter_requester.clone(),
-				trace_filter_max_count: cmd.ethapi_trace_max_count,
+				trace_filter_max_count: rpc_config.ethapi_trace_max_count,
 				max_past_logs,
 			};
 
@@ -484,7 +484,7 @@ pub async fn start_node(
 	polkadot_config: Configuration,
 	id: polkadot_primitives::v0::Id,
 	collator: bool,
-	cmd: RunCmd,
+	rpc_config: RpcConfig,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)> {
 	start_node_impl(
 		parachain_config,
@@ -493,7 +493,7 @@ pub async fn start_node(
 		polkadot_config,
 		id,
 		collator,
-		cmd,
+		rpc_config,
 		|_| Default::default(),
 	)
 	.await
@@ -503,12 +503,15 @@ pub async fn start_node(
 /// the parachain inherent.
 pub fn new_dev(
 	config: Configuration,
-	author_id: Option<nimbus_primitives::NimbusId>,
-	// TODO I guess we should use substrate-cli's validator flag for this.
-	// Resolve after https://github.com/paritytech/cumulus/pull/380 is reviewed.
-	collator: bool,
-	cmd: RunCmd,
+	_author_id: Option<nimbus_primitives::NimbusId>,
+	sealing: Sealing,
+	rpc_config: RpcConfig,
 ) -> Result<TaskManager, ServiceError> {
+	use async_io::Timer;
+	use futures::Stream;
+	use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
+	use sp_core::H256;
+
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -526,7 +529,7 @@ pub fn new_dev(
 				_telemetry_worker_handle,
 				frontier_backend,
 			),
-	} = new_partial(&config, author_id, true)?;
+	} = new_partial(&config, _author_id, true)?;
 
 	let (network, system_rpc_tx, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -552,8 +555,18 @@ pub fn new_dev(
 	let subscription_task_executor =
 		sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 	let mut command_sink = None;
+	let collator = config.role.is_authority();
 
 	if collator {
+		//TODO For now, all dev service nodes use Alith's nimbus id in their author inherent.
+		// This could and perhaps should be made more flexible. Here are some options:
+		// 1. a dedicated `--dev-author-id` flag that only works with the dev service
+		// 2. restore the old --author-id` and also allow it to force a secific key
+		//    in the parachain context
+		// 3. check the keystore like we do in nimbus. Actually, maybe the keystore-checking could
+		//    be exported as a helper function from nimbus.
+		let author_id = get_from_seed::<NimbusId>("Alice");
+
 		let env = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),
@@ -563,7 +576,7 @@ pub fn new_dev(
 		);
 
 		let commands_stream: Box<dyn Stream<Item = EngineCommand<H256>> + Send + Sync + Unpin> =
-			match cmd.sealing {
+			match sealing {
 				Sealing::Instant => {
 					Box::new(
 						// This bit cribbed from the implementation of instant seal.
@@ -619,6 +632,7 @@ pub fn new_dev(
 						.number(block)
 						.expect("Header lookup should succeed")
 						.expect("Header passed in as parent should be present in backend.");
+					let author_id = author_id.clone();
 
 					async move {
 						let time = sp_timestamp::InherentDataProvider::from_system_time();
@@ -629,10 +643,7 @@ pub fn new_dev(
 							relay_blocks_per_para_block: 2,
 						};
 
-						//TODO I want to use the value from a variable above.
-						let author = nimbus_primitives::InherentDataProvider::<NimbusId>(
-							get_from_seed::<NimbusId>("Alice"),
-						);
+						let author = nimbus_primitives::InherentDataProvider::<NimbusId>(author_id);
 
 						Ok((time, mocked_parachain, author))
 					}
@@ -641,13 +652,13 @@ pub fn new_dev(
 		);
 	}
 
-	let permit_pool = Arc::new(Semaphore::new(cmd.ethapi_max_permits as usize));
+	let permit_pool = Arc::new(Semaphore::new(rpc_config.ethapi_max_permits as usize));
 
-	let (trace_filter_task, trace_filter_requester) = if cmd.ethapi.contains(&EthApiCmd::Trace) {
+	let (trace_filter_task, trace_filter_requester) = if rpc_config.ethapi.contains(&EthApiCmd::Trace) {
 		let (trace_filter_task, trace_filter_requester) = moonbeam_rpc_trace::CacheTask::create(
 			Arc::clone(&client),
 			Arc::clone(&backend),
-			Duration::from_secs(cmd.ethapi_trace_cache_duration),
+			Duration::from_secs(rpc_config.ethapi_trace_cache_duration),
 			Arc::clone(&permit_pool),
 		);
 		(Some(trace_filter_task), Some(trace_filter_requester))
@@ -655,7 +666,7 @@ pub fn new_dev(
 		(None, None)
 	};
 
-	let (debug_task, debug_requester) = if cmd.ethapi.contains(&EthApiCmd::Debug) {
+	let (debug_task, debug_requester) = if rpc_config.ethapi.contains(&EthApiCmd::Debug) {
 		let (debug_task, debug_requester) = DebugHandler::task(
 			Arc::clone(&client),
 			Arc::clone(&backend),
@@ -674,9 +685,9 @@ pub fn new_dev(
 		let network = network.clone();
 		let pending = pending_transactions.clone();
 		let filter_pool = filter_pool.clone();
-		let ethapi_cmd = cmd.ethapi.clone();
+		let ethapi_cmd = rpc_config.ethapi.clone();
 		let frontier_backend = frontier_backend.clone();
-		let max_past_logs = cmd.max_past_logs;
+		let max_past_logs = rpc_config.max_past_logs;
 
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
@@ -694,7 +705,7 @@ pub fn new_dev(
 				backend: backend.clone(),
 				debug_requester: debug_requester.clone(),
 				trace_filter_requester: trace_filter_requester.clone(),
-				trace_filter_max_count: cmd.ethapi_trace_max_count,
+				trace_filter_max_count: rpc_config.ethapi_trace_max_count,
 				max_past_logs,
 			};
 			crate::rpc::create_full(deps, subscription_task_executor.clone())
