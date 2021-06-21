@@ -66,7 +66,13 @@ pub fn development_config(para_id: ParaId) -> ChainSpec {
 				// Nominations
 				vec![],
 				moonbeam_inflation_config(),
-				vec![AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap()],
+				vec![
+					AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
+					AccountId::from_str("81D288F95a78bc074ea7e831DEb6B046fEb3ef61").unwrap(),
+					AccountId::from_str("9AAc88b9FD5C4ff74DCe3775dAe365856Aa14064").unwrap(),
+					AccountId::from_str("76DF50d897eE66473D91df327cCB2690bccb5551").unwrap(),
+					AccountId::from_str("413E9c0e2F92A8b939833f1bc3c48135aff767b5").unwrap(),
+				],
 				Default::default(), // para_id
 				2160,               //ChainId
 			)
