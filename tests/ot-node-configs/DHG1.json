@@ -1,0 +1,47 @@
+{
+  "initial_deposit_amount": "10000000000000000000000",
+  "database": {
+    "password": "",
+    "provider": "arangodb",
+    "username": "root",
+    "port": 8529,
+    "database": "origintrail-DHG1",
+    "host": "localhost",
+    "max_path_length": 1000
+  },
+  "network": {
+    "remoteWhitelist": [],
+    "bootstraps": [
+      "https://127.0.0.1:5200/#781e64952478359bd10b79ab69d42bea189834be"
+    ]
+  },
+  "node_rpc_port": 8901,
+  "node_port": 5201,
+  "node_remote_control_port": 3001,
+  "control_port": 5801,
+  "local_network_only": true,
+  "traverse_nat_enabled": false,
+  "deposit_on_demand": true,
+  "houston_password": "houston",
+  "blockchain": {
+    "implementations": [
+      {
+        "blockchain_title": "Ethereum",
+        "network_id": "starfleet",
+        "gas_limit": "2000000",
+        "gas_price": "20000000000",
+        "identity_filepath": "starfleet_identity.json",
+        "node_wallet_path": "starfleet_wallet.json",
+        "hub_contract_address": "0x42e2EE7Ba8975c473157634Ac2AF4098190fc741",
+        "rpc_server_url": "http://localhost:9933"
+      }
+    ]
+  },
+  "dc_holding_time_in_minutes": 5,
+  "logs_level_debug": true,
+  "dc_choose_time": 180000,
+  "dc_litigation_interval_in_minutes": 1,
+  "dh_min_litigation_interval_in_minutes": 1,
+  "litigationEnabled": true,
+  "commandExecutorVerboseLoggingEnabled": false
+}

@@ -1,0 +1,19 @@
+{
+  "name": "moonbeam-truffle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "private-provider.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "./node_modules/.bin/truffle migrate --network dev"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ethereumjs-wallet": "^1.0.1",
+    "truffle": "^5.1.61",
+    "truffle-privatekey-provider": "^1.5.0",
+    "web3": "^1.3.1",
+    "web3-provider-engine": "^16.0.1"
+  }
+}
