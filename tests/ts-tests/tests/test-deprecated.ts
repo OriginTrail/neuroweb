@@ -1,8 +1,8 @@
 import { expect } from "chai";
 
-import { customRequest, describeWithFrontier } from "./util";
+import { customRequest, describeWithOTParachain } from "./util";
 
-describeWithFrontier("Frontier RPC (Deprecated)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Deprecated)", `simple-specs.json`, (context) => {
 	// List of deprecated methods
 	[
 		{ method: "eth_getCompilers", params: [] },

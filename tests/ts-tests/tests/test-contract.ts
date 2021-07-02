@@ -1,9 +1,9 @@
 import { expect } from "chai";
 
 import Test from "../build/contracts/Test.json"
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithOTParachain } from "./util";
 
-describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Contract)", `simple-specs.json`, (context) => {
 	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
 	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
 
@@ -11,7 +11,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) =
 	const TEST_CONTRACT_DEPLOYED_BYTECODE = Test.deployedBytecode
 	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a";
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
-	// to spin up a frontier node, it saves a lot of time.
+	// to spin up a OriginTrail Parachain node, it saves a lot of time.
 
 	it("contract creation should return transaction hash", async function () {
 		this.timeout(15000);

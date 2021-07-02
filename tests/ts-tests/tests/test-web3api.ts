@@ -1,13 +1,13 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { describeWithFrontier, customRequest } from "./util";
+import { describeWithOTParachain, customRequest } from "./util";
 
-describeWithFrontier("Frontier RPC (Web3Api)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Web3Api)", `simple-specs.json`, (context) => {
 
 	step("should get client version", async function () {
 		const version = await context.web3.eth.getNodeInfo();
-		expect(version).to.be.equal("node-frontier-template/v1.1/fc-rpc-0.1.0");
+		expect(version).to.be.equal("origintrail-parachain/v1.1/fc-rpc-0.1.0");
 	});
 
 	step("should remote sha3", async function () {

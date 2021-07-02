@@ -1,10 +1,10 @@
 import { expect } from "chai";
 
 import ExplicitRevertReason from "../build/contracts/ExplicitRevertReason.json"
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithOTParachain } from "./util";
 import { AbiItem } from "web3-utils";
 
-describeWithFrontier("Frontier RPC (Revert Reason)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Revert Reason)", `simple-specs.json`, (context) => {
 
 	let contractAddress;
 

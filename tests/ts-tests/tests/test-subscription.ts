@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithOTParachain } from "./util";
 
-describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Subscription)", `simple-specs.json`, (context) => {
 
 	let subscription;
 	let logs_generated = 0;
