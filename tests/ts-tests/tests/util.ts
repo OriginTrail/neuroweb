@@ -45,7 +45,17 @@ export async function createAndFinalizeBlock(web3: Web3) {
 	}
 }
 
+let nodeStarted = false;
+
 export async function startOTParachainNode(specFilename: string, provider?: string): Promise<{ web3: Web3; binary: ChildProcess }> {
+
+	while (nodeStarted) {
+		// Wait 100ms to see if the node is free
+		await new Promise((resolve) => {
+			setTimeout(resolve, 100);
+		});
+	}
+	nodeStarted = true;
 
 	var web3;
 	if (!provider || provider == 'http') {
@@ -58,14 +68,33 @@ export async function startOTParachainNode(specFilename: string, provider?: stri
 		`--no-telemetry`,
 		`--no-prometheus`,
 		`--dev`,
-		`--sealing=Manual`,
+		`--sealing=manual`,
 		`-l${OTParachain_LOG}`,
 		`--port=${PORT}`,
 		`--rpc-port=${RPC_PORT}`,
 		`--ws-port=${WS_PORT}`,
 		`--tmp`,
 	];
-	const binary = spawn(cmd, args);
+
+
+	const onProcessExit = function() {
+		binary && binary.kill();
+	}
+
+	const onProcessInterrupt = function() {
+		process.exit(2);
+	}
+
+	let binary: ChildProcess = null;
+	process.once("exit", onProcessExit);
+	process.once("SIGINT", onProcessInterrupt);
+	binary = spawn(cmd, args);
+
+	binary.once("exit", () => {
+		process.removeListener("exit", onProcessExit);
+		process.removeListener("SIGINT", onProcessInterrupt);
+		nodeStarted = false;
+	});
 
 	binary.on("error", (err) => {
 		if ((err as any).errno == "ENOENT") {
@@ -85,7 +114,7 @@ export async function startOTParachainNode(specFilename: string, provider?: stri
 			console.error(`Command: ${cmd} ${args.join(" ")}`);
 			console.error(`Logs:`);
 			console.error(binaryLogs.map((chunk) => chunk.toString()).join("\n"));
-			process.exit(1);
+			throw new Error("Failed to launch node");
 		}, SPAWNING_TIME - 2000);
 
 		const onData = async (chunk) => {
@@ -93,11 +122,11 @@ export async function startOTParachainNode(specFilename: string, provider?: stri
 				console.log(chunk.toString());
 			}
 			binaryLogs.push(chunk);
-			if (chunk.toString().match(/Manual Seal Ready/)) {
-				if (!provider || provider == "http") {
+			if (chunk.toString().match(/Development Service Ready/)) {
+				/*if (!provider || provider == "http") {
 					// This is needed as the EVM runtime needs to warmup with a first call
 					await web3.eth.getChainId();
-				}
+				}*/
 
 				clearTimeout(timer);
 				if (!DISPLAY_LOG) {
