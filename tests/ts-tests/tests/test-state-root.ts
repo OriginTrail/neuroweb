@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { createAndFinalizeBlock, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, describeWithOTParachain } from "./util";
 
-describeWithFrontier("Frontier RPC (State root hash)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (State root hash)", `simple-specs.json`, (context) => {
 
 	let block;
 	step("should calculate a valid intermediate state root hash", async function () {

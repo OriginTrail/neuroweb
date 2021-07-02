@@ -5,12 +5,12 @@ import { spawn, ChildProcess } from "child_process";
 export const PORT = 19931;
 export const RPC_PORT = 19932;
 export const WS_PORT = 19933;
-export const SPECS_PATH = `./frontier-test-specs`;
+export const SPECS_PATH = `./otparachain-test-specs`;
 
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
-export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
+export const OTParachain_LOG = process.env.FRONTIER_LOG || "info";
 
-export const BINARY_PATH = `../../target/release/node-template`;
+export const BINARY_PATH = `../../target/release/origintrail-parachain`;
 export const SPAWNING_TIME = 30000;
 
 export async function customRequest(web3: Web3, method: string, params: any[]) {
@@ -45,7 +45,7 @@ export async function createAndFinalizeBlock(web3: Web3) {
 	}
 }
 
-export async function startFrontierNode(specFilename: string, provider?: string): Promise<{ web3: Web3; binary: ChildProcess }> {
+export async function startOTParachainNode(specFilename: string, provider?: string): Promise<{ web3: Web3; binary: ChildProcess }> {
 
 	var web3;
 	if (!provider || provider == 'http') {
@@ -54,14 +54,12 @@ export async function startFrontierNode(specFilename: string, provider?: string)
 
 	const cmd = BINARY_PATH;
 	const args = [
-		`--validator`, // Required by manual sealing to author the blocks
 		`--execution=Native`, // Faster execution using native
 		`--no-telemetry`,
 		`--no-prometheus`,
+		`--dev`,
 		`--sealing=Manual`,
-		`--no-grandpa`,
-		`--force-authoring`,
-		`-l${FRONTIER_LOG}`,
+		`-l${OTParachain_LOG}`,
 		`--port=${PORT}`,
 		`--rpc-port=${RPC_PORT}`,
 		`--ws-port=${WS_PORT}`,
@@ -72,7 +70,7 @@ export async function startFrontierNode(specFilename: string, provider?: string)
 	binary.on("error", (err) => {
 		if ((err as any).errno == "ENOENT") {
 			console.error(
-				`\x1b[31mMissing Frontier binary (${BINARY_PATH}).\nPlease compile the Frontier project:\ncargo build\x1b[0m`
+				`\x1b[31mMissing OriginTrail Parachain binary (${BINARY_PATH}).\nPlease compile the OriginTrail Parachain project:\ncargo build\x1b[0m`
 			);
 		} else {
 			console.error(err);
@@ -83,7 +81,7 @@ export async function startFrontierNode(specFilename: string, provider?: string)
 	const binaryLogs = [];
 	await new Promise((resolve) => {
 		const timer = setTimeout(() => {
-			console.error(`\x1b[31m Failed to start Frontier Template Node.\x1b[0m`);
+			console.error(`\x1b[31m Failed to start OriginTrail Parachain Node.\x1b[0m`);
 			console.error(`Command: ${cmd} ${args.join(" ")}`);
 			console.error(`Logs:`);
 			console.error(binaryLogs.map((chunk) => chunk.toString()).join("\n"));
@@ -121,14 +119,14 @@ export async function startFrontierNode(specFilename: string, provider?: string)
 	return { web3, binary };
 }
 
-export function describeWithFrontier(title: string, specFilename: string, cb: (context: { web3: Web3 }) => void, provider?: string) {
+export function describeWithOTParachain(title: string, specFilename: string, cb: (context: { web3: Web3 }) => void, provider?: string) {
 	describe(title, () => {
 		let context: { web3: Web3 } = { web3: null };
 		let binary: ChildProcess;
-		// Making sure the Frontier node has started
-		before("Starting Frontier Test Node", async function () {
+		// Making sure the OriginTrail Parachain node has started
+		before("Starting OTParachain", async function () {
 			this.timeout(SPAWNING_TIME);
-			const init = await startFrontierNode(specFilename, provider);
+			const init = await startOTParachainNode(specFilename, provider);
 			context.web3 = init.web3;
 			binary = init.binary;
 		});

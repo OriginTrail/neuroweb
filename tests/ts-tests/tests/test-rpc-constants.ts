@@ -1,10 +1,10 @@
 import { expect } from "chai";
 
-import { describeWithFrontier } from "./util";
+import { describeWithOTParachain } from "./util";
 
 // All test for the RPC
 
-describeWithFrontier("Frontier RPC (Constant)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Constant)", `simple-specs.json`, (context) => {
 	it("should have 0 hashrate", async function () {
 		expect(await context.web3.eth.getHashrate()).to.equal(0);
 	});
