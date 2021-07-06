@@ -68,30 +68,6 @@ pub mod pallet {
 		fn can_register(account: &Self::AccountId) -> bool;
 	}
 
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_runtime_upgrade() -> Weight {
-			// This upgrade needs a value to use as the deposit for any registrations that were made
-			// before deposit amounts were tracked. The most 100% correct thing would be to add an
-			// associated type. But since we know this pallet on only used by moonbeam and we know
-			// the old deposit is the same for all accounts, I'll save us some headache by just
-			// defining it here.
-			let old_deposit_amount = 100u32;
-
-			for (author_id, account_id) in Mapping::<T>::drain() {
-				let info = RegistrationInfo {
-					account: account_id,
-					deposit: old_deposit_amount.into(),
-				};
-				MappingWithDeposit::<T>::insert(author_id, info);
-			}
-
-			// No idea about the real weight. Probably not worrying about because this will
-			// definitely fit in one of Moonbeam's almost-empty blocks.
-			10_000
-		}
-	}
-
 	/// An error that can occur while executing the mapping pallet's logic.
 	#[pallet::error]
 	pub enum Error<T> {
