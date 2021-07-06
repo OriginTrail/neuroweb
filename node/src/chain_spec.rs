@@ -1,5 +1,6 @@
 use cumulus_primitives_core::ParaId;
-use origintrail_parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR, InflationInfo, Range, AuthorFilterConfig, AuthorMappingConfig, Balance, BalancesConfig,
+use origintrail_parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR, InflationInfo, Range, AuthorFilterConfig,
+									AuthorMappingConfig, Balance, BalancesConfig, EthereumChainIdConfig,
 									GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig, WASM_BINARY, ParachainStakingConfig};
 
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -160,22 +161,23 @@ pub fn testnet_genesis(
 		.map(H160::from_low_u64_be);
 
 	GenesisConfig {
-		frame_system: SystemConfig {
+		system: SystemConfig {
 			code: WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: BalancesConfig {
+		balances: BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
 				.map(|k| (k, 1 << 80))
 				.collect(),
 		},
-		pallet_sudo: SudoConfig { key: root_key },
+		sudo: SudoConfig { key: root_key },
 		parachain_info: ParachainInfoConfig { parachain_id: para_id },
-		pallet_evm: EVMConfig {
+		ethereum_chain_id: EthereumChainIdConfig { chain_id },
+		evm: EVMConfig {
 			accounts: precompile_addresses
 				.map(|a| {
 					(
@@ -190,9 +192,9 @@ pub fn testnet_genesis(
 				})
 				.collect(),
 		},
-		pallet_ethereum: EthereumConfig {},
+		ethereum: EthereumConfig {},
 		parachain_staking: ParachainStakingConfig {
-			stakers: stakers
+			candidates: stakers
 				.iter()
 				.cloned()
 				.map(|(account, _, bond)| (account, bond))
@@ -200,8 +202,8 @@ pub fn testnet_genesis(
 			nominations,
 			inflation_config,
 		},
-		pallet_author_slot_filter: AuthorFilterConfig { eligible_ratio: Percent::from_percent(50), },
-		pallet_author_mapping: AuthorMappingConfig {
+		author_filter: AuthorFilterConfig { eligible_ratio: Percent::from_percent(50), },
+		author_mapping: AuthorMappingConfig {
 			mappings: stakers
 				.iter()
 				.cloned()

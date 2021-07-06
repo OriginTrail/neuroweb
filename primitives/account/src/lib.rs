@@ -83,9 +83,14 @@ impl From<[u8; 20]> for EthereumSigner {
 
 impl From<ecdsa::Public> for EthereumSigner {
 	fn from(x: ecdsa::Public) -> Self {
-		let mut m = [0u8; 20];
-		m.copy_from_slice(&x.as_ref()[13..33]);
-		EthereumSigner(m)
+		let decompressed =
+			secp256k1::PublicKey::parse_slice(&x.0, Some(secp256k1::PublicKeyFormat::Compressed))
+				.expect("Wrong compressed public key provided")
+				.serialize();
+		let mut m = [0u8; 64];
+		m.copy_from_slice(&decompressed[1..65]);
+		let account = H160::from(H256::from_slice(Keccak256::digest(&m).as_slice()));
+		EthereumSigner(account.into())
 	}
 }
 
