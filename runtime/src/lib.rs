@@ -51,6 +51,7 @@ pub use parachain_staking::{InflationInfo, Range};
 use nimbus_primitives::{CanAuthor, NimbusId};
 
 use codec::{Decode, Encode};
+use precompiles::OriginTrailParachainPrecompiles;
 use fp_rpc::TransactionStatus;
 use evm::Config as EvmConfig;
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
@@ -71,6 +72,8 @@ pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill, Perquintill};
+
+pub type Precompiles = OriginTrailParachainPrecompiles<Runtime>;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -123,7 +126,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("origintrail-parachain"),
 	impl_name: create_runtime_str!("origintrail-parachain"),
 	authoring_version: 1,
-    spec_version: 101,
+    spec_version: 102,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -265,9 +268,12 @@ parameter_types! {
 	/// Same as Polkadot Relay Chain.
 	pub const ExistentialDeposit: Balance = 500;
 	pub const MaxLocks: u32 = 50;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
+    type MaxReserves = MaxReserves;
+    type ReserveIdentifier = [u8; 4];
     type MaxLocks = MaxLocks;
     /// The type for recording an account's balance.
     type Balance = Balance;
@@ -295,8 +301,13 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
+impl pallet_ethereum_chain_id::Config for Runtime {}
+
+impl pallet_randomness_collective_flip::Config for Runtime {}
+
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -338,21 +349,21 @@ parameter_types! {
 	pub const MinNominatorStk: u128 = 5 * GLMR;
 }
 impl parachain_staking::Config for Runtime {
-    type Event = Event;
-    type Currency = Balances;
-    type MinBlocksPerRound = MinBlocksPerRound;
-    type DefaultBlocksPerRound = DefaultBlocksPerRound;
-    type BondDuration = BondDuration;
-    type MinSelectedCandidates = MinSelectedCandidates;
-    type MaxNominatorsPerCollator = MaxNominatorsPerCollator;
-    type MaxCollatorsPerNominator = MaxCollatorsPerNominator;
-    type DefaultCollatorCommission = DefaultCollatorCommission;
-    type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
-    type MinCollatorStk = MinCollatorStk;
-    type MinCollatorCandidateStk = MinCollatorStk;
-    type MinNomination = MinNominatorStk;
-    type MinNominatorStk = MinNominatorStk;
-    type WeightInfo = parachain_staking::weights::SubstrateWeight<Runtime>;
+	type Event = Event;
+	type Currency = Balances;
+	type MinBlocksPerRound = MinBlocksPerRound;
+	type DefaultBlocksPerRound = DefaultBlocksPerRound;
+	type BondDuration = BondDuration;
+	type MinSelectedCandidates = MinSelectedCandidates;
+	type MaxNominatorsPerCollator = MaxNominatorsPerCollator;
+	type MaxCollatorsPerNominator = MaxCollatorsPerNominator;
+	type DefaultCollatorCommission = DefaultCollatorCommission;
+	type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
+	type MinCollatorStk = MinCollatorStk;
+	type MinCollatorCandidateStk = MinCollatorStk;
+	type MinNomination = MinNominatorStk;
+	type MinNominatorStk = MinNominatorStk;
+	type WeightInfo = parachain_staking::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -436,7 +447,7 @@ pub type Barrier = (
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
-	type XcmSender = XcmRouter;
+	type XcmSender = (); //XcmRouter;
 	// How to withdraw and deposit an asset.
 	type AssetTransactor = (); //LocalAssetTransactor;
 	type OriginConverter = (); //XcmOriginToTransactDispatchOrigin;
@@ -458,17 +469,17 @@ pub type LocalOriginToLocation = ();
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = (
+//pub type XcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem>,
+//	cumulus_primitives_utility::ParentAsUmp<ParachainSystem>,
 	// ..and XCMP to communicate with the sibling chains.
-	XcmpQueue,
-);
+//	XcmpQueue,
+//);
 
 impl pallet_xcm::Config for Runtime {
     type Event = Event;
     type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-    type XcmRouter = XcmRouter;
+    type XcmRouter = (); //XcmRouter;
     type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
     type XcmExecuteFilter = All<(MultiLocation, Xcm<Call>)>;
     type XcmExecutor = XcmExecutor<XcmConfig>;
@@ -482,11 +493,11 @@ impl cumulus_pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type ChannelInfo = ParachainSystem;
-}
+//impl cumulus_pallet_xcmp_queue::Config for Runtime {
+//	type Event = Event;
+//	type XcmExecutor = XcmExecutor<XcmConfig>;
+//	type ChannelInfo = ParachainSystem;
+//}
 
 pub struct FixedGasPrice;
 
@@ -574,12 +585,7 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type Precompiles = (
-        pallet_evm_precompile_simple::ECRecover,
-        pallet_evm_precompile_simple::Sha256,
-        pallet_evm_precompile_simple::Ripemd160,
-        pallet_evm_precompile_simple::Identity,
-    );
+    type Precompiles = OriginTrailParachainPrecompiles<Self>;
     type ChainId = StarfleetTestnetChainId;
     type BlockGasLimit = BlockGasLimit;
     type OnChargeTransaction = ();
@@ -659,17 +665,17 @@ impl pallet_multisig::Config for Runtime {
 
 
 impl pallet_author_inherent::Config for Runtime {
-    type AuthorId = NimbusId;
-    type SlotBeacon = pallet_author_inherent::RelayChainBeacon<Self>;
-    type AccountLookup = AuthorMapping;
-    type EventHandler = ParachainStaking;
-    type CanAuthor = AuthorFilter;
+	type AuthorId = NimbusId;
+	type SlotBeacon = pallet_author_inherent::RelayChainBeacon<Self>;
+	type AccountLookup = AuthorMapping;
+	type EventHandler = ParachainStaking;
+	type CanAuthor = AuthorFilter;
 }
 
 impl pallet_author_slot_filter::Config for Runtime {
-    type Event = Event;
-    type RandomnessSource = RandomnessCollectiveFlip;
-    type PotentialAuthors = ParachainStaking;
+	type Event = Event;
+	type RandomnessSource = RandomnessCollectiveFlip;
+	type PotentialAuthors = ParachainStaking;
 }
 
 parameter_types! {
@@ -678,13 +684,13 @@ parameter_types! {
 // This is a simple session key manager. It should probably either work with, or be replaced
 // entirely by pallet sessions
 impl pallet_author_mapping::Config for Runtime {
-    type Event = Event;
-    type AuthorId = NimbusId;
-    type DepositCurrency = Balances;
-    type DepositAmount = DepositAmount;
-    fn can_register(account: &AccountId) -> bool {
-        ParachainStaking::is_candidate(account)
-    }
+	type Event = Event;
+	type AuthorId = NimbusId;
+	type DepositCurrency = Balances;
+	type DepositAmount = DepositAmount;
+	fn can_register(account: &AccountId) -> bool {
+		ParachainStaking::is_candidate(account)
+	}
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -698,15 +704,16 @@ construct_runtime!(
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>},
+		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>, ValidateUnsigned},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
-		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
+		//XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin},
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+		EthereumChainId: pallet_ethereum_chain_id::{Pallet, Storage, Config},
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
 		AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent},
@@ -728,25 +735,25 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
-    frame_system::CheckSpecVersion<Runtime>,
-    frame_system::CheckTxVersion<Runtime>,
-    frame_system::CheckGenesis<Runtime>,
-    frame_system::CheckEra<Runtime>,
-    frame_system::CheckNonce<Runtime>,
-    frame_system::CheckWeight<Runtime>,
-    pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	frame_system::CheckSpecVersion<Runtime>,
+	frame_system::CheckTxVersion<Runtime>,
+	frame_system::CheckGenesis<Runtime>,
+	frame_system::CheckEra<Runtime>,
+	frame_system::CheckNonce<Runtime>,
+	frame_system::CheckWeight<Runtime>,
+	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
-/// Executive: handles dispatch to the various modules.
+/// Executive: handles dispatch to the various pallets.
 pub type Executive = frame_executive::Executive<
-    Runtime,
-    Block,
-    frame_system::ChainContext<Runtime>,
-    Runtime,
-    AllPallets,
+	Runtime,
+	Block,
+	frame_system::ChainContext<Runtime>,
+	Runtime,
+	AllPallets,
 >;
 
 impl_runtime_apis! {
@@ -858,7 +865,7 @@ impl_runtime_apis! {
 									)
 								},
 								TraceType::CallList => {
-									Ok(CallListTracer::new()
+									Ok(CallListTracer::default()
 										.trace(|| Executive::apply_extrinsic(ext))
 										.0
 										.into_tx_trace()
@@ -899,7 +906,7 @@ impl_runtime_apis! {
 			for ext in extrinsics.into_iter() {
 				match &ext.function {
 					Call::Ethereum(transact(_transaction)) => {
-						let tx_traces = CallListTracer::new()
+						let tx_traces = CallListTracer::default()
 							.trace(|| Executive::apply_extrinsic(ext))
 							.0
 							.into_tx_trace();
@@ -1209,8 +1216,33 @@ impl_runtime_apis! {
     }
 }
 
+// Check the timestamp and parachain inherents
+struct CheckInherents;
+
+impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
+	fn check_inherents(
+		block: &Block,
+		relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
+	) -> sp_inherents::CheckInherentsResult {
+		let relay_chain_slot = relay_state_proof
+			.read_slot()
+			.expect("Could not read the relay chain slot from the proof");
+
+		let inherent_data =
+			cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
+				relay_chain_slot,
+				sp_std::time::Duration::from_secs(6),
+			)
+			.create_inherent_data()
+			.expect("Could not create the timestamp inherent data");
+
+		inherent_data.check_extrinsics(&block)
+	}
+}
+
 // Notice we're using Nimbus's Executive wrapper to pop (and in the future verify) the seal digest.
-cumulus_pallet_parachain_system::register_validate_block!(
-	Runtime,
-	pallet_author_inherent::BlockExecutor<Runtime, Executive>
-);
+cumulus_pallet_parachain_system::register_validate_block! {
+	Runtime = Runtime,
+	BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
+	CheckInherents = CheckInherents,
+}
