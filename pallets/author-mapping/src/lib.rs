@@ -255,13 +255,6 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn old_account_id_of)]
-	// This is the old storage item used in the old version of the pallet. The type is being kept
-	// for now to enable easier migration of the data. This storage item should be removed from the
-	// code after on-chain data has been migrated.
-	type Mapping<T: Config> = StorageMap<_, Twox64Concat, T::AuthorId, T::AccountId, OptionQuery>;
-
-	#[pallet::storage]
 	#[pallet::getter(fn account_and_deposit_of)]
 	/// We maintain a mapping from the AuthorIds used in the consensus layer
 	/// to the AccountIds runtime (including this staking pallet).
@@ -291,10 +284,9 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			for (author_id, account_id) in &self.mappings {
-				match Pallet::<T>::enact_registration(&author_id, &account_id) {
-					Err(e) => log::warn!("Error with genesis registration: {:?}", e),
-					_ => (),
-				};
+				if let Err(e) = Pallet::<T>::enact_registration(&author_id, &account_id) {
+					log::warn!("Error with genesis author mapping registration: {:?}", e);
+				}
 			}
 		}
 	}
