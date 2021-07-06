@@ -15,6 +15,11 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.6" }
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.6" }
 pallet-evm = { git = "https://github.com/purestake/frontier", default-features = false, branch = "moonbeam-polkadot-v0.9.6" }
+pallet-evm-precompile-bn128 = { git = "https://github.com/purestake/frontier", default-features = false, branch = "moonbeam-polkadot-v0.9.6" }
+pallet-evm-precompile-dispatch = { git = "https://github.com/purestake/frontier", default-features = false, branch = "moonbeam-polkadot-v0.9.6" }
+pallet-evm-precompile-modexp = { git = "https://github.com/purestake/frontier", default-features = false, branch = "moonbeam-polkadot-v0.9.6" }
+pallet-evm-precompile-simple = { git = "https://github.com/purestake/frontier", default-features = false, branch = "moonbeam-polkadot-v0.9.6" }
+pallet-evm-precompile-sha3fips = { git = "https://github.com/purestake/frontier", default-features = false, branch = "moonbeam-polkadot-v0.9.6" }
 parachain-staking = { path = "../../pallets/parachain-staking", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.6" }
 
@@ -24,11 +29,16 @@ hex = "0.4"
 [features]
 default = ["std"]
 std = [
-    "codec/std",
-    "frame-support/std",
-    "evm/std",
-    "sp-std/std",
-    "sp-core/std",
-    "parachain-staking/std",
-    "frame-system/std",
+	"codec/std",
+	"frame-support/std",
+	"evm/std",
+	"sp-std/std",
+	"sp-core/std",
+	"pallet-evm-precompile-bn128/std",
+	"pallet-evm-precompile-dispatch/std",
+	"pallet-evm-precompile-modexp/std",
+	"pallet-evm-precompile-simple/std",
+	"parachain-staking/std",
+	"frame-system/std",
+	"pallet-evm-precompile-sha3fips/std",
 ]
