@@ -50,15 +50,15 @@ pub struct Transaction {
 }
 
 fn block_hash_serialize<S>(hash: &Option<H256>, serializer: S) -> Result<S::Ok, S::Error>
-where
-	S: Serializer,
+	where
+		S: Serializer,
 {
 	serializer.serialize_str(&format!("0x{:x}", hash.unwrap_or_default()))
 }
 
 fn to_serialize<S>(hash: &Option<H160>, serializer: S) -> Result<S::Ok, S::Error>
-where
-	S: Serializer,
+	where
+		S: Serializer,
 {
 	serializer.serialize_str(&format!("0x{:x}", hash.unwrap_or_default()))
 }

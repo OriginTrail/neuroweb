@@ -29,8 +29,8 @@ pub struct Summary {
 
 impl Serialize for Summary {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where
-		S: Serializer,
+		where
+			S: Serializer,
 	{
 		let res = format!(
 			"0x{:x}: {} wei + {} gas x {} wei",

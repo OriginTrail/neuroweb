@@ -71,7 +71,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&origintrail_parachain_runtime::VERSION
+		return &origintrail_parachain_runtime::VERSION;
 	}
 }
 
