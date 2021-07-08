@@ -21,7 +21,7 @@ describeWithOTParachain("OriginTrail Parachain RPC (Subscription)",(context) => 
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
 				gasPrice: "0x01",
-				gas: "0x4F930",
+				gas: "0x1000000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
@@ -96,7 +96,6 @@ describeWithOTParachain("OriginTrail Parachain RPC (Subscription)",(context) => 
 		const tx = await sendTransaction(context);
 		let data = null;
 		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
 			subscription.on("data", function (d: any) {
 				data = d;
 				logs_generated += 1;
@@ -107,6 +106,7 @@ describeWithOTParachain("OriginTrail Parachain RPC (Subscription)",(context) => 
 
 		expect(data).to.be.not.null;
 		expect(tx["transactionHash"]).to.be.eq(data);
+		await createAndFinalizeBlock(context.web3);
 		setTimeout(done,10000);
 	}).timeout(20000);
 
