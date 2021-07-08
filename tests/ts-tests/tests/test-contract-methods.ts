@@ -46,6 +46,39 @@ describeWithOTParachain("OriginTrail Parachain RPC (Contract Methods)",  (contex
 		expect(await contract.methods.multiply(3).call()).to.equal("21");
 	});
 
+	it("should get correct environmental block number", async function () {
+		// Solidity `block.number` is expected to return the same height at which the runtime call was made.
+		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x01",
+		});
+		let block = await context.web3.eth.getBlock("latest");
+		expect(await contract.methods.currentBlock().call()).to.eq(block.number.toString());
+		await createAndFinalizeBlock(context.web3);
+		block = await context.web3.eth.getBlock("latest");
+		expect(await contract.methods.currentBlock().call()).to.eq(block.number.toString());
+	});
+
+	it("should get correct environmental block hash", async function () {
+		this.timeout(20000);
+		// Solidity `blockhash` is expected to return the ethereum block hash at a given height.
+		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x01",
+		});
+		let number = (await context.web3.eth.getBlock("latest")).number;
+		let last = number + 256;
+		for(let i = number; i <= last; i++) {
+			let hash = (await context.web3.eth.getBlock("latest")).hash;
+			expect(await contract.methods.blockHash(i).call()).to.eq(hash);
+			await createAndFinalizeBlock(context.web3);
+		}
+		// should not store more than 256 hashes
+		expect(await contract.methods.blockHash(number).call()).to.eq(
+			"0x0000000000000000000000000000000000000000000000000000000000000000"
+		);
+	});
+
 	// Requires error handling
 	it.skip("should fail for missing parameters", async function () {
 		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI[0], inputs: [] }], FIRST_CONTRACT_ADDRESS, {
