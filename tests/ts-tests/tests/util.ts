@@ -5,7 +5,6 @@ import { spawn, ChildProcess } from "child_process";
 export const PORT = 19931;
 export const RPC_PORT = 19932;
 export const WS_PORT = 19933;
-export const SPECS_PATH = `./otparachain-test-specs`;
 
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
 export const OTParachain_LOG = process.env.FRONTIER_LOG || "info";
@@ -47,7 +46,7 @@ export async function createAndFinalizeBlock(web3: Web3) {
 
 let nodeStarted = false;
 
-export async function startOTParachainNode(specFilename: string, provider?: string): Promise<{ web3: Web3; binary: ChildProcess }> {
+export async function startOTParachainNode(provider?: string): Promise<{ web3: Web3; binary: ChildProcess }> {
 
 	while (nodeStarted) {
 		// Wait 100ms to see if the node is free
@@ -123,11 +122,6 @@ export async function startOTParachainNode(specFilename: string, provider?: stri
 			}
 			binaryLogs.push(chunk);
 			if (chunk.toString().match(/Development Service Ready/)) {
-				/*if (!provider || provider == "http") {
-					// This is needed as the EVM runtime needs to warmup with a first call
-					await web3.eth.getChainId();
-				}*/
-
 				clearTimeout(timer);
 				if (!DISPLAY_LOG) {
 					binary.stderr.off("data", onData);
@@ -148,14 +142,14 @@ export async function startOTParachainNode(specFilename: string, provider?: stri
 	return { web3, binary };
 }
 
-export function describeWithOTParachain(title: string, specFilename: string, cb: (context: { web3: Web3 }) => void, provider?: string) {
+export function describeWithOTParachain(title: string, cb: (context: { web3: Web3 }) => void, provider?: string) {
 	describe(title, () => {
 		let context: { web3: Web3 } = { web3: null };
 		let binary: ChildProcess;
 		// Making sure the OriginTrail Parachain node has started
 		before("Starting OTParachain", async function () {
 			this.timeout(SPAWNING_TIME);
-			const init = await startOTParachainNode(specFilename, provider);
+			const init = await startOTParachainNode(provider);
 			context.web3 = init.web3;
 			binary = init.binary;
 		});

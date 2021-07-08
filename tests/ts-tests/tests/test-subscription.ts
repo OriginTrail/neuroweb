@@ -3,7 +3,7 @@ import { step } from "mocha-steps";
 
 import { createAndFinalizeBlock, customRequest, describeWithOTParachain } from "./util";
 
-describeWithOTParachain("OriginTrail Parachain RPC (Subscription)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Subscription)",(context) => {
 
 	let subscription;
 	let logs_generated = 0;

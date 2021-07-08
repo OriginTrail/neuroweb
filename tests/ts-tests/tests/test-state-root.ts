@@ -3,7 +3,7 @@ import { step } from "mocha-steps";
 
 import { createAndFinalizeBlock, describeWithOTParachain } from "./util";
 
-describeWithOTParachain("OriginTrail Parachain RPC (State root hash)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (State root hash)",(context) => {
 
 	let block;
 	step("should calculate a valid intermediate state root hash", async function () {

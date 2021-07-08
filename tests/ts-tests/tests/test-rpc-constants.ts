@@ -4,7 +4,7 @@ import { describeWithOTParachain } from "./util";
 
 // All test for the RPC
 
-describeWithOTParachain("OriginTrail Parachain RPC (Constant)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Constant)",(context) => {
 	it("should have 0 hashrate", async function () {
 		expect(await context.web3.eth.getHashrate()).to.equal(0);
 	});

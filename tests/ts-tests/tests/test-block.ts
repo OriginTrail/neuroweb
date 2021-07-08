@@ -3,7 +3,7 @@ import { step } from "mocha-steps";
 
 import { createAndFinalizeBlock, describeWithOTParachain } from "./util";
 
-describeWithOTParachain("OriginTrail Parachain RPC (Block)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Block)", (context) => {
 	let previousBlock;
 	// Those js-tests are dependant of each other in the given order.
 	// The reason is to avoid having to restart the node each time
