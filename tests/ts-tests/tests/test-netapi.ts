@@ -3,7 +3,7 @@ import { step } from "mocha-steps";
 
 import { describeWithOTParachain, customRequest } from "./util";
 
-describeWithOTParachain("Frontier RPC (Net)", (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Net)", (context) => {
     step("should return `net_version` 42", async function () {
         expect(await context.web3.eth.net.getId()).to.equal(42);
     });
