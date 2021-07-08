@@ -1,10 +1,10 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./util";
+import {createAndFinalizeBlock, customRequest, describeWithOTParachain} from "./util";
 import { TransactionReceipt } from 'web3-core';
 
-describeWithFrontier("Frontier RPC (Log filtering)", (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Log filtering)", (context) => {
 
     const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
     const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
