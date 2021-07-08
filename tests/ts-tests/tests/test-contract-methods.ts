@@ -21,6 +21,7 @@ describeWithOTParachain("OriginTrail Parachain RPC (Contract Methods)",  (contex
 				value: "0x00",
 				gasPrice: "0x01",
 				gas: "0x100000",
+				chainId: 2160,
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);

@@ -17,9 +17,10 @@ describeWithOTParachain("OriginTrail Parachain RPC (Pending Pool)", (context) =>
 			{
 				from: GENESIS_ACCOUNT,
 				data: TEST_CONTRACT_BYTECODE,
-				value: "0x00",
+				value: "0x200",
 				gasPrice: "0x01",
 				gas: "0x100000",
+				chainId: 2160,
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
@@ -32,7 +33,7 @@ describeWithOTParachain("OriginTrail Parachain RPC (Pending Pool)", (context) =>
 			blockNumber: null,
 			hash: tx_hash,
 			publicKey: "0x624f720eae676a04111631c9ca338c11d0f5a80ee42210c6be72983ceb620fbf645a96f951529fa2d70750432d11b7caba5270c4d677255be90b3871c8c58069",
-			r: "0x5431b25e8100a21ced6af01868357b19d58b94afa6f57dc7cbf81f4a922ddecc",
+			r: "0x37443857ff8ae9a2fdc9288304f153880669e761abd1c103a84912350153201",
 			s: "0x22e05530d015ea702ffb37af313e691ce4423565c2734c267edd3c74aea0a010",
 			v: "0x77",
 		});
@@ -44,7 +45,7 @@ describeWithOTParachain("OriginTrail Parachain RPC (Pending Pool)", (context) =>
 			blockNumber: "0x1",
 			hash: tx_hash,
 			publicKey: "0x624f720eae676a04111631c9ca338c11d0f5a80ee42210c6be72983ceb620fbf645a96f951529fa2d70750432d11b7caba5270c4d677255be90b3871c8c58069",
-			r: "0x5431b25e8100a21ced6af01868357b19d58b94afa6f57dc7cbf81f4a922ddecc",
+			r: "0x37443857ff8ae9a2fdc9288304f153880669e761abd1c103a84912350153201",
 			s: "0x22e05530d015ea702ffb37af313e691ce4423565c2734c267edd3c74aea0a010",
 			v: "0x77",
 		});
