@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import { customRequest, describeWithOTParachain } from "./util";
 
-describeWithOTParachain("OriginTrail Parachain RPC (Deprecated)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Deprecated)", (context) => {
 	// List of deprecated methods
 	[
 		{ method: "eth_getCompilers", params: [] },

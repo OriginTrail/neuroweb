@@ -3,7 +3,7 @@ import { step } from "mocha-steps";
 
 import { describeWithOTParachain, customRequest } from "./util";
 
-describeWithOTParachain("OriginTrail Parachain RPC (Web3Api)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Web3Api)", (context) => {
 
 	step("should get client version", async function () {
 		const version = await context.web3.eth.getNodeInfo();

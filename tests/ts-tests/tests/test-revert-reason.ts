@@ -4,7 +4,7 @@ import ExplicitRevertReason from "../build/contracts/ExplicitRevertReason.json"
 import { createAndFinalizeBlock, customRequest, describeWithOTParachain } from "./util";
 import { AbiItem } from "web3-utils";
 
-describeWithOTParachain("OriginTrail Parachain RPC (Revert Reason)", `simple-specs.json`, (context) => {
+describeWithOTParachain("OriginTrail Parachain RPC (Revert Reason)",  (context) => {
 
 	let contractAddress;
 
