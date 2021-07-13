@@ -1,4 +1,4 @@
-import { expect } from "chai";
+/*import { expect } from "chai";
 
 import Test from "../build/contracts/Storage.json"
 import { createAndFinalizeBlock, customRequest, describeWithOTParachain } from "./util";
@@ -78,3 +78,4 @@ describeWithOTParachain("OriginTrail Parachain RPC (Contract)", (context) => {
 		);
 	});
 });
+*/
