@@ -68,13 +68,17 @@ frame-system-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate'
 ## Substrate Pallet Dependencies
 #pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
 pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
+pallet-collective = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
 pallet-multisig = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
+pallet-membership = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
 pallet-randomness-collective-flip = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
 pallet-scheduler = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
 pallet-sudo = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
 pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
+pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
+
 
 # Cumulus Dependencies
 
@@ -124,10 +128,13 @@ std = [
 	'frame-system/std',
 	'frame-system-rpc-runtime-api/std',
 	'pallet-balances/std',
+	"pallet-collective/std",
+	"pallet-membership/std",
 	'pallet-randomness-collective-flip/std',
 	'pallet-timestamp/std',
 	'pallet-sudo/std',
 	'pallet-transaction-payment/std',
+	"pallet-treasury/std",
 	'parachain-info/std',
 	'cumulus-pallet-parachain-system/std',
 	'cumulus-primitives-core/std',
