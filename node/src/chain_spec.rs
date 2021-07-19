@@ -1,6 +1,6 @@
 use cumulus_primitives_core::ParaId;
 use origintrail_parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR, InflationInfo, Range, AuthorFilterConfig,
-									AuthorMappingConfig, Balance, BalancesConfig, EthereumChainIdConfig,
+									AuthorMappingConfig, Balance, BalancesConfig, EthereumChainIdConfig, CouncilConfig, 
 									GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig, WASM_BINARY, ParachainStakingConfig};
 
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -176,6 +176,9 @@ pub fn testnet_genesis(
 		},
 		sudo: SudoConfig { key: root_key },
 		parachain_info: ParachainInfoConfig { parachain_id: para_id },
+		council: CouncilConfig::default(),
+		council_membership: Default::default(),
+		treasury: Default::default(),
 		ethereum_chain_id: EthereumChainIdConfig { chain_id },
 		evm: EVMConfig {
 			accounts: precompile_addresses
