@@ -3,10 +3,10 @@ name: Check Links
 on:
   pull_request:
     branches:
-    - master
+    - feature/unit-tests
   push:
     branches:
-    - master
+    - feature/unit-tests
 
 jobs:
   markdown-link-check:

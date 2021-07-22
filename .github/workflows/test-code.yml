@@ -3,10 +3,10 @@ name: Test Code
 on:
   pull_request:
     branches:
-    - master
+    - feature/unit-tests
   push:
     branches:
-    - master
+    - feature/unit-tests
 
 jobs:
   test-code:
@@ -45,3 +45,97 @@ jobs:
 
     - name: Test Code
       run: cargo test
+
+  
+  build:
+    runs-on: self-hosted
+    env:
+      RUSTFLAGS: "-C opt-level=3"
+    outputs:
+      RUSTC: ${{ steps.get-rust-versions.outputs.rustc }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ needs.set-tags.outputs.git_ref }}
+
+      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+      - name: Setup Rust toolchain
+        run: rustup show
+      - id: get-rust-versions
+        run: |
+          echo "::set-output name=rustc::$(rustc --version)"
+      - name: Build Node
+        run: |
+          env
+          cargo build --release --all
+      - name: Verify node version
+        run: |
+          GIT_COMMIT=`git log -1 --format="%H" | cut -c1-7`
+          MB_VERSION=`./target/release/moonbeam --version`
+          echo "Checking $MB_VERSION contains $GIT_COMMIT"
+          echo "$MB_VERSION" | grep $GIT_COMMIT
+      - name: Unit tests
+        run: cargo test --release --all
+
+      # We determine whether there are unmodified Cargo.lock files by:
+      # 1. Asking git for a list of all modified files
+      # 2. Using grep to reduce the list to only Cargo.lock files
+      # 3. Counting the number of lines of output
+      - name: Check Cargo Toml
+        run: |
+          # Make sure git is working, and if not abort early. When git is not working it looks like:
+          # $ git diff-index --name-only HEAD
+          # fatal: not a git repository (or any of the parent directories): .git
+          DIFF_INDEX=$(git diff-index --name-only HEAD)
+          if [[ ${DIFF_INDEX:0:5} == "fatal" ]]; then
+            echo "There was an error with the git checkout. Can't check Cargo.lock file."
+            false
+          fi
+          FILECOUNT=$(echo $DIFF_INDEX | grep Cargo.lock | wc -l)
+          if [[ $FILECOUNT -eq 0 ]]; then
+            echo "All lock files are valid"
+          else
+            echo "The following Cargo.lock files have uncommitted changes"
+            echo $DIFF_INDEX | grep Cargo.lock
+            false
+          fi
+      - name: Check with Clippy
+        run: cargo clippy --release --workspace
+      - name: Ensure benchmarking compiles
+        run: cargo check --release --features=runtime-benchmarks
+      - name: Save parachain binary
+        run: |
+          mkdir -p build
+          cp target/release/moonbeam build/moonbeam;
+      - name: Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: origintrail-parachain
+          path: build
+
+  typescript-tests:
+    runs-on: self-hosted
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ needs.set-tags.outputs.git_ref }}
+      - uses: actions/download-artifact@v2
+        with:
+          name: origintrail-parachain
+          path: build
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14.x
+      - name: Typescript integration tests (against dev service)
+        env:
+          BINARY_PATH: ../build/origintrail-parachain
+        run: |
+          chmod uog+x build/origintrail-parachain
+          cd ../tests/ts-tests
+          npm install
+          node_modules/.bin/mocha --parallel -j 7 -r ts-node/register 'tests/ts-tests/**/test-*.ts'
