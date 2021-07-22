@@ -1,4 +1,4 @@
-import { expect } from "chai";
+/*import { expect } from "chai";
 
 import Test from "../build/contracts/Test.json"
 import { createAndFinalizeBlock, customRequest, describeWithOTParachain } from "./util";
@@ -11,7 +11,7 @@ describeWithOTParachain("OriginTrail Parachain RPC (Contract Methods)",  (contex
 	const TEST_CONTRACT_BYTECODE = Test.bytecode;
 	const TEST_CONTRACT_ABI = Test.abi as AbiItem[];
 	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a"; // Those test are ordered. In general this should be avoided, but due to the time it takes	// to spin up a OriginTrail Parachain node, it saves a lot of time.
-
+	
 	before("create the contract", async function () {
 		this.timeout(15000);
 		const tx = await context.web3.eth.accounts.signTransaction(
@@ -135,3 +135,4 @@ describeWithOTParachain("OriginTrail Parachain RPC (Contract Methods)",  (contex
 			);
 	});
 });
+*/
