@@ -40,15 +40,47 @@ jobs:
     # - name: Check and Lint Code
     #   run: cargo +nightly-2020-05-07 clippy -- -D warnings
 
-    - name: Check Code
-      run: cargo check
+    #- name: Check Code
+    #  run: cargo check
 
-    - name: Test Code
-      run: cargo test
+    #- name: Test Code
+    #  run: cargo test
 
+  set-tags:
+    runs-on: ubuntu-latest
+    outputs:
+      git_ref: ${{ steps.check-git-ref.outputs.git_ref }}
+      sha: ${{ steps.get-sha.outputs.sha }}
+      sha8: ${{ steps.get-sha.outputs.sha8 }}
+      polkadot_commit: ${{ steps.get-sha.outputs.polkadot_commit }}
+    steps:
+      - name: Check git ref
+        id: check-git-ref
+        run: |
+          if [[ -n "${{ github.event.inputs.pull_request }}" ]]; then
+            echo ::set-output name=git_ref::refs/pull/${{ github.event.inputs.pull_request }}/head
+          else 
+            echo ::set-output name=git_ref::$GITHUB_REF
+          fi
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ steps.check-git-ref.outputs.git_ref }}
+      - name: Get Sha
+        id: get-sha
+        run: |
+          echo ::set-output name=sha::$(git log -1 --format="%H")
+          echo ::set-output name=sha8::$(git log -1 --format="%H" | cut -c1-8)
+          echo ::set-output name=polkadot_commit::$(egrep -o '/polkadot.*#([^\"]*)' Cargo.lock | \
+            head -1 | sed 's/.*#//' |  cut -c1-8)
+      - name: Display variables
+        run: |
+          echo git_ref: ${{ steps.check-git-ref.outputs.git_ref }}
+          echo sha: ${{ steps.get-sha.outputs.sha }}
+          echo sha8: ${{ steps.get-sha.outputs.sha8 }}
   
   build:
     runs-on: self-hosted
+    needs: ["set-tags"]
     env:
       RUSTFLAGS: "-C opt-level=3"
     outputs:
