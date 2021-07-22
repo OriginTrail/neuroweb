@@ -66,7 +66,7 @@ Copy the Hub contract address value somewhere, it might be required when setting
 
 ### OriginTrail node setup and startup
 
-Firstly, make sure that you have the prerequisites for ot-node installed, you can find them on our [ReadTheDocs](http://docs.origintrail.io/en/latest/Running-a-Node/getting-started.html#manual-installation)
+Firstly, make sure that you have the prerequisites for ot-node installed, you can find them on our [ReadTheDocs](https://docs.origintrail.io/en/latest/Running-a-Node/basic-setup.html#manual-installation)
 
 Switch to version 9 of nodejs and Install the dependencies for ot-node with the following commands:
 ```
