@@ -129,4 +129,4 @@ jobs:
           chmod uog+x build/origintrail-parachain
           cd tests/ts-tests
           npm install
-          node_modules/.bin/mocha --parallel -j 7 -r ts-node/register 'tests/ts-tests/**/test-*.ts'
+          node_modules/.bin/mocha --parallel -j 7 -r ts-node/register 'tests/**/test-*.ts'
