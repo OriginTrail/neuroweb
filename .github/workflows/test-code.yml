@@ -79,7 +79,7 @@ jobs:
           echo sha8: ${{ steps.get-sha.outputs.sha8 }}
   
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: ["set-tags"]
     env:
       RUSTFLAGS: "-C opt-level=3"
@@ -148,7 +148,7 @@ jobs:
           path: build
 
   typescript-tests:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Checkout
