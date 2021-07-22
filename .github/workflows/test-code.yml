@@ -9,43 +9,6 @@ on:
     - feature/unit-tests
 
 jobs:
-  test-code:
-    runs-on: ubuntu-20.04
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v2
-
-      # Steps taken from https://github.com/actions/cache/blob/master/examples.md#rust---cargo
-    - name: Cache cargo registry
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Install toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly-2021-04-18
-        components: rustfmt, clippy
-        target: wasm32-unknown-unknown
-        override: true
-        default: true
-
-    # Enable this for clippy linting.
-    # - name: Check and Lint Code
-    #   run: cargo +nightly-2020-05-07 clippy -- -D warnings
-
-    #- name: Check Code
-    #  run: cargo check
-
-    #- name: Test Code
-    #  run: cargo test
-
   set-tags:
     runs-on: ubuntu-latest
     outputs:
@@ -78,7 +41,7 @@ jobs:
           echo sha: ${{ steps.get-sha.outputs.sha }}
           echo sha8: ${{ steps.get-sha.outputs.sha8 }}
   
-  build:
+  test:
     runs-on: ubuntu-latest
     needs: ["set-tags"]
     env:
@@ -108,10 +71,10 @@ jobs:
           MB_VERSION=`./target/release/origintrail-parachain --version`
           echo "Checking $MB_VERSION contains $GIT_COMMIT"
           echo "$MB_VERSION" | grep $GIT_COMMIT
-      #- name: Unit tests
-      #  run: cargo test --release --all
-      #- name: Check with Clippy
-      #  run: cargo clippy --release --workspace
+      - name: Unit tests
+        run: cargo test --release --all
+      - name: Check with Clippy
+        run: cargo clippy --release --workspace
       #- name: Ensure benchmarking compiles
       #  run: cargo check --release --features=runtime-benchmarks
       - name: Save parachain binary
