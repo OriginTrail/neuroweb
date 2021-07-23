@@ -1,4 +1,4 @@
-import { expect } from "chai";
+/*import { expect } from "chai";
 
 import ExplicitRevertReason from "../build/contracts/ExplicitRevertReason.json"
 import { createAndFinalizeBlock, customRequest, describeWithOTParachain } from "./util";
@@ -46,3 +46,4 @@ describeWithOTParachain("OriginTrail Parachain RPC (Revert Reason)",  (context) 
 		}
 	});
 });
+*/
