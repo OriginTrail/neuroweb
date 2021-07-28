@@ -1,6 +1,14 @@
 import Web3 from "web3";
 import { JsonRpcResponse } from "web3-core-helpers";
 import { spawn, ChildProcess } from "child_process";
+import { Subscription as Web3Subscription } from "web3-core-subscriptions";
+import { BlockHeader } from "web3-eth";
+import { Log } from "web3-core";
+
+import { Contract } from "web3-eth-contract";
+import { getCompiled } from "./contracts";
+import * as RLP from "rlp";
+const debug = require("debug")("test:transaction");
 
 export const PORT = 19931;
 export const RPC_PORT = 19932;
@@ -11,6 +19,174 @@ export const OTParachain_LOG = process.env.FRONTIER_LOG || "info";
 
 export const BINARY_PATH = `../../target/release/origintrail-parachain`;
 export const SPAWNING_TIME = 30000;
+
+import { BlockHash } from "@polkadot/types/interfaces/chain";
+import { ethers } from "ethers";
+import { ApiPromise, WsProvider } from "@polkadot/api";
+import { HttpProvider } from "web3-core"
+
+export type EnhancedWeb3 = Web3 & {
+	customRequest: (method: string, params: any[]) => Promise<JsonRpcResponse>;
+  };
+
+export interface BlockCreation {
+	parentHash?: BlockHash;
+	finalize?: boolean;
+	transactions?: string[];
+  }
+
+export interface DevTestContext {
+	createWeb3: (protocol?: "ws" | "http") => Promise<EnhancedWeb3>;
+	createEthers: () => Promise<ethers.providers.JsonRpcProvider>;
+	createPolkadotApi: () => Promise<ApiPromise>;
+  
+	createBlock: (options?: BlockCreation) => Promise<{
+	  txResults: JsonRpcResponse[];
+	  block: {
+		duration: number;
+		hash: BlockHash;
+	  };
+	}>;
+  
+	// We also provided singleton providers for simplicity
+	web3: EnhancedWeb3;
+	ethers: ethers.providers.JsonRpcProvider;
+	polkadotApi: ApiPromise;
+  }
+
+  interface InternalDevTestContext extends DevTestContext {
+	_polkadotApis: ApiPromise[];
+	_web3Providers: HttpProvider[];
+  }
+
+export interface TransactionOptions {
+	from?: string;
+	to?: string;
+	privateKey?: string;
+	nonce?: number;
+	gas?: string | number;
+	gasPrice?: string | number;
+	value?: string | number | BigInt;
+	data?: string;
+  }
+
+export const GENESIS_ACCOUNT = "0x6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b";
+export const GENESIS_ACCOUNT_PRIVATE_KEY =
+  "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
+
+const GENESIS_TRANSACTION: TransactionOptions = {
+	from: GENESIS_ACCOUNT,
+	privateKey: GENESIS_ACCOUNT_PRIVATE_KEY,
+	nonce: null,
+	gas: 12_000_000,
+	gasPrice: 1_000_000_000,
+	value: "0x00",
+  };
+  
+  export const createTransaction = async (
+	web3: Web3,
+	options: TransactionOptions
+  ): Promise<string> => {
+	const gas = options.gas || 12_000_000;
+	const gasPrice = options.gasPrice !== undefined ? options.gasPrice : 1_000_000_000;
+	const value = options.value !== undefined ? options.value : "0x00";
+	const from = options.from || GENESIS_ACCOUNT;
+	const privateKey =
+	  options.privateKey !== undefined ? options.privateKey : GENESIS_ACCOUNT_PRIVATE_KEY;
+  
+	const data = {
+	  from,
+	  to: options.to,
+	  value: value && value.toString(),
+	  gasPrice,
+	  gas,
+	  nonce: options.nonce,
+	  data: options.data,
+	};
+	debug(
+	  `Tx [${/:([0-9]+)$/.exec((web3.currentProvider as any).host)[1]}] ` +
+		`from: ${data.from.substr(0, 5) + "..." + data.from.substr(data.from.length - 3)}, ` +
+		(data.to
+		  ? `to: ${data.to.substr(0, 5) + "..." + data.to.substr(data.to.length - 3)}, `
+		  : "") +
+		(data.value ? `value: ${data.value.toString()}, ` : "") +
+		`gasPrice: ${data.gasPrice.toString()}, ` +
+		(data.gas ? `gas: ${data.gas.toString()}, ` : "") +
+		(data.nonce ? `nonce: ${data.nonce.toString()}, ` : "") +
+		(!data.data
+		  ? ""
+		  : `data: ${
+			  data.data.length < 50
+				? data.data
+				: data.data.substr(0, 5) + "..." + data.data.substr(data.data.length - 3)
+			}`)
+	);
+	const tx = await web3.eth.accounts.signTransaction(data, privateKey);
+	return tx.rawTransaction;
+  };
+  
+  export const createTransfer = async (
+	web3: Web3,
+	to: string,
+	value: number | string | BigInt,
+	options: TransactionOptions = GENESIS_TRANSACTION
+  ): Promise<string> => {
+	return await createTransaction(web3, { ...options, value, to });
+  };
+  
+
+// Will create the transaction to deploy a contract.
+// This requires to compute the nonce. It can't be used multiple times in the same block from the
+// same from
+export async function createContract(
+	web3: Web3,
+	contractName: string,
+	options: TransactionOptions = GENESIS_TRANSACTION,
+	contractArguments: any[] = []
+  ): Promise<{ rawTx: string; contract: Contract; contractAddress: string }> {
+	const contractCompiled = await getCompiled(contractName);
+	const from = options.from !== undefined ? options.from : GENESIS_ACCOUNT;
+	const nonce = options.nonce || (await web3.eth.getTransactionCount(from));
+	const contractAddress =
+	  "0x" +
+	  web3.utils
+		.sha3(RLP.encode([from, nonce]) as any)
+		.slice(12)
+		.substring(14);
+  
+	const contract = new web3.eth.Contract(contractCompiled.contract.abi, contractAddress);
+	const data = contract
+	  .deploy({
+		data: contractCompiled.byteCode,
+		arguments: contractArguments,
+	  })
+	  .encodeABI();
+  
+	const rawTx = await createTransaction(web3, { ...options, from, nonce, data });
+  
+	return {
+	  rawTx,
+	  contract,
+	  contractAddress,
+	};
+  }
+
+// Extra type because web3 is not well typed
+export interface Subscription<T> extends Web3Subscription<T> {
+	once: (type: "data" | "connected", handler: (data: T) => void) => Subscription<T>;
+  }
+
+// Little helper to hack web3 that are not complete.
+export function web3Subscribe(web3: Web3, type: "newBlockHeaders"): Subscription<BlockHeader>;
+export function web3Subscribe(web3: Web3, type: "pendingTransactions"): Subscription<string>;
+export function web3Subscribe(web3: Web3, type: "logs", params: {}): Subscription<Log>;
+export function web3Subscribe(
+  web3: Web3,
+  type: "newBlockHeaders" | "pendingTransactions" | "logs",
+  params?: any
+) {
+  return (web3.eth as any).subscribe(...[].slice.call(arguments, 1));
+}
 
 export async function customRequest(web3: Web3, method: string, params: any[]) {
 	return new Promise<JsonRpcResponse>((resolve, reject) => {
