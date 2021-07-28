@@ -19,9 +19,10 @@ describeWithOTParachain("OriginTrail Parachain RPC (Constructor Revert)", (conte
 	const FAIL_BYTECODE = '6080604052348015600f57600080fd5b506000601a57600080fd5b603f8060276000396000f3fe6080604052600080fdfea26469706673582212209f2bb2a4cf155a0e7b26bd34bb01e9b645a92c82e55c5dbdb4b37f8c326edbee64736f6c63430006060033';
 	const GOOD_BYTECODE = '6080604052348015600f57600080fd5b506001601a57600080fd5b603f8060276000396000f3fe6080604052600080fdfea2646970667358221220c70bc8b03cdfdf57b5f6c4131b836f9c2c4df01b8202f530555333f2a00e4b8364736f6c63430006060033';
 
+
 	it("should provide a tx receipt after successful deployment", async function () {
 		this.timeout(15000);
-		const GOOD_TX_HASH = '0xae813c533aac0719fbca4db6e3bb05cfb5859bdeaaa7dc5c9dbd24083301be8d';
+		const GOOD_TX_HASH = '0xac4130ee515a043be57d7fe9ad3d85eb02c8d16d1878fd4c2e8c5211e26fb611';
 
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
@@ -37,9 +38,9 @@ describeWithOTParachain("OriginTrail Parachain RPC (Constructor Revert)", (conte
 		expect(
 			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])
 		).to.deep.equal({
-			id: 1,
-			jsonrpc: "2.0",
+			jsonrpc: '2.0',
 			result: GOOD_TX_HASH,
+			id: 1
 		});
 
 		// Verify the receipt exists after the block is created
@@ -52,7 +53,7 @@ describeWithOTParachain("OriginTrail Parachain RPC (Constructor Revert)", (conte
 			from: '0x6be02d1d3665660d22ff9624b7be0551ee1ac91b',
 			gasUsed: 67231,
 			to: null,
-			transactionHash: '0xae813c533aac0719fbca4db6e3bb05cfb5859bdeaaa7dc5c9dbd24083301be8d',
+			transactionHash: '0xac4130ee515a043be57d7fe9ad3d85eb02c8d16d1878fd4c2e8c5211e26fb611',
 			transactionIndex: 0,
 			status: true
 		});
@@ -62,7 +63,7 @@ describeWithOTParachain("OriginTrail Parachain RPC (Constructor Revert)", (conte
 		this.timeout(15000);
 		// Transaction hash depends on which nonce we're using
 		//const FAIL_TX_HASH = '0x89a956c4631822f407b3af11f9251796c276655860c892919f848699ed570a8d'; //nonce 1
-		const FAIL_TX_HASH = '0x640df9deb183d565addc45bdc8f95b30c7c03ce7e69df49456be9929352e4347'; //nonce 2
+		const FAIL_TX_HASH = '0x35a55efa0568b01f7294906e9d5d84c3c2a7f23e79c8e8c8729e71fbe1184ec5'; //nonce 2
 
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
@@ -92,7 +93,7 @@ describeWithOTParachain("OriginTrail Parachain RPC (Constructor Revert)", (conte
 			from: '0x6be02d1d3665660d22ff9624b7be0551ee1ac91b',
 			gasUsed: 54600,
 			to: null,
-			transactionHash: '0x640df9deb183d565addc45bdc8f95b30c7c03ce7e69df49456be9929352e4347',
+			transactionHash: '0x35a55efa0568b01f7294906e9d5d84c3c2a7f23e79c8e8c8729e71fbe1184ec5',
 			transactionIndex: 0,
 			status: false
 		});

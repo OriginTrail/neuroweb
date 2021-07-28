@@ -12,7 +12,7 @@ describeWithOTParachain("OriginTrail Parachain RPC (Pending Pool)", (context) =>
 	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a";
 
 	it("should return a pending transaction", async function () {
-		this.timeout(15000);
+		//this.timeout(15000);
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
@@ -33,9 +33,9 @@ describeWithOTParachain("OriginTrail Parachain RPC (Pending Pool)", (context) =>
 			blockNumber: null,
 			hash: tx_hash,
 			publicKey: "0x624f720eae676a04111631c9ca338c11d0f5a80ee42210c6be72983ceb620fbf645a96f951529fa2d70750432d11b7caba5270c4d677255be90b3871c8c58069",
-			r: "0x37443857ff8ae9a2fdc9288304f153880669e761abd1c103a84912350153201",
-			s: "0x22e05530d015ea702ffb37af313e691ce4423565c2734c267edd3c74aea0a010",
-			v: "0x77",
+			r: "0x25431c382907cc7908fe7d7192261ebef8d73c87e81ec4a10128cc8e85f44ce2",
+			s: "0x5d102ef1103350765ce6bb66f1ac87cc2e8ee6eee5a08f2cbe825d2145cd42ee",
+			v: "0x1103",
 		});
 
 		await createAndFinalizeBlock(context.web3);
@@ -45,9 +45,9 @@ describeWithOTParachain("OriginTrail Parachain RPC (Pending Pool)", (context) =>
 			blockNumber: "0x1",
 			hash: tx_hash,
 			publicKey: "0x624f720eae676a04111631c9ca338c11d0f5a80ee42210c6be72983ceb620fbf645a96f951529fa2d70750432d11b7caba5270c4d677255be90b3871c8c58069",
-			r: "0x37443857ff8ae9a2fdc9288304f153880669e761abd1c103a84912350153201",
-			s: "0x22e05530d015ea702ffb37af313e691ce4423565c2734c267edd3c74aea0a010",
-			v: "0x77",
+			r: "0x25431c382907cc7908fe7d7192261ebef8d73c87e81ec4a10128cc8e85f44ce2",
+			s: "0x5d102ef1103350765ce6bb66f1ac87cc2e8ee6eee5a08f2cbe825d2145cd42ee",
+			v: "0x1103",
 		});
 	});
 });

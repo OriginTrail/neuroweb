@@ -1,4 +1,4 @@
-/*import { assert, expect } from "chai";
+import { assert, expect } from "chai";
 import ECRecoverTests from "../build/contracts/ECRecoverTests.json"
 import { createAndFinalizeBlock, customRequest, describeWithOTParachain } from "./util";
 import { AbiItem } from "web3-utils";
@@ -78,4 +78,4 @@ describeWithOTParachain("OriginTrail Parachain RPC (Precompile)", (context) => {
 		assert.equal(callResult, message);
 	});
 });
-*/
+
