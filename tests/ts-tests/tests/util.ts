@@ -24,6 +24,7 @@ import { BlockHash } from "@polkadot/types/interfaces/chain";
 import { ethers } from "ethers";
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { HttpProvider } from "web3-core"
+import { typesBundle } from "../ot-parachain-types-bundle";
 
 export type EnhancedWeb3 = Web3 & {
 	customRequest: (method: string, params: any[]) => Promise<JsonRpcResponse>;
@@ -36,9 +37,6 @@ export interface BlockCreation {
   }
 
 export interface DevTestContext {
-	createWeb3: (protocol?: "ws" | "http") => Promise<EnhancedWeb3>;
-	createEthers: () => Promise<ethers.providers.JsonRpcProvider>;
-	createPolkadotApi: () => Promise<ApiPromise>;
   
 	createBlock: (options?: BlockCreation) => Promise<{
 	  txResults: JsonRpcResponse[];
@@ -49,15 +47,11 @@ export interface DevTestContext {
 	}>;
   
 	// We also provided singleton providers for simplicity
-	web3: EnhancedWeb3;
-	ethers: ethers.providers.JsonRpcProvider;
-	polkadotApi: ApiPromise;
+	web3;
+	ethers;
+	polkadotApi;
   }
 
-  interface InternalDevTestContext extends DevTestContext {
-	_polkadotApis: ApiPromise[];
-	_web3Providers: HttpProvider[];
-  }
 
 export interface TransactionOptions {
 	from?: string;
@@ -318,9 +312,148 @@ export async function startOTParachainNode(provider?: string): Promise<{ web3: W
 	return { web3, binary };
 }
 
-export function describeWithOTParachain(title: string, cb: (context: { web3: Web3 }) => void, provider?: string) {
+async function createPolkadotApi() {
+	const apiPromise = await ApiPromise.create({
+		initWasm: false,
+		provider: new WsProvider(`ws://127.0.0.1:${WS_PORT}`),
+		types: {
+        AccountId: 'EthereumAccountId',
+        AccountId32: 'H256',
+        AccountInfo: 'AccountInfoWithTripleRefCount',
+        Address: 'AccountId',
+        AuthorId: 'AccountId32',
+        Balance: 'u128',
+        LookupSource: 'AccountId',
+        Account: {
+          nonce: 'U256',
+          balance: 'u128'
+        },
+        ExtrinsicSignature: 'EthereumSignature',
+        RoundIndex: 'u32',
+        Candidate: {
+          id: 'AccountId',
+          fee: 'Perbill',
+          bond: 'Balance',
+          nominators: 'Vec<Bond>',
+          total: 'Balance',
+          state: 'CollatorStatus'
+        },
+        Nominator: {
+          nominations: 'Vec<Bond>',
+          total: 'Balance'
+        },
+		NominatorAdded: {
+			_enum: [],
+		  },
+        Bond: {
+          owner: 'AccountId',
+          amount: 'Balance'
+        },
+        TxPoolResultContent: {
+          pending: 'HashMap<H160, HashMap<U256, PoolTransaction>>',
+          queued: 'HashMap<H160, HashMap<U256, PoolTransaction>>'
+        },
+        TxPoolResultInspect: {
+          pending: 'HashMap<H160, HashMap<U256, Summary>>',
+          queued: 'HashMap<H160, HashMap<U256, Summary>>'
+        },
+        TxPoolResultStatus: {
+          pending: 'U256',
+          queued: 'U256'
+        },
+        Summary: 'Bytes',
+        PoolTransaction: {
+          hash: 'H256',
+          nonce: 'U256',
+          block_hash: 'Option<H256>',
+          block_number: 'Option<U256>',
+          from: 'H160',
+          to: 'Option<H160>',
+          value: 'U256',
+          gas_price: 'U256',
+          gas: 'U256',
+          input: 'Bytes'
+        },
+        // Staking inflation
+        Range: 'RangeBalance',
+        RangeBalance: {
+          min: 'Balance',
+          ideal: 'Balance',
+          max: 'Balance'
+        },
+        RangePerbill: {
+          min: 'Perbill',
+          ideal: 'Perbill',
+          max: 'Perbill'
+        },
+        InflationInfo: {
+          expect: 'RangeBalance',
+          annual: 'RangePerbill',
+          round: 'RangePerbill'
+        },
+        OrderedSet: 'Vec<Bond>',
+        Collator: {
+          id: 'AccountId',
+          bond: 'Balance',
+          nominators: 'Vec<Bond>',
+          total: 'Balance',
+          state: 'CollatorStatus'
+        },
+		Collator2: {
+			id: "AccountId",
+			bond: "Balance",
+			nominators: "Vec<AccountId>",
+			top_nominators: "Vec<Bond>",
+			bottom_nominators: "Vec<Bond>",
+			total_counted: "Balance",
+			total_backing: "Balance",
+			state: "CollatorStatus",
+		  },
+        CollatorSnapshot: {
+          bond: 'Balance',
+          nominators: 'Vec<Bond>',
+          total: 'Balance'
+        },
+        SystemInherentData: {
+          validation_data: 'PersistedValidationData',
+          relay_chain_state: 'StorageProof',
+          downward_messages: 'Vec<InboundDownwardMessage>',
+          horizontal_messages: 'BTreeMap<ParaId, Vec<InboundHrmpMessage>>'
+        },
+        RelayChainAccountId: 'AccountId32',
+        RoundInfo: {
+          current: 'RoundIndex',
+          first: 'BlockNumber',
+          length: 'u32'
+        },
+        RewardInfo: {
+          total_reward: 'Balance',
+          claimed_reward: 'Balance'
+        },
+        RegistrationInfo: {
+          account: 'AccountId',
+          deposit: 'Balance'
+        },
+		ParachainBondConfig: {
+			account: "AccountId",
+			percent: "Percent",
+		  },
+      }
+	  });
+	// We keep track of the polkadotApis to close them at the end of the test
+	await apiPromise.isReady;
+	// Necessary hack to allow polkadotApi to finish its internal metadata loading
+	// apiPromise.isReady unfortunately doesn't wait for those properly
+	await new Promise((resolve) => {
+	  setTimeout(resolve, 100);
+	});
+
+	return apiPromise;
+}
+
+export function describeWithOTParachain(title: string, cb: (context: DevTestContext) => void, provider?: string) {
 	describe(title, () => {
-		let context: { web3: Web3 } = { web3: null };
+		let context: DevTestContext = {} as DevTestContext;
 		let binary: ChildProcess;
 		// Making sure the OriginTrail Parachain node has started
 		before("Starting OTParachain", async function () {
@@ -328,9 +461,11 @@ export function describeWithOTParachain(title: string, cb: (context: { web3: Web
 			const init = await startOTParachainNode(provider);
 			context.web3 = init.web3;
 			binary = init.binary;
+			context.polkadotApi = await createPolkadotApi();
 		});
 
 		after(async function () {
+			await context.polkadotApi.disconnect();
 			//console.log(`\x1b[31m Killing RPC\x1b[0m`);
 			binary.kill();
 		});
