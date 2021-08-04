@@ -24,7 +24,6 @@ import { BlockHash } from "@polkadot/types/interfaces/chain";
 import { ethers } from "ethers";
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { HttpProvider } from "web3-core"
-import { typesBundle } from "../ot-parachain-types-bundle";
 
 export type EnhancedWeb3 = Web3 & {
 	customRequest: (method: string, params: any[]) => Promise<JsonRpcResponse>;
