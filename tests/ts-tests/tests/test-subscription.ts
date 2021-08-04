@@ -84,6 +84,8 @@ describeWithOTParachain("OriginTrail Parachain RPC (Subscription)",(context) => 
 		setTimeout(done,10000);
 	}).timeout(20000);
 
+	/*
+
 	it.skip("should get newPendingTransactions stream", async function (done) {
 		subscription = context.web3.eth.subscribe("pendingTransactions", function(error, result){});
 
@@ -492,4 +494,5 @@ describeWithOTParachain("OriginTrail Parachain RPC (Subscription)",(context) => 
 		expect(data).to.not.be.null;
 		setTimeout(done,10000);
 	}).timeout(20000);
+	*/
 }, "ws");

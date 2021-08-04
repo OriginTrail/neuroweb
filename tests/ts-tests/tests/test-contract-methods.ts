@@ -47,50 +47,6 @@ describeWithOTParachain("OriginTrail Parachain RPC (Contract Methods)",  (contex
 		expect(await contract.methods.multiply(3).call()).to.equal("21");
 	});
 
-	
-	it.skip("should get correct environmental block number", async function () {
-		// Solidity `block.number` is expected to return the same height at which the runtime call was made.
-		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
-			from: GENESIS_ACCOUNT,
-			gasPrice: "0x01",
-		});
-		
-		console.log(await contract.methods.currentBlock().call());
-		let block = await context.web3.eth.getBlock("latest");
-		console.log(block.number.toString());
-		expect(await contract.methods.currentBlock().call()).to.eq(block.number.toString());
-		await createAndFinalizeBlock(context.web3);
-		block = await context.web3.eth.getBlock("latest");
-		expect(await contract.methods.currentBlock().call()).to.eq(block.number.toString());
-	});
-
-	it.skip("should get correct environmental block hash", async function () {
-		this.timeout(20000);
-		// Solidity `blockhash` is expected to return the ethereum block hash at a given height.
-		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
-			from: GENESIS_ACCOUNT,
-			gasPrice: "0x01",
-		});
-		let number = (await context.web3.eth.getBlock("latest")).number;
-		let last = number + 256;
-		for(let i = number; i <= last; i++) {
-			
-			console.log(await context.web3.eth.getBlock(i));
-			let hash = (await context.web3.eth.getBlock(i)).hash;
-			//console.log("Expeceted current num " + (await context.web3.eth.getBlock("latest")).number);
-			//console.log(i);
-			let expectedHash = await contract.methods.blockHash(i-1).call();
-			console.log(hash + " vs " + expectedHash);
-			expect(expectedHash).to.eq(hash);
-			await createAndFinalizeBlock(context.web3);
-		}
-		console.log("FInished loop");
-		// should not store more than 256 hashes
-		expect(await contract.methods.blockHash(number).call()).to.eq(
-			"0x0000000000000000000000000000000000000000000000000000000000000000"
-		);
-	});
-
 	// Requires error handling
 	it("should fail for missing parameters", async function () {
 		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI[0], inputs: [] }], FIRST_CONTRACT_ADDRESS, {
