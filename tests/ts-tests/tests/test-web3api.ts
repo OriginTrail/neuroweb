@@ -7,7 +7,11 @@ describeWithOTParachain("OriginTrail Parachain RPC (Web3Api)", (context) => {
 
 	step("should get client version", async function () {
 		const version = await context.web3.eth.getNodeInfo();
-		expect(version).to.be.equal("origintrail-parachain/v104.1/fc-rpc-2.0.0-dev");
+		let specName: string = await context.polkadotApi.runtimeVersion.specName.toString();
+		let specVersion: string = await context.polkadotApi.runtimeVersion.specVersion.toString();
+		let implVersion: string = await context.polkadotApi.runtimeVersion.implVersion.toString();
+		let regex = new RegExp(specName + "/v" + specVersion + "." + implVersion + "/fc-rpc-2.0.0");
+		expect(version).to.be.match(regex);
 	});
 
 	step("should remote sha3", async function () {
