@@ -93,4 +93,4 @@ jobs:
           cd tests/ts-tests
           npm install
           node_modules/.bin/truffle compile
-          node_modules/.bin/mocha --parallel -j 7 -r ts-node/register 'tests/**/test-*.ts'
+          node_modules/.bin/mocha -r ts-node/register 'tests/**/test-*.ts'
