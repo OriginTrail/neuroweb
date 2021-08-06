@@ -1,4 +1,4 @@
-/*import { expect } from "chai";
+import { expect } from "chai";
 
 import Test from "../build/contracts/Test.json"
 import { describeWithOTParachain, createAndFinalizeBlock } from "./util";
@@ -12,33 +12,16 @@ describeWithOTParachain("OriginTrail Parachain RPC (Gas)", (context) => {
 	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a"; // Those test are ordered. In general this should be avoided, but due to the time it takes	// to spin up a OriginTrail Parachain node, it saves a lot of time.
 
 	it("eth_estimateGas for contract creation", async function () {
-		expect(
-			await context.web3.eth.estimateGas({
-				from: GENESIS_ACCOUNT,
-				data: Test.bytecode,
-			})
-		).to.equal(91019);
+		let estimation = await context.web3.eth.estimateGas({
+			from: GENESIS_ACCOUNT,
+			data: Test.bytecode,
+		});
+
+		expect(estimation).to.equal(186067);
 	});
 
-	it.skip("block gas limit over 5M", async function () {
+	it("block gas limit over 5M", async function () {
 		expect((await context.web3.eth.getBlock("latest")).gasLimit).to.be.above(5000000);
-	});
-
-	// Testing the gas limit protection, hardcoded to 25M
-	it.skip("gas limit should decrease on next block if gas unused", async function () {
-		this.timeout(15000);
-
-		const gasLimit = (await context.web3.eth.getBlock("latest")).gasLimit;
-		await createAndFinalizeBlock(context.web3);
-
-		// Gas limit is expected to have decreased as the gasUsed by the block is lower than 2/3 of the previous gas limit
-		const newGasLimit = (await context.web3.eth.getBlock("latest")).gasLimit;
-		expect(newGasLimit).to.be.below(gasLimit);
-	});
-
-	// Testing the gas limit protection, hardcoded to 25M
-	it.skip("gas limit should increase on next block if gas fully used", async function () {
-		// TODO: fill a block with many heavy transaction to simulate lot of gas.
 	});
 
 	it("eth_estimateGas for contract call", async function () {
@@ -59,4 +42,3 @@ describeWithOTParachain("OriginTrail Parachain RPC (Gas)", (context) => {
 	});
 
 });
-*/
