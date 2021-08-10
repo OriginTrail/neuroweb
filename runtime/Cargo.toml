@@ -98,6 +98,13 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot', branch = 'relea
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot', branch = 'release-v0.9.6', default-features = false }
 
 
+[dev-dependencies]
+cumulus-test-relay-sproof-builder = { git = "https://github.com/purestake/cumulus", default-features = false,  branch = "nimbus-polkadot-v0.9.6"  }
+cumulus-primitives-parachain-inherent = { git = "https://github.com/purestake/cumulus", default-features = false,  branch = "nimbus-polkadot-v0.9.6"  }
+evm = { version = "0.27.0", default-features = false, features = ["with-codec"] }
+rlp = "0.5"
+hex = "0.4"
+
 [features]
 default = ['std']
 runtime-benchmarks = [
