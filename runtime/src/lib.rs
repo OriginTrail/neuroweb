@@ -54,6 +54,8 @@ use pallet_evm::{
 
 pub use parachain_staking::{InflationInfo, Range};
 use nimbus_primitives::{CanAuthor, NimbusId};
+use sp_core::crypto::KeyTypeId;
+
 
 use codec::{Decode, Encode};
 use precompiles::OriginTrailParachainPrecompiles;
@@ -776,6 +778,65 @@ impl pallet_author_mapping::Config for Runtime {
 	fn can_register(account: &AccountId) -> bool {
 		ParachainStaking::is_candidate(account)
 	}
+}
+
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"btc!");
+
+/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
+/// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
+/// the types with this pallet-specific identifier.
+pub mod crypto {
+	use super::KEY_TYPE;
+	use sp_runtime::{
+		app_crypto::{app_crypto, sr25519},
+		traits::Verify,
+	};
+	use sp_core::sr25519::Signature as Sr25519Signature;
+	app_crypto!(sr25519, KEY_TYPE);
+
+	pub struct TestAuthId;
+	impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature> for TestAuthId {
+		type RuntimeAppPublic = Public;
+		type GenericSignature = sp_core::sr25519::Signature;
+		type GenericPublic = sp_core::sr25519::Public;
+	}
+}
+
+parameter_types! {
+	pub const GracePeriod: u32 = 2;
+	pub const UnsignedInterval: u32 = 20;
+	pub const UnsigendPriority: u64 = 55;
+}
+// This is a simple session key manager. It should probably either work with, or be replaced
+// entirely by pallet sessions
+impl dkg_offchain_worker::Config for Runtime {
+	/// The identifier type for an offchain worker.
+	type AuthorityId = TestAuthId;
+
+	/// The overarching event type.
+	type Event = Event;
+	/// The overarching dispatch call type.
+	type Call = Call;
+
+	// Configuration parameters
+
+	/// A grace period after we send transaction.
+	///
+	/// To avoid sending too many transactions, we only attempt to send one
+	/// every `GRACE_PERIOD` blocks. We use Local Storage to coordinate
+	/// sending between distinct runs of this offchain worker.
+	type GracePeriod = GracePeriod;
+
+	/// Number of blocks of cooldown after unsigned transaction is included.
+	///
+	/// This ensures that we only accept unsigned transactions once, every `UnsignedInterval` blocks.
+	type UnsignedInterval = UnsignedInterval;
+
+	/// A configuration for base priority of unsigned transactions.
+	///
+	/// This is exposed so that it can be tuned for particular runtime, when
+	/// multiple pallets send unsigned transactions.
+	type UnsignedPriority = UnsigendPriority;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
