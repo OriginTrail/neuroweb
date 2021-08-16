@@ -146,6 +146,7 @@ std = [
 	'cumulus-pallet-xcm/std',
 	#'cumulus-pallet-xcmp-queue/std',
 	'cumulus-primitives-utility/std',
+	'dkg-offchain-worker/std',
 	"pallet-ethereum-chain-id/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",

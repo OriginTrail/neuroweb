@@ -54,7 +54,6 @@ use pallet_evm::{
 
 pub use parachain_staking::{InflationInfo, Range};
 use nimbus_primitives::{CanAuthor, NimbusId};
-use sp_core::crypto::KeyTypeId;
 
 
 use codec::{Decode, Encode};
@@ -65,7 +64,7 @@ use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-	construct_runtime, parameter_types, match_type,
+	construct_runtime, parameter_types, match_type, debug,
 	traits::{Randomness, IsInVec, All, Currency as PalletCurrency, OnUnbalanced, Imbalance },
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -78,7 +77,9 @@ pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill, Perquintill};
+pub use sp_runtime::{Perbill, Permill, Perquintill, SaturatedConversion};
+
+pub use dkg_offchain_worker;
 
 pub type Precompiles = OriginTrailParachainPrecompiles<Runtime>;
 
@@ -779,65 +780,75 @@ impl pallet_author_mapping::Config for Runtime {
 		ParachainStaking::is_candidate(account)
 	}
 }
+// ---------------------- Recipe Pallet Configurations ----------------------
 
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"btc!");
+/// Payload data to be signed when making signed transaction from off-chain workers,
+///   inside `create_transaction` function.
+pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 
-/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
-/// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
-/// the types with this pallet-specific identifier.
-pub mod crypto {
-	use super::KEY_TYPE;
-	use sp_runtime::{
-		app_crypto::{app_crypto, sr25519},
-		traits::Verify,
-	};
-	use sp_core::sr25519::Signature as Sr25519Signature;
-	app_crypto!(sr25519, KEY_TYPE);
+impl dkg_offchain_worker::Config for Runtime {
+	type AuthorityId = dkg_offchain_worker::crypto::TestAuthId;
+	type Call = Call;
+	type Event = Event;
+}
 
-	pub struct TestAuthId;
-	impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature> for TestAuthId {
-		type RuntimeAppPublic = Public;
-		type GenericSignature = sp_core::sr25519::Signature;
-		type GenericPublic = sp_core::sr25519::Public;
+impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
+where
+	Call: From<LocalCall>,
+{
+	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
+		call: Call,
+		public: <Signature as sp_runtime::traits::Verify>::Signer,
+		account: AccountId,
+		index: Index,
+	) -> Option<(
+		Call,
+		<UncheckedExtrinsic as sp_runtime::traits::Extrinsic>::SignaturePayload,
+	)> {
+		let period = BlockHashCount::get() as u64;
+		let current_block = System::block_number()
+			.saturated_into::<u64>()
+			.saturating_sub(1);
+		let tip = 0;
+		let extra: SignedExtra = (
+			frame_system::CheckSpecVersion::<Runtime>::new(),
+			frame_system::CheckTxVersion::<Runtime>::new(),
+			frame_system::CheckGenesis::<Runtime>::new(),
+			frame_system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
+			frame_system::CheckNonce::<Runtime>::from(index),
+			frame_system::CheckWeight::<Runtime>::new(),
+			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+		);
+
+		#[cfg_attr(not(feature = "std"), allow(unused_variables))]
+		let raw_payload = SignedPayload::new(call, extra)
+			.map_err(|e| {
+				debug::native::warn!("SignedPayload error: {:?}", e);
+			})
+			.ok()?;
+
+		let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
+
+		let address = account;
+		let (call, extra, _) = raw_payload.deconstruct();
+		Some((call, (address, signature, extra)))
 	}
 }
 
-parameter_types! {
-	pub const GracePeriod: u32 = 2;
-	pub const UnsignedInterval: u32 = 20;
-	pub const UnsigendPriority: u64 = 55;
+impl frame_system::offchain::SigningTypes for Runtime {
+	type Public = <Signature as sp_runtime::traits::Verify>::Signer;
+	type Signature = Signature;
 }
-// This is a simple session key manager. It should probably either work with, or be replaced
-// entirely by pallet sessions
-impl dkg_offchain_worker::Config for Runtime {
-	/// The identifier type for an offchain worker.
-	type AuthorityId = TestAuthId;
 
-	/// The overarching event type.
-	type Event = Event;
-	/// The overarching dispatch call type.
-	type Call = Call;
-
-	// Configuration parameters
-
-	/// A grace period after we send transaction.
-	///
-	/// To avoid sending too many transactions, we only attempt to send one
-	/// every `GRACE_PERIOD` blocks. We use Local Storage to coordinate
-	/// sending between distinct runs of this offchain worker.
-	type GracePeriod = GracePeriod;
-
-	/// Number of blocks of cooldown after unsigned transaction is included.
-	///
-	/// This ensures that we only accept unsigned transactions once, every `UnsignedInterval` blocks.
-	type UnsignedInterval = UnsignedInterval;
-
-	/// A configuration for base priority of unsigned transactions.
-	///
-	/// This is exposed so that it can be tuned for particular runtime, when
-	/// multiple pallets send unsigned transactions.
-	type UnsignedPriority = UnsigendPriority;
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
+	Call: From<C>,
+{
+	type OverarchingCall = Call;
+	type Extrinsic = UncheckedExtrinsic;
 }
+
+// ---------------------- End of Recipe Pallet Configurations ----------------------
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -869,6 +880,7 @@ construct_runtime!(
         AuthorMapping: pallet_author_mapping::{Pallet, Call, Config<T>, Storage, Event<T>},
         AuthorFilter: pallet_author_slot_filter::{Pallet, Storage, Event, Config},
         ParachainStaking: parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>},
+		DkgOffchainWorker: dkg_offchain_worker::{Module, Call, Storage, Event<T>, ValidateUnsigned}
 	}
 );
 
