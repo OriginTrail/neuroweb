@@ -80,10 +80,14 @@ pub use sp_runtime::{Perbill, Permill, Perquintill};
 
 pub type Precompiles = OriginTrailParachainPrecompiles<Runtime>;
 
+// SBP M3 review: you could already structure the project
+// to have a different runtime config per chain (testnet/mainnet).
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
+// SBP M3 review: this makes the chain focused primarily on ETH compatibility .. is that what you want ?
 pub type Signature = account::EthereumSignature; //MultiSignature;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
@@ -267,6 +271,8 @@ impl pallet_timestamp::Config for Runtime {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
+	// SBP M3 review: should specify weight info, either run benchmarks
+	// for Starfleet runtime, or use default FRAME pallets' weights.
     type WeightInfo = ();
 }
 
@@ -307,6 +313,7 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 }
 
 parameter_types! {
+	// SBP M3 review: use UNITS or DOLLARS instead of 1_000_000_000_000 ?
 	pub const TransactionByteFee: Balance = 1;
 }
 
@@ -344,6 +351,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
+// SBP M3 review: you could define a typical UNITS constant.
 /// GLMR, the native token, uses 18 decimals of precision.
 pub const GLMR: Balance = 1_000_000_000_000_000_000;
 
@@ -525,6 +533,7 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> U256 {
         // Gas price is always one token per gas.
+		// SBP M3 review: this probably needs to specify a unit
         1.into()
     }
 }
@@ -549,6 +558,9 @@ impl pallet_evm::GasWeightMapping for StarfleetGasWeightMapping {
 
 parameter_types! {
     pub const StarfleetTestnetChainId: u64 = 2160;
+	// SBP M3 review: you sure about this ?
+	// Moonbeam uses a more sensible approach:
+	//  U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS)
 	pub BlockGasLimit: U256 = U256::from(u32::max_value());
 }
 
@@ -659,10 +671,13 @@ impl pallet_scheduler::Config for Runtime {
     type MaximumWeight = MaximumSchedulerWeight;
     type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	// SBP M3 review: should specify weight info, either run benchmarks
+	// for Starfleet runtime, or use default FRAME pallets' weights.
     type WeightInfo = ();
 }
 
 parameter_types! {
+	// SBP M3 review: seems very short, is this the final setting ?
 	pub const CouncilMotionDuration: BlockNumber = 5 * MINUTES;
 	pub const CouncilMaxProposals: u32 = 100;
 	pub const CouncilMaxMembers: u32 = 100;
@@ -677,6 +692,8 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	// SBP M3 review: should specify weight info, either run benchmarks
+	// for Starfleet runtime, or use default FRAME pallets' weights.
 	type WeightInfo = ();
 }
 
@@ -697,6 +714,8 @@ impl pallet_membership::Config<CouncilMembershipInstance> for Runtime {
 	type MembershipInitialized = Council;
 	type MembershipChanged = Council;
 	type MaxMembers = CouncilMaxMembers;
+	// SBP M3 review: should specify weight info, either run benchmarks
+	// for Starfleet runtime, or use default FRAME pallets' weights.
 	type WeightInfo = ();
 }
 
@@ -727,7 +746,7 @@ impl pallet_treasury::Config for Runtime {
 
 
 // Implementation of multisig pallet
-
+// SBP M3 review: duplicates from constants::currency ?
 pub const MILLICENTS: Balance = 1_000_000_000;
 pub const CENTS: Balance = 1_000 * MILLICENTS;
 pub const DOLLARS: Balance = 100 * CENTS;
@@ -745,6 +764,8 @@ impl pallet_multisig::Config for Runtime {
     type DepositBase = DepositBase;
     type DepositFactor = DepositFactor;
     type MaxSignatories = MaxSignatories;
+	// SBP M3 review: should specify weight info, either run benchmarks
+	// for Starfleet runtime, or use default FRAME pallets' weights.
     type WeightInfo = ();
 }
 
@@ -764,6 +785,7 @@ impl pallet_author_slot_filter::Config for Runtime {
 }
 
 parameter_types! {
+	// SBP M3 review: use UNITS instead of GLMR ?
 	pub const DepositAmount: Balance = 100 * GLMR;
 }
 // This is a simple session key manager. It should probably either work with, or be replaced

@@ -4,6 +4,7 @@ build = 'build.rs'
 description = 'A Cumulus FRAME-based Substrate node'
 edition = '2018'
 homepage = 'https://substrate.dev'
+# SBP M3 review: you might want to choose & specify a license
 license = 'Unlicense'
 name = 'origintrail-parachain'
 repository = 'https://github.com/OriginTrail/starfleet-parachain'

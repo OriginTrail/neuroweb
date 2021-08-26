@@ -1,6 +1,7 @@
 pub mod currency {
 	use node_primitives::Balance;
 
+	// SBP M3 review: these seem to be re-defined in lib.rs ...
 	pub const MILLICENTS: Balance = 1_000_000_000;
 	pub const CENTS: Balance = 1_000 * MILLICENTS;    // assume this is worth about a cent.
 	pub const DOLLARS: Balance = 100 * CENTS;
@@ -13,6 +14,7 @@ pub mod currency {
 pub mod time {
 	use primitives::{Balance, BlockNumber, Moment};
 
+	// SBP M3 review: different values than in lib.rs ... is this intentional ?
 	pub const SECS_PER_BLOCK: Moment = 6;
 	pub const MILLISECS_PER_BLOCK: Moment = SECS_PER_BLOCK * 1000;
 

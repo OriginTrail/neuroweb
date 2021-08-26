@@ -62,6 +62,7 @@ pub fn development_config(para_id: ParaId) -> ChainSpec {
 				vec![(
 					AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
 					get_from_seed::<NimbusId>("Alice"),
+					// SBP M3 review: use UNITS or DOLLARS instead of GLMR ?
 					1_000 * GLMR,
 				)],
 				// Nominations
@@ -81,6 +82,7 @@ pub fn development_config(para_id: ParaId) -> ChainSpec {
 		vec![],
 		None,
 		None,
+		// SPP M3 review: you could specify the tokenSymbol here as well
 		Some(serde_json::from_str("{\"tokenDecimals\": 18}").expect("Provided valid json map")),
 		Extensions {
 			relay_chain: "dev-service".into(),
@@ -103,6 +105,7 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 				vec![(
 					AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
 					get_from_seed::<NimbusId>("Alice"),
+					// SBP M3 review: use UNITS or DOLLARS instead of GLMR ?
 					1_000 * GLMR,
 				)],
 				// Nominations
@@ -116,6 +119,7 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 		vec![],
 		None,
 		None,
+		// SPP M3 review: you could specify the tokenSymbol here as well
 		Some(serde_json::from_str("{\"tokenDecimals\": 18}").expect("Provided valid json map")),
 		Extensions {
 			relay_chain: "local_testnet".into(),
@@ -124,9 +128,11 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 	)
 }
 
+// SBP M3 review: rename to starfleet_inflation_config ?
 pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
 	InflationInfo {
 		expect: Range {
+			// SBP M3 review: use UNITS or DOLLARS instead of GLMR ?
 			min: 100_000 * GLMR,
 			ideal: 200_000 * GLMR,
 			max: 500_000 * GLMR,
