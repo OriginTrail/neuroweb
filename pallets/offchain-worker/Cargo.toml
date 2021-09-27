@@ -1,0 +1,44 @@
+[package]
+name = "pallet-ocw"
+version = "2.0.1"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+license = "Unlicense"
+homepage = "https://substrate.dev"
+repository = "https://github.com/paritytech/substrate/"
+description = "FRAME example pallet for offchain worker"
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+codec = { package = 'parity-scale-codec', version = '2.0.0', default-features = false, features = ['derive']}
+frame-support = { git = 'https://github.com/paritytech/substrate', default-features = false, branch = 'polkadot-v0.9.6' }
+frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
+sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
+sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.6', default-features = false }
+sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.6', default-features = false }
+lite-json = { version = "0.1", default-features = false }
+log = { version = "0.4.14", default-features = false }
+serde = { version = '1.0.130', default-features = false, features = ['derive'] }
+serde_json = { version = '1.0.67', default-features = false, features = ['alloc'] }
+account = { path = "../../primitives/account/", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"frame-support/std",
+	"frame-system/std",
+	"lite-json/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	'sp-arithmetic/std',
+	'account/std',
+]
+try-runtime = ["frame-support/try-runtime"]
