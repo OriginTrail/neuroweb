@@ -2,12 +2,6 @@
 
 OriginTrail Parachain node built with [Substrate](https://substrate.dev) framework.
 
-This project is a fork of the
-[Substrate Developer Hub Node Template](https://github.com/substrate-developer-hub/substrate-node-template)
-modified to include dependencies required for registering this node as a **parathread or parachian**
-to an established **relay chain** 
-
-
 ## Build & Run
 
 Follow these steps to prepare a local Substrate development environment :hammer_and_wrench:

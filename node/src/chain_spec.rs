@@ -1,31 +1,20 @@
 use cumulus_primitives_core::ParaId;
-use origintrail_parachain_runtime::{AccountId, Signature, EVMConfig, EthereumConfig, GLMR, InflationInfo, Range, AuthorFilterConfig,
-									AuthorMappingConfig, Balance, BalancesConfig, EthereumChainIdConfig, CouncilConfig, 
-									GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig, WASM_BINARY, ParachainStakingConfig};
-
+use origintrail_parachain_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{H160, U256, Pair, Public, sr25519};
-use sp_runtime::{
-	traits::{BlakeTwo256, Hash, IdentifyAccount, Verify},
-	Perbill, Percent
-};
-
-
-use pallet_evm::GenesisAccount;
-use std::str::FromStr;
-use serde_json as json;
-use nimbus_primitives::NimbusId;
-
-use std::convert::TryInto;
-
+use sp_core::{sr25519, Pair, Public};
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
+pub type ChainSpec =
+	sc_service::GenericChainSpec<origintrail_parachain_runtime::GenesisConfig, Extensions>;
+
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 /// Helper function to generate a crypto pair from seed
-pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
 		.expect("static values are valid; qed")
 		.public()
@@ -48,48 +37,92 @@ impl Extensions {
 	}
 }
 
-pub fn development_config(para_id: ParaId) -> ChainSpec {
+type AccountPublic = <Signature as Verify>::Signer;
+
+/// Generate collator keys from seed.
+///
+/// This function's return type must always match the session keys of the chain in tuple format.
+pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
+	get_public_from_seed::<AuraId>(seed)
+}
+
+/// Helper function to generate an account ID from seed
+pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
+where
+	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+{
+	AccountPublic::from(get_public_from_seed::<TPublic>(seed)).into_account()
+}
+
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+pub fn template_session_keys(keys: AuraId) -> origintrail_parachain_runtime::SessionKeys {
+	origintrail_parachain_runtime::SessionKeys { aura: keys }
+}
+
+pub fn development_config() -> ChainSpec {
+	// Give your base currency a unit name and decimal places
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "UNIT".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+	properties.insert("ss58Format".into(), 42.into());
+
 	ChainSpec::from_genesis(
 		// Name
 		"Development",
 		// ID
 		"dev",
-		ChainType::Local,
+		ChainType::Development,
 		move || {
 			testnet_genesis(
-				AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
-				// Validator
-				vec![(
-					AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
-					get_from_seed::<NimbusId>("Alice"),
-					1_000 * GLMR,
-				)],
-				// Nominations
-				vec![],
-				moonbeam_inflation_config(),
+				// initial collators.
 				vec![
-					AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
-					AccountId::from_str("81D288F95a78bc074ea7e831DEb6B046fEb3ef61").unwrap(),
-					AccountId::from_str("9AAc88b9FD5C4ff74DCe3775dAe365856Aa14064").unwrap(),
-					AccountId::from_str("76DF50d897eE66473D91df327cCB2690bccb5551").unwrap(),
-					AccountId::from_str("413E9c0e2F92A8b939833f1bc3c48135aff767b5").unwrap(),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob"),
+					),
 				],
-				Default::default(), // para_id
-				2160,               //ChainId
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				1000.into(),
 			)
 		},
-		vec![],
+		Vec::new(),
 		None,
 		None,
-		Some(serde_json::from_str("{\"tokenDecimals\": 18}").expect("Provided valid json map")),
+		None,
+		None,
 		Extensions {
-			relay_chain: "dev-service".into(),
-			para_id: para_id.into(),
+			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
+			para_id: 1000,
 		},
 	)
 }
 
-pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
+pub fn local_testnet_config() -> ChainSpec {
+	// Give your base currency a unit name and decimal places
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "UNIT".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+	properties.insert("ss58Format".into(), 42.into());
+
 	ChainSpec::from_genesis(
 		// Name
 		"Local Testnet",
@@ -98,120 +131,91 @@ pub fn local_testnet_config(para_id: ParaId) -> ChainSpec {
 		ChainType::Local,
 		move || {
 			testnet_genesis(
-				AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
-				// Validator
-				vec![(
-					AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap(),
-					get_from_seed::<NimbusId>("Alice"),
-					1_000 * GLMR,
-				)],
-				// Nominations
-				vec![],
-				moonbeam_inflation_config(),
-				vec![AccountId::from_str("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b").unwrap()],
-				para_id,
-				2160, //ChainId
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob"),
+					),
+				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				1000.into(),
 			)
 		},
-		vec![],
+		// Bootnodes
+		Vec::new(),
+		// Telemetry
 		None,
+		// Protocol ID
+		Some("template-local"),
+		// Fork ID
 		None,
-		Some(serde_json::from_str("{\"tokenDecimals\": 18}").expect("Provided valid json map")),
+		// Properties
+		Some(properties),
+		// Extensions
 		Extensions {
-			relay_chain: "local_testnet".into(),
-			para_id: para_id.into(),
+			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
+			para_id: 1000,
 		},
 	)
 }
 
-pub fn moonbeam_inflation_config() -> InflationInfo<Balance> {
-	InflationInfo {
-		expect: Range {
-			min: 100_000 * GLMR,
-			ideal: 200_000 * GLMR,
-			max: 500_000 * GLMR,
-		},
-		annual: Range {
-			min: Perbill::from_percent(4),
-			ideal: Perbill::from_percent(5),
-			max: Perbill::from_percent(5),
-		},
-		// 8766 rounds (hours) in a year
-		round: Range {
-			min: Perbill::from_parts(Perbill::from_percent(4).deconstruct() / 8766),
-			ideal: Perbill::from_parts(Perbill::from_percent(5).deconstruct() / 8766),
-			max: Perbill::from_parts(Perbill::from_percent(5).deconstruct() / 8766),
-		},
-	}
-}
-
-pub fn testnet_genesis(
-	root_key: AccountId,
-	stakers: Vec<(AccountId, NimbusId, Balance)>,
-	nominations: Vec<(AccountId, AccountId, Balance)>,
-	inflation_config: InflationInfo<Balance>,
+fn testnet_genesis(
+	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
-	para_id: ParaId,
-	chain_id: u64,
-) -> GenesisConfig {
-	let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
-
-	let precompile_addresses = vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 2048]
-		.into_iter()
-		.map(H160::from_low_u64_be);
-
-	GenesisConfig {
-		system: SystemConfig {
-			code: WASM_BINARY
+	id: ParaId,
+) -> origintrail_parachain_runtime::GenesisConfig {
+	origintrail_parachain_runtime::GenesisConfig {
+		system: origintrail_parachain_runtime::SystemConfig {
+			code: origintrail_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
-		balances: BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.cloned()
-				.map(|k| (k, 1 << 80))
-				.collect(),
+		balances: origintrail_parachain_runtime::BalancesConfig {
+			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		sudo: SudoConfig { key: root_key },
-		parachain_info: ParachainInfoConfig { parachain_id: para_id },
-		council: CouncilConfig::default(),
-		council_membership: Default::default(),
-		treasury: Default::default(),
-		ethereum_chain_id: EthereumChainIdConfig { chain_id },
-		evm: EVMConfig {
-			accounts: precompile_addresses
-				.map(|a| {
+		parachain_info: origintrail_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: origintrail_parachain_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
+			..Default::default()
+		},
+		session: origintrail_parachain_runtime::SessionConfig {
+			keys: invulnerables
+				.into_iter()
+				.map(|(acc, aura)| {
 					(
-						a,
-						GenesisAccount {
-							nonce: Default::default(),
-							balance: Default::default(),
-							storage: Default::default(),
-							code: revert_bytecode.clone(),
-						},
+						acc.clone(),                 // account id
+						acc,                         // validator id
+						template_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
 		},
-		ethereum: EthereumConfig {},
-		parachain_staking: ParachainStakingConfig {
-			candidates: stakers
-				.iter()
-				.cloned()
-				.map(|(account, _, bond)| (account, bond))
-				.collect(),
-			nominations,
-			inflation_config,
-		},
-		author_filter: AuthorFilterConfig { eligible_ratio: Percent::from_percent(50), },
-		author_mapping: AuthorMappingConfig {
-			mappings: stakers
-				.iter()
-				.cloned()
-				.map(|(account_id, author_id, _)| (author_id, account_id))
-				.collect(),
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		aura: Default::default(),
+		aura_ext: Default::default(),
+		parachain_system: Default::default(),
+		polkadot_xcm: origintrail_parachain_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
 }
