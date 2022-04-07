@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use origintrail_parachain_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
+use origintrail_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -87,6 +87,7 @@ pub fn development_config() -> ChainSpec {
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -142,6 +143,7 @@ pub fn local_testnet_config() -> ChainSpec {
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -179,6 +181,7 @@ pub fn local_testnet_config() -> ChainSpec {
 
 fn testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
+	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> origintrail_parachain_runtime::GenesisConfig {
@@ -216,6 +219,10 @@ fn testnet_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: origintrail_parachain_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
+		sudo: SudoConfig {
+			// Assign network admin rights.
+			key: Some(root_key),
 		},
 	}
 }
