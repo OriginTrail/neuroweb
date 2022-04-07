@@ -471,6 +471,11 @@ impl pallet_scheduler::Config for Runtime {
 	type NoPreimagePostponement = ();
 }
 
+impl pallet_sudo::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+}
+
 /// Configure the pallet template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
@@ -513,6 +518,9 @@ construct_runtime!(
 
 		// Governance stuff.
 		Scheduler: pallet_scheduler::{Pallet, Storage, Event<T>, Call} = 60,
+
+		// Temporary.
+		Sudo: pallet_sudo = 255,
 	}
 );
 
