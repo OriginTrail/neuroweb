@@ -449,6 +449,11 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
+impl pallet_sudo::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+}
+
 /// Configure the pallet template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
@@ -488,6 +493,10 @@ construct_runtime!(
 
 		// Template
 		TemplatePallet: pallet_template::{Pallet, Call, Storage, Event<T>}  = 40,
+
+		// Temporary.
+		Sudo: pallet_sudo = 255,
+
 	}
 );
 
