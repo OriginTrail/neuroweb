@@ -126,9 +126,9 @@ pub fn local_testnet_config() -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"OriginTrail Parachain Testnet",
+		"OT Parachain Testnet",
 		// ID
-		"origintrail_parachain_testnet",
+		"ot_parachain_testnet",
 		ChainType::Local,
 		move || {
 			testnet_genesis(
@@ -166,7 +166,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("origintrail-parachain"),
+		Some("origintrail-parachain-collator"),
 		// Fork ID
 		None,
 		// Properties
