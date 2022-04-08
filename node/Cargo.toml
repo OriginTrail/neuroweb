@@ -10,7 +10,7 @@ edition = "2021"
 build = "build.rs"
 
 [[bin]]
-name = "parachain-collator"
+name = "origintrail-parachain"
 path = "src/main.rs"
 
 [dependencies]
