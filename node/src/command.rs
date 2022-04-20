@@ -32,7 +32,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"OriginTrail Parachain Collator".into()
+		"OriginTrail Parachain".into()
 	}
 
 	fn impl_version() -> String {
@@ -40,7 +40,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn description() -> String {
-		"OriginTrail Parachain Collator\n\nThe command-line arguments provided first will be \
+		"OriginTrail Parachain\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
 		origintrail-parachain <parachain-args> -- <relay-chain-args>"
@@ -52,7 +52,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/paritytech/cumulus/issues/new".into()
+		"https://github.com/OriginTrail/origintrail-parachain/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -70,7 +70,7 @@ impl SubstrateCli for Cli {
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"OriginTrail Parachain Collator".into()
+		"OriginTrail Parachain".into()
 	}
 
 	fn impl_version() -> String {
@@ -78,7 +78,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn description() -> String {
-		"OriginTrail Parachain Collator\n\nThe command-line arguments provided first will be \
+		"OriginTrail Parachain \n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
 		origintrail-parachain <parachain-args> -- <relay-chain-args>"
@@ -90,7 +90,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/paritytech/cumulus/issues/new".into()
+		"https://github.com/OriginTrail/origintrail-parachain/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {

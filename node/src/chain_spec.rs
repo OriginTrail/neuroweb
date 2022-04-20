@@ -62,11 +62,10 @@ pub fn template_session_keys(keys: AuraId) -> origintrail_parachain_runtime::Ses
 }
 
 pub fn development_config() -> ChainSpec {
-	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "UNIT".into());
+	properties.insert("tokenSymbol".into(), "OTP".into());
 	properties.insert("tokenDecimals".into(), 12.into());
-	properties.insert("ss58Format".into(), 42.into());
+	properties.insert("ss58Format".into(), 101.into());
 
 	ChainSpec::from_genesis(
 		// Name
@@ -118,17 +117,16 @@ pub fn development_config() -> ChainSpec {
 }
 
 pub fn local_testnet_config() -> ChainSpec {
-	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "UNIT".into());
+	properties.insert("tokenSymbol".into(), "OTP".into());
 	properties.insert("tokenDecimals".into(), 12.into());
-	properties.insert("ss58Format".into(), 42.into());
+	properties.insert("ss58Format".into(), 101.into());
 
 	ChainSpec::from_genesis(
 		// Name
-		"OT Parachain Testnet",
+		"OriginTrail Parachain Testnet",
 		// ID
-		"ot_parachain_testnet",
+		"origintrail_parachain_testnet",
 		ChainType::Local,
 		move || {
 			testnet_genesis(
@@ -166,7 +164,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("origintrail-parachain-collator"),
+		Some("origintrail-parachain"),
 		// Fork ID
 		None,
 		// Properties
