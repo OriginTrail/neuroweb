@@ -1,9 +1,9 @@
 [package]
 name = "origintrail-parachain-runtime"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["TraceLabs"]
 description = "OriginTrail Parachain Runtime - Cumulus FRAME-based Substrate Runtime"
-license = "Unlicense"
+license = "GPL-3.0-only"
 homepage = "https://parachain.origintrail.io/"
 repository = "https://github.com/OriginTrail/origintrail-parachain/"
 edition = "2021"

@@ -1,16 +1,16 @@
 [package]
 name = "origintrail-parachain-node"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["TraceLabs"]
-description = "OriginTrail Parachain Runtime - Cumulus FRAME-based Substrate Node."
-license = "Unlicense"
+description = "OriginTrail Parachain - Cumulus FRAME-based Substrate Node"
+license = "GPL-3.0-only"
 homepage = "https://parachain.origintrail.io/"
 repository = "https://github.com/OriginTrail/origintrail-parachain/"
 edition = "2021"
 build = "build.rs"
 
 [[bin]]
-name = "origintrail-parachain-collator"
+name = "origintrail-parachain"
 path = "src/main.rs"
 
 [dependencies]
