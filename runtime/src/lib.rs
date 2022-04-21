@@ -452,7 +452,7 @@ impl pallet_collator_selection::Config for Runtime {
 
 // Define the types required by the Scheduler pallet.
 parameter_types! {
-    pub MaximumSchedulerWeight: Weight = 10_000_000;
+    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * MAXIMUM_BLOCK_WEIGHT;
     pub const MaxScheduledPerBlock: u32 = 50;
 }
 
