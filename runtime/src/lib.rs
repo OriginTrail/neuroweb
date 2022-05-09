@@ -171,7 +171,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("origintrail-parachain"),
 	impl_name: create_runtime_str!("origintrail-parachain"),
 	authoring_version: 1,
-	spec_version: 100,
+	spec_version: 101,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
