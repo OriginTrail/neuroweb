@@ -1,9 +1,17 @@
 # OriginTrail Parachain Node
 
-
-<p align="center">
+<div align="center">
   <img src="https://parachain.origintrail.io/images/navigation-logo.svg">
-</p>
+
+
+[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Substrate version](https://img.shields.io/badge/Substrate-3.0.0-brightgreen?logo=Parity%20Substrate)](https://substrate.io)
+[![Twitter URL](https://img.shields.io/twitter/follow/OT_Parachain?style=social)](https://twitter.com/OT_Parachain)
+[![Telegram](https://img.shields.io/endpoint?color=neon&style=flat-square&url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Forigintrail)](https://t.me/origintrail)
+[![Medium](https://badgen.net/badge/icon/medium?icon=medium&label)](https://medium.com/origintrail)
+[![Discord](https://img.shields.io/badge/Discord-gray?logo=discord)](https://discord.gg/FCgYk2S)
+  
+</div>
 
 The OriginTrail Parachain is the next-generation L1 blockchain designed to tightly integrate with the OriginTrail DKG. As an OriginTrail-tailored blockchain it is optimized for maximum performance and usability in the OriginTrail consensus layer. It leverages the strong trust model and inherent interoperability of Polkadot, enabling smooth integration with other Polkadot ecosystem projects.
 
