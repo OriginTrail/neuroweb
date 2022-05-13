@@ -513,6 +513,34 @@ impl pallet_vesting::Config for Runtime {
 	const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
+parameter_types! {
+    pub const ProposalBond: Permill = Permill::from_percent(5);
+    pub const ProposalBondMinimum: Balance = 1 * OTP;
+	pub const ProposalBondMaximum: Balance = 5 * OTP;
+    pub const SpendPeriod: BlockNumber = 5 * MINUTES;
+    pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+    pub const MaxApprovals: u32 = 100;
+}
+
+
+impl pallet_treasury::Config for Runtime {
+	type PalletId = TreasuryPalletId;
+	type Currency = Balances;
+	type ApproveOrigin = EnsureRoot<AccountId>;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type Event = Event;
+	type OnSlash = ();
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type ProposalBondMaximum = ProposalBondMaximum;
+	type SpendPeriod = SpendPeriod;
+	type Burn = ();
+	type BurnDestination = ();
+	type SpendFunds = ();
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+	type MaxApprovals = MaxApprovals;
+}
+
 /// Configure the pallet template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
@@ -538,6 +566,7 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
 		Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 12,
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 13,
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
