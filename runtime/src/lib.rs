@@ -10,10 +10,10 @@ pub mod xcm_config;
 
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, sr25519};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify, BlockNumberProvider},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -513,6 +513,39 @@ impl pallet_vesting::Config for Runtime {
 	const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
+pub struct RelayChainBlockNumberProvider<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: cumulus_pallet_parachain_system::Config> BlockNumberProvider
+for RelayChainBlockNumberProvider<T>
+{
+	type BlockNumber = BlockNumber;
+
+	fn current_block_number() -> Self::BlockNumber {
+		cumulus_pallet_parachain_system::Pallet::<T>::validation_data()
+			.map(|d| d.relay_parent_number)
+			.unwrap_or_default()
+	}
+}
+
+parameter_types! {
+
+	pub FutureAuctionTreasuryId: AccountId = Pair::from_string("abc");
+	pub CollatorsIncentivesTreasuryId: AccountId = 2222;
+	pub DkgIncentivesTreasuryId: AccountId = 3333;
+	pub CommunityTreasuryId: AccountId = 4444;
+	pub const InflationBlockInterval: u32 = 100; // every time per how many blocks inflation is applied
+}
+
+impl pallet_inflation::Config for Runtime {
+	type Currency = Balances;
+	type FutureAuctionTreasuryId = FutureAuctionTreasuryId;
+	type CollatorsIncentivesTreasuryId = CollatorsIncentivesTreasuryId;
+	type DkgIncentivesTreasuryId = DkgIncentivesTreasuryId;
+	type CommunityTreasuryId = CommunityTreasuryId;
+	type InflationBlockInterval = InflationBlockInterval;
+	type BlockNumberProvider = RelayChainBlockNumberProvider<Runtime>;
+}
+
 /// Configure the pallet template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
@@ -551,6 +584,9 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+
+		// Inflation.
+		Inflation: pallet_inflation::{Pallet, Call, Storage}  = 50,
 
 		// Template.
 		TemplatePallet: pallet_template::{Pallet, Call, Storage, Event<T>}  = 40,
