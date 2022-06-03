@@ -10,6 +10,7 @@ pub mod xcm_config;
 
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
+use sp_io::hashing::blake2_128;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -54,6 +55,9 @@ use xcm_executor::XcmExecutor;
 
 /// Import the template pallet.
 pub use pallet_template;
+
+pub use pallet_bridge;
+pub use pallet_bridgetransfer;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -566,6 +570,35 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const BridgeChainId: u8 = 0;
+    pub const ProposalLifetime: BlockNumber = 7 * DAYS; // ~7 days
+}
+
+impl pallet_bridge::Config for Runtime {
+	type Event = Event;
+	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type Proposal = Call;
+	type BridgeChainId = BridgeChainId;
+	type ProposalLifetime = ProposalLifetime;
+}
+
+parameter_types! {
+	pub BridgeTokenId: pallet_bridge::ResourceId = pallet_bridge::derive_resource_id(0, &blake2_128(b"DAV"));
+
+    // pub const BridgeTokenId: [u8; 32] = hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac").to_vec().into();//hex_literal::hex!("0000000000000000000000A2120b9e674d3fC3875f415A7DF52e382F14122501");
+    pub const EnableFee: bool = true;
+}
+
+impl pallet_bridgetransfer::Config for Runtime {
+	type Event = Event;
+	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime>;
+	type Currency = Balances;
+	type BridgeTokenId = BridgeTokenId;
+	type OnFeePay = Treasury;
+	type EnableFee = EnableFee;
+}
+
 /// Configure the pallet template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
@@ -606,6 +639,10 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+
+		// Bridge
+		ChainBridge: pallet_bridge::{Pallet, Call, Storage, Event<T>} = 34,
+		BridgeTransfer: pallet_bridgetransfer::{Pallet, Call, Storage, Event<T>} = 35,
 
 		// Template.
 		TemplatePallet: pallet_template::{Pallet, Call, Storage, Event<T>}  = 40,

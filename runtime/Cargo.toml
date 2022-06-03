@@ -84,6 +84,10 @@ cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus", de
 pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18" }
 parachain-info = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18" }
 
+pallet-bridge = { path = "../pallets/bridge", default-features = false }
+pallet-bridgetransfer = { path = "../pallets/bridgetransfer", default-features = false }
+
+
 [features]
 default = ["std"]
 std = [
@@ -137,6 +141,8 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm/std",
+	'pallet-bridge/std',
+	'pallet-bridgetransfer/std',
 ]
 
 runtime-benchmarks = [
