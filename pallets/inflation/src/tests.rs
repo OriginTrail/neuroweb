@@ -179,15 +179,18 @@ fn inflation_rate_by_year() {
 		let _ = <Balances as Currency<_>>::deposit_creating(&1234, initial_issuance);
 		assert_eq!(Balances::free_balance(1234), initial_issuance);
 
+		println!("Initial inflation is {0} OTPs", total_inflation);
+		println!("Starting inflation with 5% per year with 100 block frequency where 1 year has {0} blocks (12s)", YEAR);
+		println!("");
+
 		// Start inflation as sudo
 		assert_ok!(Inflation::start_inflation(RawOrigin::Root.into(), 1));
 
-		for year in 0..=2 {
+		for year in 0..=4 {
 			for block in 0..=YEAR {
 				MockBlockNumberProvider::set((year+1) * block);
 				Inflation::on_initialize(0);
 			}
-
 			assert_eq!(<Balances as Currency<_>>::free_balance(&FutureAuctionTreasuryId::get()),
 					   other_treasuries + (total_inflation as f64 * 0.05 * 0.3 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64);
 			assert_eq!(<Balances as Currency<_>>::free_balance(&CollatorsIncentivesTreasuryId::get()),
@@ -200,6 +203,14 @@ fn inflation_rate_by_year() {
 			other_treasuries += (total_inflation as f64 * 0.05 * 0.3 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64;
 			community_treasury += (total_inflation as f64 * 0.05 * 0.1 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64;
 			total_inflation -= 3 * (total_inflation as f64 * 0.05 * 0.3 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64 + (total_inflation as f64 * 0.05 * 0.1 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64;
+
+			println!("After year {0} inflation per 100 blocks is {1}", year + 1, block_inflation!());
+			println!("After year {0} total inflation left is {1}", year + 1, total_inflation);
+			println!("After year {0} total inflation for future auction treasury is {1}", year + 1, <Balances as Currency<_>>::free_balance(&FutureAuctionTreasuryId::get()));
+			println!("After year {0} total inflation for collators incentives treasury is {1}", year + 1, <Balances as Currency<_>>::free_balance(&CollatorsIncentivesTreasuryId::get()));
+			println!("After year {0} total inflation for dkg incentives treasury is {1}", year + 1, <Balances as Currency<_>>::free_balance(&DkgIncentivesTreasuryId::get()));
+			println!("After year {0} total inflation for community treasury is {1}", year + 1, <Balances as Currency<_>>::free_balance(&CommunityTreasuryId::get()));
+			println!("");
 		}
 	});
 }
