@@ -13,6 +13,10 @@ use sp_runtime::{
 	testing::Header,
 };
 
+use sp_runtime::{
+	Perbill,
+};
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -176,6 +180,7 @@ fn inflation_rate_by_year() {
 		let mut total_inflation: u64 = 500_000_000;
 		let mut community_treasury: u64 = 0;
 		let mut other_treasuries: u64 = 0;
+		let mut next_block: bool = false;
 		let _ = <Balances as Currency<_>>::deposit_creating(&1234, initial_issuance);
 		assert_eq!(Balances::free_balance(1234), initial_issuance);
 
@@ -186,23 +191,33 @@ fn inflation_rate_by_year() {
 		// Start inflation as sudo
 		assert_ok!(Inflation::start_inflation(RawOrigin::Root.into(), 1));
 
-		for year in 0..=4 {
+		for year in 0..=9 {
 			for block in 0..=YEAR {
-				MockBlockNumberProvider::set((year+1) * block);
+				MockBlockNumberProvider::set((year * YEAR) + block);
 				Inflation::on_initialize(0);
-			}
-			assert_eq!(<Balances as Currency<_>>::free_balance(&FutureAuctionTreasuryId::get()),
-					   other_treasuries + (total_inflation as f64 * 0.05 * 0.3 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64);
-			assert_eq!(<Balances as Currency<_>>::free_balance(&CollatorsIncentivesTreasuryId::get()),
-					   other_treasuries + (total_inflation as f64 * 0.05 * 0.3 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64);
-			assert_eq!(<Balances as Currency<_>>::free_balance(&DkgIncentivesTreasuryId::get()),
-					   other_treasuries + (total_inflation as f64 * 0.05 * 0.3 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64);
-			assert_eq!(<Balances as Currency<_>>::free_balance(&CommunityTreasuryId::get()),
-					   community_treasury + (total_inflation as f64 * 0.05 * 0.1 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64);
 
-			other_treasuries += (total_inflation as f64 * 0.05 * 0.3 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64;
-			community_treasury += (total_inflation as f64 * 0.05 * 0.1 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64;
-			total_inflation -= 3 * (total_inflation as f64 * 0.05 * 0.3 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64 + (total_inflation as f64 * 0.05 * 0.1 * InflationBlockInterval::get() as f64/YEAR as f64).round() as u64 * (YEAR as f64/InflationBlockInterval::get() as f64).round() as u64;
+				if next_block == true {
+					other_treasuries += Perbill::from_rational(InflationBlockInterval::get(), YEAR.try_into().unwrap()) * Perbill::from_percent(5) * Perbill::from_percent(30) * total_inflation;
+					community_treasury += Perbill::from_rational(InflationBlockInterval::get(), YEAR.try_into().unwrap()) * Perbill::from_percent(5) * Perbill::from_percent(10) * total_inflation;
+
+					assert_eq!(<Balances as Currency<_>>::free_balance(&FutureAuctionTreasuryId::get()),
+							   other_treasuries);
+					assert_eq!(<Balances as Currency<_>>::free_balance(&CollatorsIncentivesTreasuryId::get()),
+							   other_treasuries);
+					assert_eq!(<Balances as Currency<_>>::free_balance(&DkgIncentivesTreasuryId::get()),
+							   other_treasuries);
+					assert_eq!(<Balances as Currency<_>>::free_balance(&CommunityTreasuryId::get()),
+							   community_treasury);
+
+					next_block = false;
+				}
+
+				if (year * YEAR) + block % InflationBlockInterval::get() as u64 == 0 {
+					next_block = true;
+				}
+			}
+
+			total_inflation -= 3 * other_treasuries + community_treasury;
 
 			println!("After year {0} inflation per 100 blocks is {1}", year + 1, block_inflation!());
 			println!("After year {0} total inflation left is {1}", year + 1, total_inflation);
@@ -211,6 +226,8 @@ fn inflation_rate_by_year() {
 			println!("After year {0} total inflation for dkg incentives treasury is {1}", year + 1, <Balances as Currency<_>>::free_balance(&DkgIncentivesTreasuryId::get()));
 			println!("After year {0} total inflation for community treasury is {1}", year + 1, <Balances as Currency<_>>::free_balance(&CommunityTreasuryId::get()));
 			println!("");
+
+			next_block = false;
 		}
 	});
 }
