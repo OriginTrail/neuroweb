@@ -13,7 +13,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, sr25519};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify, BlockNumberProvider},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify, BlockNumberProvider, AccountIdConversion},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -529,10 +529,10 @@ for RelayChainBlockNumberProvider<T>
 
 parameter_types! {
 
-	pub FutureAuctionTreasuryId: AccountId = Pair::from_string("abc");
-	pub CollatorsIncentivesTreasuryId: AccountId = 2222;
-	pub DkgIncentivesTreasuryId: AccountId = 3333;
-	pub CommunityTreasuryId: AccountId = 4444;
+	pub FutureAuctionTreasuryId: AccountId = PalletId(*b"Tresury1").into_account();
+	pub CollatorsIncentivesTreasuryId: AccountId = PalletId(*b"Tresury2").into_account();
+	pub DkgIncentivesTreasuryId: AccountId = PalletId(*b"Tresury3").into_account();
+	pub CommunityTreasuryId: AccountId = PalletId(*b"Tresury4").into_account();
 	pub const InflationBlockInterval: u32 = 100; // every time per how many blocks inflation is applied
 }
 
