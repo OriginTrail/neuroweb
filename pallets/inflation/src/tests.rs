@@ -56,7 +56,7 @@ parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(1024);
-	pub const SS58Prefix: u8 = 42;
+	pub const SS58Prefix: u8 = 101;
 }
 
 impl frame_system::Config for Test {
