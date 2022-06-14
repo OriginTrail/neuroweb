@@ -224,5 +224,6 @@ fn testnet_genesis(
 		},
 		treasury: Default::default(),
 		community_treasury: Default::default(),
+		vesting: Default::default(),
 	}
 }
