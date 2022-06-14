@@ -5178,7 +5178,7 @@ dependencies = [
 
 [[package]]
 name = "origintrail-parachain-runtime"
-version = "1.0.0"
+version = "1.0.2"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
