@@ -1,0 +1,52 @@
+################################################################################
+# Package
+
+[package]
+authors = ['OriginTrail']
+description = 'OriginTrail Inflation Pallet'
+edition = '2021'
+homepage = 'https://parachain.origintrail.io/'
+license = 'GPLv3'
+name = 'pallet-inflation'
+repository = 'https://github.com/OriginTrail/origintrail-parachain'
+version = '0.1.0'
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+
+[dependencies]
+scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.1.2", features = ["derive"], default-features = false }
+serde = { version = "1.0.130", default-features = false, features = ["derive"] }
+
+
+# Substrate
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.18" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+
+
+
+[features]
+default = ['std']
+runtime-benchmarks = ['frame-benchmarking']
+std = [
+    'codec/std',
+    'serde/std',
+    'frame-support/std',
+    'frame-system/std',
+    'pallet-balances/std',
+    'pallet-timestamp/std',
+    'pallet-randomness-collective-flip/std',
+    'sp-std/std',
+    'sp-runtime/std',
+    'frame-benchmarking/std',
+]

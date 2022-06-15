@@ -11,10 +11,10 @@ pub mod xcm_config;
 
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, sr25519};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify, BlockNumberProvider, AccountIdConversion},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -176,7 +176,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("origintrail-parachain"),
 	impl_name: create_runtime_str!("origintrail-parachain"),
 	authoring_version: 1,
-	spec_version: 100,
+	spec_version: 102,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -204,6 +204,10 @@ pub const DAYS: BlockNumber = HOURS * 24;
 pub const OTP: Balance = 1_000_000_000_000;
 pub const MILLIOTP: Balance = 1_000_000_000;
 pub const MICROOTP: Balance = 1_000_000;
+
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+	items as Balance * 15 * OTP + (bytes as Balance) * 6 * OTP
+}
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = OTP;
@@ -541,6 +545,72 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
+parameter_types! {
+    // One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+    pub const DepositBase: Balance = deposit(1, 88);
+    // Additional storage item size of 32 bytes.
+    pub const DepositFactor: Balance = deposit(0, 32);
+    pub const MaxSignatories: u16 = 100;
+}
+
+impl pallet_multisig::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type DepositBase = DepositBase;
+	type DepositFactor = DepositFactor;
+	type MaxSignatories = MaxSignatories;
+	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const MinVestedTransfer: Balance = 100 * OTP;
+}
+
+impl pallet_vesting::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type BlockNumberToBalance = ConvertInto;
+	type MinVestedTransfer = MinVestedTransfer;
+	type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+	// `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
+	// highest number of schedules that encodes less than 2^10.
+	const MAX_VESTING_SCHEDULES: u32 = 28;
+}
+
+pub struct RelayChainBlockNumberProvider<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: cumulus_pallet_parachain_system::Config> BlockNumberProvider
+for RelayChainBlockNumberProvider<T>
+{
+	type BlockNumber = BlockNumber;
+
+	fn current_block_number() -> Self::BlockNumber {
+		cumulus_pallet_parachain_system::Pallet::<T>::validation_data()
+			.map(|d| d.relay_parent_number)
+			.unwrap_or_default()
+	}
+}
+
+parameter_types! {
+
+	pub FutureAuctionTreasuryId: AccountId = PalletId(*b"Tresury1").into_account();
+	pub CollatorsIncentivesTreasuryId: AccountId = PalletId(*b"Tresury2").into_account();
+	pub DkgIncentivesTreasuryId: AccountId = PalletId(*b"Tresury3").into_account();
+	pub CommunityTreasuryId: AccountId = PalletId(*b"Tresury4").into_account();
+	pub const InflationBlockInterval: u32 = 100; // every time per how many blocks inflation is applied
+}
+
+impl pallet_inflation::Config for Runtime {
+	type Currency = Balances;
+	type FutureAuctionTreasuryId = FutureAuctionTreasuryId;
+	type CollatorsIncentivesTreasuryId = CollatorsIncentivesTreasuryId;
+	type DkgIncentivesTreasuryId = DkgIncentivesTreasuryId;
+	type CommunityTreasuryId = CommunityTreasuryId;
+	type InflationBlockInterval = InflationBlockInterval;
+	type BlockNumberProvider = RelayChainBlockNumberProvider<Runtime>;
+}
+
 /// Configure the pallet template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
@@ -631,6 +701,7 @@ construct_runtime!(
 		} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -638,6 +709,7 @@ construct_runtime!(
 		Treasury: pallet_treasury::<Instance1>::{Pallet, Call, Storage, Config, Event<T>} = 12,
 		CommunityTreasury: pallet_treasury::<Instance2>::{Pallet, Call, Storage, Config, Event<T>} = 13,
 		Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 14,
+		Inflation: pallet_inflation::{Pallet, Call, Storage}  = 15,
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
