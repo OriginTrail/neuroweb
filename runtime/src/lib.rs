@@ -26,7 +26,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::Everything,
+	traits::{Everything, Currency as PalletCurrency, OnUnbalanced, Imbalance},
 	weights::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -38,7 +38,7 @@ use frame_system::{
 	EnsureRoot,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
+pub use sp_runtime::{MultiAddress, Perbill, Permill, traits::AccountIdConversion };
 pub use frame_support::traits::EqualPrivilegeOnly;
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
@@ -53,6 +53,9 @@ use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 // XCM Imports
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
+
+pub use pallet_treasury::Instance1;
+pub use pallet_treasury::Instance2;
 
 /// Import the template pallet.
 pub use pallet_template;
@@ -256,6 +259,16 @@ parameter_types! {
 	pub const SS58Prefix: u16 = 101;
 }
 
+// Pallet accounts of runtime
+parameter_types! {
+	pub const TreasuryPalletId: PalletId = PalletId(*b"otp/trsy");
+	pub const CommunityTreasuryPalletId: PalletId = PalletId(*b"otp/cmtr");
+	pub const DkgIncentivesPalletId: PalletId = PalletId(*b"otp/dkgi");
+	pub const FutureAuctionsPalletId: PalletId = PalletId(*b"otp/fauc");
+	pub const CollatorsIncentivesPalletId: PalletId = PalletId(*b"otp/coli");
+	pub const PotId: PalletId = PalletId(*b"PotStake");
+}
+
 // Configure FRAME pallets to include in runtime.
 
 impl frame_system::Config for Runtime {
@@ -351,6 +364,57 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 }
 
+pub struct ToStakingPot;
+impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let staking_pot = PotId::get().into_account();
+        Balances::resolve_creating(&staking_pot, amount);
+    }
+}
+
+pub struct FutureAuctionsPot;
+impl OnUnbalanced<NegativeImbalance> for FutureAuctionsPot {
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let future_auctions_pot = FutureAuctionsPalletId::get().into_account();
+        Balances::resolve_creating(&future_auctions_pot, amount);
+    }
+}
+
+pub struct DkgIncentivesPot;
+impl OnUnbalanced<NegativeImbalance> for DkgIncentivesPot {
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let dkg_incentives_pot = DkgIncentivesPalletId::get().into_account();
+        Balances::resolve_creating(&dkg_incentives_pot, amount);
+    }
+}
+
+type NegativeImbalance = <Balances as PalletCurrency<AccountId>>::NegativeImbalance;
+
+pub struct DealWithFees;
+impl OnUnbalanced<NegativeImbalance> for DealWithFees {
+	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+		if let Some(mut fees) = fees_then_tips.next() {
+			if let Some(tips) = fees_then_tips.next() {
+				tips.merge_into(&mut fees);
+			}
+			// for fees and tips:
+			// - 30% to DKG Incentives pool
+			// - 30% to Collators Incentives pool
+			// - 30% to Future Auctions pool
+			// - 10% to Community Treasury
+			let split = fees.ration(60, 40);
+			let (dkg_incentives_fees, collators_incentives_fees) = split.0.ration(50, 50);
+			let (future_auctions_fees, community_treasury_fees) = split.1.ration(75, 25);
+
+
+			CommunityTreasury::on_unbalanced(community_treasury_fees);
+			<ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators_incentives_fees);
+			<FutureAuctionsPot as OnUnbalanced<_>>::on_unbalanced(future_auctions_fees);
+			<DkgIncentivesPot as OnUnbalanced<_>>::on_unbalanced(dkg_incentives_fees);
+		}
+	}
+}
+
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = 10 * MICROOTP;
@@ -358,7 +422,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
@@ -429,7 +493,6 @@ impl pallet_aura::Config for Runtime {
 }
 
 parameter_types! {
-	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 1000;
 	pub const MinCandidates: u32 = 5;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
@@ -553,6 +616,77 @@ impl pallet_template::Config for Runtime {
 	type Event = Event;
 }
 
+pub type TreasuryInstance = pallet_treasury::Instance1;
+
+parameter_types! {
+    pub const ProposalBond: Permill = Permill::from_percent(5);
+    pub const ProposalBondMinimum: Balance = 1 * OTP;
+	pub const ProposalBondMaximum: Balance = 5 * OTP;
+    pub const SpendPeriod: BlockNumber = 5 * MINUTES;
+    pub const MaxApprovals: u32 = 100;
+}
+
+impl pallet_treasury::Config<TreasuryInstance> for Runtime {
+	type PalletId = TreasuryPalletId;
+	type Currency = Balances;
+	type ApproveOrigin = EnsureRoot<AccountId>;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type Event = Event;
+	type OnSlash = ();
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type ProposalBondMaximum = ProposalBondMaximum;
+	type SpendPeriod = SpendPeriod;
+	type Burn = ();
+	type BurnDestination = ();
+	type SpendFunds = ();
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+	type MaxApprovals = MaxApprovals;
+}
+
+pub type CommunityTreasuryInstance = pallet_treasury::Instance2;
+
+parameter_types! {
+    pub const CommunityProposalBond: Permill = Permill::from_percent(5);
+    pub const CommunityProposalBondMinimum: Balance = 1 * OTP;
+	pub const CommunityProposalBondMaximum: Balance = 5 * OTP;
+    pub const CommunitySpendPeriod: BlockNumber = 5 * MINUTES;
+    pub const CommunityMaxApprovals: u32 = 100;
+}
+
+impl pallet_treasury::Config<CommunityTreasuryInstance> for Runtime {
+	type PalletId = CommunityTreasuryPalletId;
+	type Currency = Balances;
+	type ApproveOrigin = EnsureRoot<AccountId>;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type Event = Event;
+	type OnSlash = ();
+	type ProposalBond = CommunityProposalBond;
+	type ProposalBondMinimum = CommunityProposalBondMinimum;
+	type ProposalBondMaximum = CommunityProposalBondMinimum;
+	type SpendPeriod = CommunitySpendPeriod;
+	type Burn = ();
+	type BurnDestination = ();
+	type SpendFunds = ();
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+	type MaxApprovals = CommunityMaxApprovals;
+}
+
+parameter_types! {
+	pub const MinVestedTransfer: Balance = 15 * OTP;
+}
+
+impl pallet_vesting::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type BlockNumberToBalance = ConvertInto;
+	type MinVestedTransfer = MinVestedTransfer;
+	type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+	// `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
+	// highest number of schedules that encodes less than 2^10.
+	const MAX_VESTING_SCHEDULES: u32 = 28;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -572,8 +706,10 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
-		Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 12,
-		Inflation: pallet_inflation::{Pallet, Call, Storage}  = 13,
+		Treasury: pallet_treasury::<Instance1>::{Pallet, Call, Storage, Config, Event<T>} = 12,
+		CommunityTreasury: pallet_treasury::<Instance2>::{Pallet, Call, Storage, Config, Event<T>} = 13,
+		Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 14,
+		Inflation: pallet_inflation::{Pallet, Call, Storage}  = 15,
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
