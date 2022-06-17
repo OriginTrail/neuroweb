@@ -18,10 +18,8 @@ use sp_runtime::{
 type BalanceOf<T> =
 <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
-pub const YEAR: u32 = 2_629_800; // 5_259_600 6-second block
-// pub const YEAR: u32 = ; // 12-second block
+pub const YEAR: u32 = 2_629_800; // 12-second block
 pub const INFLATION_PERCENT: u32 = 5;
-
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -36,10 +34,8 @@ pub mod pallet {
 		type CollatorsIncentivesTreasuryId: Get<Self::AccountId>;
 		type DkgIncentivesTreasuryId: Get<Self::AccountId>;
 		type CommunityTreasuryId: Get<Self::AccountId>;
-
 		// The block number provider
 		type BlockNumberProvider: BlockNumberProvider<BlockNumber = Self::BlockNumber>;
-
 		/// Number of blocks that pass between treasury balance updates due to inflation
 		#[pallet::constant]
 		type InflationBlockInterval: Get<Self::BlockNumber>;
