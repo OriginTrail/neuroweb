@@ -11,10 +11,10 @@ pub mod xcm_config;
 
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, sr25519};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify, BlockNumberProvider, AccountIdConversion},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify, BlockNumberProvider},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -176,7 +176,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("origintrail-parachain"),
 	impl_name: create_runtime_str!("origintrail-parachain"),
 	authoring_version: 1,
-	spec_version: 102,
+	spec_version: 103,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -545,39 +545,6 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-parameter_types! {
-    // One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
-    pub const DepositBase: Balance = deposit(1, 88);
-    // Additional storage item size of 32 bytes.
-    pub const DepositFactor: Balance = deposit(0, 32);
-    pub const MaxSignatories: u16 = 100;
-}
-
-impl pallet_multisig::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
-	type Currency = Balances;
-	type DepositBase = DepositBase;
-	type DepositFactor = DepositFactor;
-	type MaxSignatories = MaxSignatories;
-	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-	pub const MinVestedTransfer: Balance = 100 * OTP;
-}
-
-impl pallet_vesting::Config for Runtime {
-	type Event = Event;
-	type Currency = Balances;
-	type BlockNumberToBalance = ConvertInto;
-	type MinVestedTransfer = MinVestedTransfer;
-	type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
-	// `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
-	// highest number of schedules that encodes less than 2^10.
-	const MAX_VESTING_SCHEDULES: u32 = 28;
-}
-
 pub struct RelayChainBlockNumberProvider<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: cumulus_pallet_parachain_system::Config> BlockNumberProvider
@@ -593,11 +560,10 @@ for RelayChainBlockNumberProvider<T>
 }
 
 parameter_types! {
-
-	pub FutureAuctionTreasuryId: AccountId = PalletId(*b"Tresury1").into_account();
-	pub CollatorsIncentivesTreasuryId: AccountId = PalletId(*b"Tresury2").into_account();
-	pub DkgIncentivesTreasuryId: AccountId = PalletId(*b"Tresury3").into_account();
-	pub CommunityTreasuryId: AccountId = PalletId(*b"Tresury4").into_account();
+	pub FutureAuctionTreasuryId: AccountId = FutureAuctionsPalletId::get().into_account();
+	pub CollatorsIncentivesTreasuryId: AccountId = CollatorsIncentivesPalletId::get().into_account();
+	pub DkgIncentivesTreasuryId: AccountId = DkgIncentivesPalletId::get().into_account();
+	pub CommunityTreasuryId: AccountId =CommunityTreasuryPalletId::get().into_account();
 	pub const InflationBlockInterval: u32 = 100; // every time per how many blocks inflation is applied
 }
 
@@ -701,7 +667,6 @@ construct_runtime!(
 		} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
-		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
