@@ -223,5 +223,6 @@ fn testnet_genesis(
 			key: Some(root_key),
 		},
 		vesting: Default::default(),
+		treasury: Default::default(),
 	}
 }
