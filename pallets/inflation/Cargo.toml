@@ -23,7 +23,7 @@ codec = { package = "parity-scale-codec", version = "3.1.2", features = [
     "derive",
 ], default-features = false }
 serde = { version = "1.0.130", default-features = false, features = ["derive"] }
-
+log = { version = "0.4.16", default-features = false }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.20" }
@@ -44,6 +44,7 @@ runtime-benchmarks = ['frame-benchmarking']
 std = [
     'codec/std',
     'serde/std',
+    'log/std',
     'frame-support/std',
     'frame-system/std',
     'pallet-balances/std',

@@ -18,7 +18,7 @@ use sp_runtime::{
 type BalanceOf<T> =
 <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
-pub const YEAR: u32 = 2_629_800; // 12-second block
+pub const YEAR: u32 = 5_259_600; // 6-second block
 pub const INFLATION_PERCENT: u32 = 5;
 
 #[frame_support::pallet]
@@ -97,12 +97,17 @@ pub mod pallet {
 			let next_inflation: T::BlockNumber = <NextInflationBlock<T>>::get();
 			add_weight(1, 0, 5_000_000);
 
+			log::info!("Executed hook! v1.2");
+			log::info!("Next inflation: {:#?}", next_inflation);
+			log::info!("Curent relay block: {:#?}", current_relay_block);
+
 			// Apply inflation every InflationBlockInterval blocks
 			// If next_inflation == 0, this means inflation wasn't yet initialized
 			if (next_inflation != 0u32.into()) && (current_relay_block >= next_inflation) {
 				// Recalculate inflation on the first block of the year (or if it is not initialized yet)
 				// Do the "current_relay_block >= next_recalculation" check in the "current_relay_block >= next_inflation"
 				// block because it saves InflationBlockInterval DB reads for NextRecalculationBlock.
+				log::info!("Entered IF!!!");
 				let next_recalculation: T::BlockNumber = <NextRecalculationBlock<T>>::get();
 				add_weight(1, 0, 0);
 				if current_relay_block >= next_recalculation {
