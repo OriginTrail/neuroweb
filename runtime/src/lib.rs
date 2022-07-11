@@ -13,7 +13,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -25,7 +25,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::Everything,
+	traits::{Everything, Currency as PalletCurrency, OnUnbalanced, Imbalance},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -38,7 +38,7 @@ use frame_system::{
 	EnsureRoot,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
+pub use sp_runtime::{MultiAddress, Perbill, Permill, traits::AccountIdConversion };
 pub use frame_support::traits::EqualPrivilegeOnly;
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
@@ -171,7 +171,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("origintrail-parachain"),
 	impl_name: create_runtime_str!("origintrail-parachain"),
 	authoring_version: 1,
-	spec_version: 100,
+	spec_version: 102,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -248,6 +248,15 @@ parameter_types! {
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
 	pub const SS58Prefix: u16 = 101;
+}
+
+// Pallet accounts of runtime
+parameter_types! {
+	pub const TreasuryPalletId: PalletId = PalletId(*b"otp/trea");
+	pub const DkgIncentivesPalletId: PalletId = PalletId(*b"otp/dkgi");
+	pub const FutureAuctionsPalletId: PalletId = PalletId(*b"otp/fauc");
+	pub const CollatorsIncentivesPalletId: PalletId = PalletId(*b"otp/coli");
+	pub const PotId: PalletId = PalletId(*b"PotStake");
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -345,6 +354,57 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 }
 
+pub struct ToStakingPot;
+impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let staking_pot = PotId::get().into_account();
+        Balances::resolve_creating(&staking_pot, amount);
+    }
+}
+
+pub struct FutureAuctionsPot;
+impl OnUnbalanced<NegativeImbalance> for FutureAuctionsPot {
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let future_auctions_pot = FutureAuctionsPalletId::get().into_account();
+        Balances::resolve_creating(&future_auctions_pot, amount);
+    }
+}
+
+pub struct DkgIncentivesPot;
+impl OnUnbalanced<NegativeImbalance> for DkgIncentivesPot {
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let dkg_incentives_pot = DkgIncentivesPalletId::get().into_account();
+        Balances::resolve_creating(&dkg_incentives_pot, amount);
+    }
+}
+
+type NegativeImbalance = <Balances as PalletCurrency<AccountId>>::NegativeImbalance;
+
+pub struct DealWithFees;
+impl OnUnbalanced<NegativeImbalance> for DealWithFees {
+	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+		if let Some(mut fees) = fees_then_tips.next() {
+			if let Some(tips) = fees_then_tips.next() {
+				tips.merge_into(&mut fees);
+			}
+			// for fees and tips:
+			// - 30% to DKG Incentives pool
+			// - 30% to Collators Incentives pool (currently staking_pot)
+			// - 30% to Future Auctions pool
+			// - 10% to Treasury
+			let split = fees.ration(60, 40);
+			let (dkg_incentives_fees, collators_incentives_fees) = split.0.ration(50, 50);
+			let (future_auctions_fees, treasury_fees) = split.1.ration(75, 25);
+
+
+			Treasury::on_unbalanced(treasury_fees);
+			<ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators_incentives_fees);
+			<FutureAuctionsPot as OnUnbalanced<_>>::on_unbalanced(future_auctions_fees);
+			<DkgIncentivesPot as OnUnbalanced<_>>::on_unbalanced(dkg_incentives_fees);
+		}
+	}
+}
+
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = 10 * MICROOTP;
@@ -352,7 +412,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
@@ -423,7 +483,6 @@ impl pallet_aura::Config for Runtime {
 }
 
 parameter_types! {
-	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 1000;
 	pub const MinCandidates: u32 = 5;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
@@ -476,6 +535,48 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
+parameter_types! {
+	pub const MinVestedTransfer: Balance = 15 * OTP;
+}
+
+impl pallet_vesting::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type BlockNumberToBalance = ConvertInto;
+	type MinVestedTransfer = MinVestedTransfer;
+	type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+	// `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
+	// highest number of schedules that encodes less than 2^10.
+	const MAX_VESTING_SCHEDULES: u32 = 28;
+}
+
+parameter_types! {
+    pub const ProposalBond: Permill = Permill::from_percent(5);
+    pub const ProposalBondMinimum: Balance = 100 * OTP;
+	pub const ProposalBondMaximum: Balance = 500 * OTP;
+    pub const SpendPeriod: BlockNumber = 24 * DAYS;
+    pub const MaxApprovals: u32 = 100;
+}
+
+
+impl pallet_treasury::Config for Runtime {
+	type PalletId = TreasuryPalletId;
+	type Currency = Balances;
+	type ApproveOrigin = EnsureRoot<AccountId>;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type Event = Event;
+	type OnSlash = ();
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type ProposalBondMaximum = ProposalBondMaximum;
+	type SpendPeriod = SpendPeriod;
+	type Burn = ();
+	type BurnDestination = ();
+	type SpendFunds = ();
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+	type MaxApprovals = MaxApprovals;
+}
+
 /// Configure the pallet template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
@@ -499,6 +600,8 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 12,
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 13,
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
