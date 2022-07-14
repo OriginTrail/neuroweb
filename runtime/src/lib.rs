@@ -11,7 +11,8 @@ pub mod xcm_config;
 
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata,
+	H160, U256};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify},
@@ -53,6 +54,11 @@ use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 // XCM Imports
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
+
+// Frontier
+use pallet_evm::{
+	Account as EVMAccount, EnsureAddressTruncated, GasWeightMapping, HashedAddressMapping, Runner,
+};
 
 /// Import the template pallet.
 pub use pallet_template;
@@ -560,7 +566,6 @@ parameter_types! {
     pub const MaxApprovals: u32 = 100;
 }
 
-
 impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
@@ -577,6 +582,29 @@ impl pallet_treasury::Config for Runtime {
 	type SpendFunds = ();
 	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 	type MaxApprovals = MaxApprovals;
+}
+
+parameter_types! {
+	pub const ChainId: u64 = 101;
+}
+
+impl pallet_evm::Config for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+
+	type BlockGasLimit = BlockGasLimit;
+	type ChainId = ChainId;
+	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
+
+	type CallOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressTruncated;
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+
+	type FeeCalculator = ();
+	type GasWeightMapping = ();
+	type OnChargeTransaction = ();
+	type FindAuthor = ();
 }
 
 /// Configure the pallet template in pallets/template.
@@ -620,6 +648,9 @@ construct_runtime!(
 
 		// Template.
 		TemplatePallet: pallet_template::{Pallet, Call, Storage, Event<T>}  = 40,
+
+		// Frontier
+		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 50,
 
 		// Governance stuff.
 		Scheduler: pallet_scheduler::{Pallet, Storage, Event<T>, Call} = 60,
