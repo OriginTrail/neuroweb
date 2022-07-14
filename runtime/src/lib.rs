@@ -14,7 +14,7 @@ use sp_core::{crypto::{ByteArray, KeyTypeId}, OpaqueMetadata, H160, H256, U256,}
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount,
-		PostDispatchInfoOf, Verify},
+		PostDispatchInfoOf, Verify, Dispatchable},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -37,8 +37,6 @@ use frame_support::{
 	},
 	PalletId, ConsensusEngineId, StorageValue,
 };
-mod precompiles;
-use precompiles::FrontierPrecompiles;
 
 pub use pallet_balances::Call as BalancesCall;
 use pallet_evm::{Account as EVMAccount, EnsureAddressTruncated, HashedAddressMapping, Runner};
@@ -51,6 +49,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill, traits::AccountIdConversion };
 pub use frame_support::traits::EqualPrivilegeOnly;
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
+pub use pallet_timestamp::Call as TimestampCall;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -64,6 +63,9 @@ use xcm_executor::XcmExecutor;
 
 /// Import the template pallet.
 pub use pallet_template;
+
+mod precompiles;
+use precompiles::FrontierPrecompiles;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -712,6 +714,8 @@ impl pallet_base_fee::Config for Runtime {
 	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
 }
 
+impl pallet_randomness_collective_flip::Config for Runtime {}
+
 /// Configure the pallet template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
@@ -757,6 +761,7 @@ construct_runtime!(
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 42,
 		DynamicFee: pallet_dynamic_fee::{Pallet, Call, Storage, Config, Inherent} = 43,
 		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 44,
+		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 45,
 
 		// Governance stuff.
 		Scheduler: pallet_scheduler::{Pallet, Storage, Event<T>, Call} = 60,
