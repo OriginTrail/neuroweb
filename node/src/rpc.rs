@@ -112,11 +112,11 @@ where
     // )?;
 
 	module.merge(
-        Eth::new(
+        Eth::<_, _, _, fp_rpc::NoTransactionConverter, _, _, _>::new(
             client.clone(),
 			pool.clone(),
             graph,
-            Some(origintrail_parachain_runtime::TransactionConverter),
+            None,
             network.clone(),
             signers,
             overrides.clone(),
