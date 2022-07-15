@@ -11,7 +11,6 @@ use origintrail_parachain_runtime::{opaque::Block, AccountId, Hash, Balance, Ind
 
 use sc_client_api::{
 	backend::{AuxStore, Backend, StorageProvider},
-	client::BlockchainEvents,
 };
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool_api::TransactionPool;

@@ -1,7 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 // std
-use std::{sync::Arc, time::Duration};
+use std::{sync::Arc, path::PathBuf, time::Duration};
 
 // rpc
 use jsonrpsee::RpcModule;
@@ -25,15 +25,19 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayC
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 
 // Substrate Imports
-use sc_client_api::ExecutorProvider;
+use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
-use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
+use sc_service::{BasePath, Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
+use futures::StreamExt;
+use sc_cli::SubstrateCli;
+
+use crate::cli::Cli;
 
 use polkadot_service::CollatorPair;
 
@@ -50,6 +54,17 @@ impl sc_executor::NativeExecutionDispatch for TemplateRuntimeExecutor {
 	fn native_version() -> sc_executor::NativeVersion {
 		origintrail_parachain_runtime::native_version()
 	}
+}
+
+pub(crate) fn db_config_dir(config: &Configuration) -> PathBuf {
+	config
+		.base_path
+		.as_ref()
+		.map(|base_path| base_path.config_dir(config.chain_spec.id()))
+		.unwrap_or_else(|| {
+			BasePath::from_project("", "", &Cli::executable_name())
+				.config_dir(config.chain_spec.id())
+		})
 }
 
 /// Starts a `ServiceBuilder` for a full service.
@@ -73,7 +88,11 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 			Block,
 			TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
 		>,
-		(Option<Telemetry>, Option<TelemetryWorkerHandle>),
+		(
+			Option<Telemetry>, 
+			Option<TelemetryWorkerHandle>, 
+			Arc<fc_db::Backend<Block>>,
+		),
 	>,
 	sc_service::Error,
 >
@@ -147,6 +166,11 @@ where
 		client.clone(),
 	);
 
+	let frontier_backend = Arc::new(fc_db::Backend::open(
+		&config.database,
+		&db_config_dir(config),
+	)?);
+
 	let import_queue = build_import_queue(
 		client.clone(),
 		config,
@@ -162,7 +186,7 @@ where
 		task_manager,
 		transaction_pool,
 		select_chain: (),
-		other: (telemetry, telemetry_worker_handle),
+		other: (telemetry, telemetry_worker_handle, frontier_backend),
 	};
 
 	Ok(params)
@@ -266,7 +290,7 @@ where
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
-	let (mut telemetry, telemetry_worker_handle) = params.other;
+	let (mut telemetry, telemetry_worker_handle, frontier_backend) = params.other;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -305,6 +329,24 @@ where
 			})),
 			warp_sync: None,
 		})?;
+
+		// Frontier offchain DB task. Essential.
+    // Maps emulated ethereum data to substrate native data.
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-mapping-sync-worker",
+        Some("frontier"),
+        fc_mapping_sync::MappingSyncWorker::new(
+            client.import_notification_stream(),
+            Duration::new(6, 0),
+            client.clone(),
+            backend.clone(),
+            frontier_backend.clone(),
+            3,
+            0,
+            fc_mapping_sync::SyncStrategy::Parachain,
+        )
+        .for_each(|()| futures::future::ready(())),
+    );
 
 	let rpc_builder = {
 		let client = client.clone();
