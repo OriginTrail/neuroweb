@@ -10,9 +10,14 @@ use std::sync::Arc;
 use origintrail_parachain_runtime::{opaque::Block, AccountId, Hash, Balance, Index as Nonce};
 
 use sc_client_api::{
-	backend::{AuxStore, Backend, StorageProvider},
+	backend::{AuxStore, Backend, StateBackend, StorageProvider},
 };
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
+use fc_rpc::{
+	EthBlockDataCacheTask, OverrideHandle,
+};
+use sp_runtime::traits::BlakeTwo256;
+use fc_rpc_core::types::{FeeHistoryCache};
 use sc_transaction_pool_api::TransactionPool;
 use sc_transaction_pool::{ChainApi, Pool};
 use sp_api::ProvideRuntimeApi;
@@ -33,8 +38,20 @@ pub struct FullDeps<C, P, A: ChainApi> {
 	pub graph: Arc<Pool<A>>,
 	/// Whether to deny unsafe calls
 	pub deny_unsafe: DenyUnsafe,
+	/// The Node authority flag
+    pub is_authority: bool,
 	/// Network service
 	pub network: Arc<NetworkService<Block, Hash>>,
+	/// Backend.
+	pub backend: Arc<fc_db::Backend<Block>>,
+	/// Maximum fee history cache size.                                                                                    
+    pub fee_history_cache_limit: u64,
+    /// Fee history cache.
+    pub fee_history_cache: FeeHistoryCache,
+	/// Ethereum data access overrides.
+	pub overrides: Arc<OverrideHandle<Block>>,
+    /// Cache for Ethereum block data.
+	pub block_data_cache: Arc<EthBlockDataCacheTask<Block>>,
 }
 
 /// Instantiate all RPC extensions.
@@ -44,6 +61,7 @@ pub fn create_full<C, P, BE, A>(
 ) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
 where
 	BE: Backend<Block> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
 	C: ProvideRuntimeApi<Block>
 		+ HeaderBackend<Block>
 		+ AuxStore
@@ -56,18 +74,59 @@ where
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
-	P: TransactionPool + Sync + Send + 'static,
+	C::Api: fp_rpc::ConvertTransactionRuntimeApi<Block>,
+	P: TransactionPool<Block = Block> + Sync + Send + 'static,
 	A: ChainApi<Block = Block> + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
 	use substrate_frame_rpc_system::{SystemApiServer, SystemRpc};
-	use fc_rpc::{Net, NetApiServer};
+	use fc_rpc::{ Eth, EthApiServer,
+		Net, NetApiServer,
+	};
 
 	let mut module = RpcExtension::new(());
-	let FullDeps { client, pool, graph, deny_unsafe, network } = deps;
+	let FullDeps { client, pool, graph, deny_unsafe, network, backend, is_authority, fee_history_cache,
+		fee_history_cache_limit, overrides, block_data_cache,} = deps;
 
 	module.merge(SystemRpc::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
 	module.merge(TransactionPaymentRpc::new(client.clone()).into_rpc())?;
+
+	let signers = Vec::new();
+	let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
+
+    // module.merge(
+    //     Eth::new(
+    //         Arc::clone(&client),
+	// 		Arc::clone(&pool),
+    //         graph,
+    //         Some(origintrail_parachain_runtime::TransactionConverter),
+    //         Arc::clone(&network),
+    //         signers,
+    //         Arc::clone(&overrides),
+	// 		Arc::clone(&backend),
+    //         is_authority,
+    //         Arc::clone(&block_data_cache),
+    //         fee_history_cache,
+    //         fee_history_cache_limit,
+    //     ).into_rpc()
+    // )?;
+
+	module.merge(
+        Eth::new(
+            client.clone(),
+			pool.clone(),
+            graph,
+            Some(origintrail_parachain_runtime::TransactionConverter),
+            network.clone(),
+            signers,
+            overrides.clone(),
+			backend.clone(),
+            is_authority,
+            block_data_cache.clone(),
+            fee_history_cache,
+            fee_history_cache_limit,
+        ).into_rpc()
+    )?;
 
 	module.merge(
 		Net::new(
