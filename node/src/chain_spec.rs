@@ -1,12 +1,12 @@
 use cumulus_primitives_core::ParaId;
-use origintrail_parachain_runtime::{AccountId, AuraId, EVMConfig, Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
+use origintrail_parachain_runtime::{AccountId, AuraId, EVMConfig, EthereumConfig, 
+	Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public, H160, U256};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::{collections::BTreeMap, str::FromStr};
-
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -258,5 +258,6 @@ fn testnet_genesis(
 				map
 			},
 		},
+		ethereum: EthereumConfig {},
 	}
 }
