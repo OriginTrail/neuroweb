@@ -86,6 +86,9 @@ fp-self-contained = { git = "https://github.com/paritytech/frontier", default-fe
 pallet-base-fee = { git = "https://github.com/paritytech/frontier", default-features = false, branch = "polkadot-v0.9.22" }
 pallet-evm = { git = "https://github.com/paritytech/frontier", default-features = false, branch = "polkadot-v0.9.22" }
 pallet-ethereum = { git = "https://github.com/paritytech/frontier", default-features = false, branch = "polkadot-v0.9.22" }
+pallet-evm-precompile-simple = { git = "https://github.com/paritytech/frontier", default-features = false, branch = "polkadot-v0.9.22" }
+pallet-evm-precompile-modexp = { git = "https://github.com/paritytech/frontier", default-features = false, branch = "polkadot-v0.9.22" }
+pallet-evm-precompile-sha3fips = { git = "https://github.com/paritytech/frontier", default-features = false, branch = "polkadot-v0.9.22" }
 
 [features]
 default = ["std"]
@@ -114,6 +117,8 @@ std = [
 	"pallet-base-fee/std",
 	"pallet-collator-selection/std",
 	"pallet-evm/std",
+	"pallet-evm-precompile-simple/std",
+	"pallet-evm-precompile-sha3fips/std",
 	"pallet-ethereum/std",
 	"pallet-scheduler/std",
 	"pallet-session/std",

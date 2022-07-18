@@ -57,7 +57,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
 /// Instantiate all RPC extensions.
 pub fn create_full<C, P, BE, A>(
 	deps: FullDeps<C, P, A>,
-	subscription_task_executor: SubscriptionTaskExecutor,
+	_subscription_task_executor: SubscriptionTaskExecutor,
 ) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
 where
 	BE: Backend<Block> + 'static,
@@ -92,24 +92,6 @@ where
 	module.merge(TransactionPaymentRpc::new(client.clone()).into_rpc())?;
 
 	let signers = Vec::new();
-	let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
-
-    // module.merge(
-    //     Eth::new(
-    //         Arc::clone(&client),
-	// 		Arc::clone(&pool),
-    //         graph,
-    //         Some(origintrail_parachain_runtime::TransactionConverter),
-    //         Arc::clone(&network),
-    //         signers,
-    //         Arc::clone(&overrides),
-	// 		Arc::clone(&backend),
-    //         is_authority,
-    //         Arc::clone(&block_data_cache),
-    //         fee_history_cache,
-    //         fee_history_cache_limit,
-    //     ).into_rpc()
-    // )?;
 
 	module.merge(
         Eth::<_, _, _, fp_rpc::NoTransactionConverter, _, _, _>::new(

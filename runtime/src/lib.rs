@@ -10,7 +10,6 @@ mod weights;
 pub mod xcm_config;
 
 use smallvec::smallvec;
-use codec::{Encode, Decode};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
@@ -63,6 +62,9 @@ use pallet_evm::{
 };
 use pallet_ethereum::{Call::transact, EthereumBlockHashMapping, Transaction as EthereumTransaction};
 use fp_rpc::TransactionStatus;
+
+mod precompiles;
+use precompiles::FrontierPrecompiles;
 
 /// Import the template pallet.
 pub use pallet_template;
@@ -543,6 +545,7 @@ impl pallet_sudo::Config for Runtime {
 parameter_types! {
 	pub const ChainId: u64 = 101;
 	pub BlockGasLimit: U256 = U256::from(u32::max_value());
+	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
 }
 
 impl pallet_evm::Config for Runtime {
@@ -562,8 +565,8 @@ impl pallet_evm::Config for Runtime {
 	type GasWeightMapping = ();
 	type OnChargeTransaction = ();
 	type FindAuthor = ();
-	type PrecompilesType = ();
-	type PrecompilesValue = ();
+	type PrecompilesType = FrontierPrecompiles<Self>;
+	type PrecompilesValue = PrecompilesValue;
 }
 
 impl pallet_ethereum::Config for Runtime {
