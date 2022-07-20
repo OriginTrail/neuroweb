@@ -365,7 +365,7 @@ impl pallet_balances::Config for Runtime {
 pub struct ToStakingPot;
 impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let staking_pot = PotId::get().into_account();
+        let staking_pot = PotId::get().into_account_truncating();
         Balances::resolve_creating(&staking_pot, amount);
     }
 }
@@ -373,7 +373,7 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
 pub struct FutureAuctionsPot;
 impl OnUnbalanced<NegativeImbalance> for FutureAuctionsPot {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let future_auctions_pot = FutureAuctionsPalletId::get().into_account();
+        let future_auctions_pot = FutureAuctionsPalletId::get().into_account_truncating();
         Balances::resolve_creating(&future_auctions_pot, amount);
     }
 }
@@ -381,7 +381,7 @@ impl OnUnbalanced<NegativeImbalance> for FutureAuctionsPot {
 pub struct DkgIncentivesPot;
 impl OnUnbalanced<NegativeImbalance> for DkgIncentivesPot {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let dkg_incentives_pot = DkgIncentivesPalletId::get().into_account();
+        let dkg_incentives_pot = DkgIncentivesPalletId::get().into_account_truncating();
         Balances::resolve_creating(&dkg_incentives_pot, amount);
     }
 }
