@@ -420,6 +420,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+    type Event = Event;
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
     type WeightToFee = WeightToFee;
@@ -608,7 +609,7 @@ construct_runtime!(
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 12,
         Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 13,
 

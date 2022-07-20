@@ -42,11 +42,13 @@ impl SubstrateCli for Cli {
     }
 
     fn description() -> String {
-        "OriginTrail Parachain\n\nThe command-line arguments provided first will be \
-		passed to the parachain node, while the arguments provided after -- will be passed \
-		to the relay chain node.\n\n\
-		origintrail-parachain <parachain-args> -- <relay-chain-args>"
-            .into()
+        format!(
+            "OriginTrail Parachain\n\nThe command-line arguments provided first will be \
+            passed to the parachain node, while the arguments provided after -- will be passed \
+            to the relay chain node.\n\n\
+            {} <parachain-args> -- <relay-chain-args>",
+			Self::executable_name()
+		)
     }
 
     fn author() -> String {
@@ -80,11 +82,12 @@ impl SubstrateCli for RelayChainCli {
     }
 
     fn description() -> String {
-        "OriginTrail Parachain \n\nThe command-line arguments provided first will be \
-		passed to the parachain node, while the arguments provided after -- will be passed \
-		to the relay chain node.\n\n\
-		origintrail-parachain <parachain-args> -- <relay-chain-args>"
-            .into()
+        format!(
+            "OriginTrail Parachain \n\nThe command-line arguments provided first will be \
+            passed to the parachain node, while the arguments provided after -- will be passed \
+            to the relay chain node.\n\n\
+            {} <parachain-args> -- <relay-chain-args>", Self::executable_name()
+		)   
     }
 
     fn author() -> String {
