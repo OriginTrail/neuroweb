@@ -148,7 +148,8 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
             return Err(()); // Deny
         }
 
-        // allow reserve transfers to arrive from relay chain
+        // An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
+		// should not allow this, but we just log it here.
         if matches!(
             origin,
             MultiLocation {
@@ -162,7 +163,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
         {
             log::warn!(
                 target: "xcm::barriers",
-                "Unexpected ReserveAssetDeposited from the relay chain",
+                "Unexpected ReserveAssetDeposited from the Relay Chain",
             );
         }
         // Permit everything else
