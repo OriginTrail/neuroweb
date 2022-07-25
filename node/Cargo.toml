@@ -22,6 +22,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0" }
 serde = { version = "1.0.137", features = ["derive"] }
 hex-literal = "0.3.4"
 jsonrpsee = { version = "0.13.0", features = ["server"] }
+tracing-log = { version = "0.1.26" }
 
 # Local
 origintrail-parachain-runtime = { path = "../runtime" }
