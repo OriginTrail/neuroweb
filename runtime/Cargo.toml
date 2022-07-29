@@ -89,6 +89,7 @@ pallet-ethereum = { git = "https://github.com/paritytech/frontier", default-feat
 pallet-evm-precompile-simple = { git = "https://github.com/paritytech/frontier", default-features = false, branch = "polkadot-v0.9.22" }
 pallet-evm-precompile-modexp = { git = "https://github.com/paritytech/frontier", default-features = false, branch = "polkadot-v0.9.22" }
 pallet-evm-precompile-sha3fips = { git = "https://github.com/paritytech/frontier", default-features = false, branch = "polkadot-v0.9.22" }
+pallet-evm-accounts = { path = "../pallets/evm-accounts", default-features = false }
 
 [features]
 default = ["std"]
@@ -146,6 +147,7 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm/std",
+	"pallet-evm-accounts/std",
 ]
 
 runtime-benchmarks = [

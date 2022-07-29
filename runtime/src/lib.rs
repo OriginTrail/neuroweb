@@ -13,12 +13,14 @@ use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
+	create_runtime_str, generic, impl_opaque_keys, DispatchResult,
 	traits::{PostDispatchInfoOf, DispatchInfoOf, Dispatchable, AccountIdLookup, BlakeTwo256, 
 		Block as BlockT, IdentifyAccount, UniqueSaturatedInto, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
 	ApplyExtrinsicResult, MultiSignature,
 };
+use pallet_evm_accounts::{EvmAddressMapping, MergeAccount};
+
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -26,8 +28,8 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::{
-	construct_runtime, parameter_types,
-	traits::Everything,
+	construct_runtime, parameter_types, transactional,
+	traits::{Everything,  ReservableCurrency},
 	weights::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -542,6 +544,30 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
+pub struct MergeAccountEvm;
+impl MergeAccount<AccountId> for MergeAccountEvm {
+#[transactional]
+fn merge_account(source: &AccountId, dest: &AccountId) -> DispatchResult {
+     // unreserve all reserved currency
+     <Balances as ReservableCurrency<_>>::unreserve(source, Balances::reserved_balance(source));
+
+     // transfer all free to dest
+     match Balances::transfer(Some(source.clone()).into(), dest.clone().into(), Balances::free_balance(source)) {
+       Ok(_) => Ok(()),
+       Err(e) => Err(e.error),
+     }
+  }
+}
+
+impl pallet_evm_accounts::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type KillAccount = frame_system::Consumer<Runtime>;
+	type AddressMapping = EvmAddressMapping<Runtime>;
+	type MergeAccount = MergeAccountEvm;
+	type WeightInfo = ();
+  }
+
 parameter_types! {
 	pub const ChainId: u64 = 101;
 	pub BlockGasLimit: U256 = U256::from(u32::max_value());
@@ -559,7 +585,7 @@ impl pallet_evm::Config for Runtime {
 
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
-	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+	type AddressMapping = EvmAddressMapping<Runtime>;
 
 	type FeeCalculator = BaseFee;
 	type GasWeightMapping = ();
@@ -643,6 +669,7 @@ construct_runtime!(
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 50,
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, Origin} = 51,
 		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 52,
+		EvmAccounts: pallet_evm_accounts::{Pallet, Call, Storage, Event<T>} = 53,
 
 		// Governance stuff.
 		Scheduler: pallet_scheduler::{Pallet, Storage, Event<T>, Call} = 60,
