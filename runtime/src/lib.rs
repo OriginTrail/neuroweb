@@ -59,8 +59,7 @@ use xcm_executor::XcmExecutor;
 
 // Frontier
 use pallet_evm::{
-	EnsureAddressTruncated, Account as EVMAccount, FeeCalculator,
-	HashedAddressMapping, Runner,
+	EnsureAddressTruncated, Account as EVMAccount, FeeCalculator, Runner,
 };
 use pallet_ethereum::{Call::transact, EthereumBlockHashMapping, Transaction as EthereumTransaction};
 use fp_rpc::TransactionStatus;
@@ -239,7 +238,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("origintrail-parachain"),
 	impl_name: create_runtime_str!("origintrail-parachain"),
 	authoring_version: 1,
-	spec_version: 100,
+	spec_version: 104,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -559,19 +558,19 @@ fn merge_account(source: &AccountId, dest: &AccountId) -> DispatchResult {
   }
 }
 
+parameter_types! {
+	pub const ChainId: u64 = 2160;
+	pub BlockGasLimit: U256 = U256::from(u32::max_value());
+	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
+}
+
 impl pallet_evm_accounts::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
-	type KillAccount = frame_system::Consumer<Runtime>;
 	type AddressMapping = EvmAddressMapping<Runtime>;
 	type MergeAccount = MergeAccountEvm;
+	type ChainId = ChainId;
 	type WeightInfo = ();
-  }
-
-parameter_types! {
-	pub const ChainId: u64 = 101;
-	pub BlockGasLimit: U256 = U256::from(u32::max_value());
-	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
 }
 
 impl pallet_evm::Config for Runtime {
