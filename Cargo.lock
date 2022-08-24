@@ -4823,7 +4823,7 @@ dependencies = [
 
 [[package]]
 name = "origintrail-parachain-node"
-version = "1.0.0"
+version = "1.0.3"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -4889,7 +4889,7 @@ dependencies = [
 
 [[package]]
 name = "origintrail-parachain-runtime"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
