@@ -2397,9 +2397,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "fp-consensus"
+version = "2.0.0-dev"
+source = "git+https://github.com/OriginTrail/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
+dependencies = [
+ "ethereum",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "fp-ethereum"
+version = "1.0.0-dev"
+source = "git+https://github.com/OriginTrail/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-evm",
+ "frame-support",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-std",
+]
+
+[[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
+source = "git+https://github.com/OriginTrail/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
 dependencies = [
  "evm",
  "frame-support",
@@ -2407,6 +2433,46 @@ dependencies = [
  "serde",
  "sp-core",
  "sp-std",
+]
+
+[[package]]
+name = "fp-rpc"
+version = "3.0.0-dev"
+source = "git+https://github.com/OriginTrail/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-evm",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "fp-self-contained"
+version = "1.0.0-dev"
+source = "git+https://github.com/OriginTrail/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
+dependencies = [
+ "ethereum",
+ "frame-support",
+ "parity-scale-codec",
+ "parity-util-mem",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+]
+
+[[package]]
+name = "fp-storage"
+version = "2.0.0"
+source = "git+https://github.com/OriginTrail/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
+dependencies = [
+ "parity-scale-codec",
+ "serde",
 ]
 
 [[package]]
@@ -5039,6 +5105,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "fp-self-contained",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -5052,6 +5119,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
+ "pallet-ethereum",
  "pallet-evm",
  "pallet-scheduler",
  "pallet-session",
@@ -5393,9 +5461,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-ethereum"
+version = "4.0.0-dev"
+source = "git+https://github.com/OriginTrail/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "evm",
+ "fp-consensus",
+ "fp-ethereum",
+ "fp-evm",
+ "fp-rpc",
+ "fp-self-contained",
+ "fp-storage",
+ "frame-support",
+ "frame-system",
+ "pallet-evm",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rlp",
+ "scale-info",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
+source = "git+https://github.com/OriginTrail/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
 dependencies = [
  "evm",
  "fp-evm",
@@ -6076,8 +6171,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c32561d248d352148124f036cac253a644685a21dc9fea383eb4907d7bd35a8f"
 dependencies = [
  "cfg-if 1.0.0",
+ "ethereum-types",
  "hashbrown 0.12.3",
  "impl-trait-for-tuples",
+ "lru 0.7.8",
  "parity-util-mem-derive",
  "parking_lot 0.12.1",
  "primitive-types",
