@@ -12,7 +12,7 @@ pub mod xcm_config;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
@@ -57,6 +57,12 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 // XCM Imports
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
+
+// Frontier
+use pallet_evm::{
+	EnsureAddressTruncated, SubstrateBlockHashMapping, 
+	HashedAddressMapping,
+};
 
 /// Import the template pallet.
 pub use pallet_template;
@@ -587,6 +593,33 @@ impl pallet_treasury::Config for Runtime {
     type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 }
 
+parameter_types! {
+	pub const ChainId: u64 = 2160;
+	pub BlockGasLimit: U256 = U256::from(u32::max_value());
+}
+
+impl pallet_evm::Config for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+
+	type BlockGasLimit = BlockGasLimit;
+	type ChainId = ChainId;
+	type BlockHashMapping = SubstrateBlockHashMapping<Self>;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
+
+	type CallOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressTruncated;
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+
+	type FeeCalculator = ();
+	type GasWeightMapping = ();
+	type OnChargeTransaction = ();
+	type FindAuthor = ();
+	type PrecompilesType = ();
+	type PrecompilesValue = ();
+}
+
+
 /// Configure the pallet template in pallets/template.
 impl pallet_template::Config for Runtime {
     type Event = Event;
@@ -628,6 +661,9 @@ construct_runtime!(
 
         // Template.
         TemplatePallet: pallet_template::{Pallet, Call, Storage, Event<T>}  = 40,
+
+        // Frontier
+		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 50,
 
         // Governance stuff.
         Scheduler: pallet_scheduler::{Pallet, Storage, Event<T>, Call} = 60,
