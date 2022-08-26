@@ -1,6 +1,6 @@
 use cumulus_primitives_core::ParaId;
-use origintrail_parachain_runtime::{AccountId, AuraId, EVMConfig, EthereumConfig,
-	Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
+use origintrail_parachain_runtime::{AccountId, AuraId,
+	EVMConfig, EthereumConfig, Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -261,5 +261,6 @@ fn testnet_genesis(
 			},
 		},
 		ethereum: EthereumConfig {},
+		base_fee: Default::default(),
 	}
 }

@@ -83,8 +83,10 @@ pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", def
 parachain-info = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.27" }
 
 # Frontier
+pallet-base-fee = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.27" }
 pallet-evm = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.27" }
 pallet-ethereum = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.27" }
+fp-rpc = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.27" }
 fp-self-contained = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.27" }
 
 [features]
@@ -102,6 +104,7 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-timestamp/std",
 	"cumulus-primitives-utility/std",
+	"fp-rpc/std",
 	"fp-self-contained/std",
 	"frame-executive/std",
 	"frame-support/std",
@@ -110,6 +113,7 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
+	"pallet-base-fee/std",
 	"pallet-collator-selection/std",
 	"pallet-evm/std",
 	"pallet-ethereum/std",
