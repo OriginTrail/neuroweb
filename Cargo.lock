@@ -5235,7 +5235,7 @@ dependencies = [
 
 [[package]]
 name = "origintrail-parachain-runtime"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5266,6 +5266,8 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
+ "pallet-vesting",
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
