@@ -36,7 +36,6 @@ use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
 use futures::StreamExt;
 use sc_cli::SubstrateCli;
-use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache};
 use fc_rpc::{
 	OverrideHandle, RuntimeApiStorageOverride,
@@ -119,11 +118,6 @@ where
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	BIQ: FnOnce(
 		Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-		FrontierBlockImport<
-            Block,
-            Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        >,
 		&Configuration,
 		Option<TelemetryHandle>,
 		&TaskManager,
@@ -181,12 +175,8 @@ where
 		&db_config_dir(config),
 	)?);
 
-	let frontier_block_import =
-		FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
-
 	let import_queue = build_import_queue(
 		client.clone(),
-		frontier_block_import,
 		config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
@@ -271,11 +261,6 @@ where
 		+ 'static,
 	BIQ: FnOnce(
 			Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-			FrontierBlockImport<
-				Block,
-				Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-				TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-			>,
 			&Configuration,
 			Option<TelemetryHandle>,
 			&TaskManager,
@@ -505,11 +490,6 @@ where
 #[allow(clippy::type_complexity)]
 pub fn parachain_build_import_queue(
 	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>>,
-	block_import: FrontierBlockImport<
-        Block,
-        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>>,
-        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>,
-    >,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,

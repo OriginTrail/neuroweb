@@ -2297,25 +2297,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fc-consensus"
-version = "2.0.0-dev"
-source = "git+https://github.com/OriginTrail/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
-dependencies = [
- "async-trait",
- "fc-db",
- "fp-consensus",
- "fp-rpc",
- "sc-client-api",
- "sc-consensus",
- "sp-api",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-runtime",
- "thiserror",
-]
-
-[[package]]
 name = "fc-db"
 version = "2.0.0-dev"
 source = "git+https://github.com/OriginTrail/frontier?branch=polkadot-v0.9.27#db6b28f486db3b630f9e6d8e3f5acefeb22aaad0"
@@ -5242,7 +5223,6 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "cumulus-relay-chain-rpc-interface",
  "derive_more",
- "fc-consensus",
  "fc-db",
  "fc-mapping-sync",
  "fc-rpc",
