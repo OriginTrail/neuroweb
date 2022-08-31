@@ -14,7 +14,7 @@ use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
+    create_runtime_str, generic, impl_opaque_keys, DispatchResult,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT,
         ConvertInto, DispatchInfoOf, Dispatchable, IdentifyAccount, 
@@ -33,8 +33,9 @@ use sp_version::RuntimeVersion;
 
 pub use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{Currency as PalletCurrency, Everything, Imbalance, OnUnbalanced},
+    construct_runtime, parameter_types, transactional,
+    traits::{Currency as PalletCurrency, Everything, 
+        ReservableCurrency, Imbalance, OnUnbalanced},
     weights::{
         constants::WEIGHT_PER_SECOND,
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -63,11 +64,12 @@ use xcm_executor::XcmExecutor;
 
 // Frontier
 use pallet_evm::{
-	EnsureAddressTruncated, Account as EVMAccount, FeeCalculator,
-	HashedAddressMapping, Runner
+	EnsureAddressTruncated, Account as EVMAccount,
+    FeeCalculator, Runner
 };
 use pallet_ethereum::{Call::transact, EthereumBlockHashMapping, Transaction as EthereumTransaction};
 use fp_rpc::TransactionStatus;
+use pallet_evm_accounts::{EvmAddressMapping, MergeAccount};
 
 mod precompiles;
 use precompiles::FrontierPrecompiles;
@@ -655,39 +657,31 @@ impl pallet_treasury::Config for Runtime {
     type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 }
 
-parameter_types! {
-	pub const ChainId: u64 = 2160;
-	pub BlockGasLimit: U256 = U256::from(u32::max_value());
-    pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
+pub struct MergeAccountEvm;
+impl MergeAccount<AccountId> for MergeAccountEvm {
+#[transactional]
+fn merge_account(source: &AccountId, dest: &AccountId) -> DispatchResult {
+     // unreserve all reserved currency
+     <Balances as ReservableCurrency<_>>::unreserve(source, Balances::reserved_balance(source));
+
+     // transfer all free to dest
+     match Balances::transfer(Some(source.clone()).into(), dest.clone().into(), Balances::free_balance(source)) {
+       Ok(_) => Ok(()),
+       Err(e) => Err(e.error),
+     }
+  }
 }
 
-impl pallet_evm::Config for Runtime {
+impl pallet_evm_accounts::Config for Runtime {
+	type Event = Event;
 	type Currency = Balances;
-	type Event = Event;
-
-	type BlockGasLimit = BlockGasLimit;
-	type ChainId = ChainId;
-	type BlockHashMapping = EthereumBlockHashMapping<Self>;
-	type Runner = pallet_evm::runner::stack::Runner<Self>;
-
-	type CallOrigin = EnsureAddressTruncated;
-	type WithdrawOrigin = EnsureAddressTruncated;
-	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
-
-	type FeeCalculator = BaseFee;
-	type GasWeightMapping = ();
-	type OnChargeTransaction = ();
-	type FindAuthor = ();
-	type PrecompilesType = FrontierPrecompiles<Self>;
-	type PrecompilesValue = PrecompilesValue;
+	type KillAccount = frame_system::Consumer<Runtime>;
+	type AddressMapping = EvmAddressMapping<Runtime>;
+	type MergeAccount = MergeAccountEvm;
+	type WeightInfo = ();
 }
 
-impl pallet_ethereum::Config for Runtime {
-	type Event = Event;
-	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
-}
-
-frame_support::parameter_types! {
+parameter_types! {
 	pub IsActive: bool = true;
 	pub DefaultBaseFeePerGas: U256 = U256::from(1_000_000_000);
 }
@@ -710,6 +704,38 @@ impl pallet_base_fee::Config for Runtime {
 	type Threshold = BaseFeeThreshold;
 	type IsActive = IsActive;
 	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+}
+
+parameter_types! {
+	pub const ChainId: u64 = 2160;
+	pub BlockGasLimit: U256 = U256::from(u32::max_value());
+    pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
+}
+
+impl pallet_evm::Config for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+
+	type BlockGasLimit = BlockGasLimit;
+	type ChainId = ChainId;
+	type BlockHashMapping = EthereumBlockHashMapping<Self>;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
+
+	type CallOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressTruncated;
+	type AddressMapping = EvmAddressMapping<Runtime>;
+
+	type FeeCalculator = BaseFee;
+	type GasWeightMapping = ();
+	type OnChargeTransaction = ();
+	type FindAuthor = ();
+	type PrecompilesType = FrontierPrecompiles<Self>;
+	type PrecompilesValue = PrecompilesValue;
+}
+
+impl pallet_ethereum::Config for Runtime {
+	type Event = Event;
+	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
 }
 
 /// Configure the pallet template in pallets/template.
@@ -757,7 +783,8 @@ construct_runtime!(
         // Frontier
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 50,
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, Origin} = 51,
-        BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 52,
+        EvmAccounts: pallet_evm_accounts::{Pallet, Call, Storage, Event<T>} = 52,
+        BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 53,
 
         // Governance stuff.
         Scheduler: pallet_scheduler::{Pallet, Storage, Event<T>, Call} = 60,
