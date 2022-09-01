@@ -765,8 +765,8 @@ impl pallet_evm::Config for Runtime {
 	type BlockHashMapping = EthereumBlockHashMapping<Self>;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 
-	type CallOrigin = EnsureAddressTruncated;
-	type WithdrawOrigin = EnsureAddressTruncated;
+    type CallOrigin = EnsureAddressRoot<AccountId>;
+	type WithdrawOrigin = EnsureAddressNever<AccountId>;
 	type AddressMapping = EvmAddressMapping<Runtime>;
 
 	type FeeCalculator = BaseFee;
