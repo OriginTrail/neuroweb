@@ -31,17 +31,18 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use codec::{Encode};
 pub use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::{
     construct_runtime, parameter_types, transactional,
-    traits::{Currency as PalletCurrency, Everything, 
+    traits::{Currency as PalletCurrency, Everything, FindAuthor,
         ReservableCurrency, Imbalance, OnUnbalanced},
     weights::{
         constants::WEIGHT_PER_SECOND,
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
-    PalletId,
+    ConsensusEngineId, PalletId,
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
@@ -771,6 +772,21 @@ impl pallet_evm::GasWeightMapping for GasWeightMapping {
     }
 }
 
+pub struct FindAuthorTruncated<F>(sp_std::marker::PhantomData<F>);
+impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
+    fn find_author<'a, I>(digests: I) -> Option<H160>
+    where
+        I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+    {
+        if let Some(author_index) = F::find_author(digests) {
+            let authority_id = Aura::authorities()[author_index as usize].clone();
+            return Some(H160::from_slice(&authority_id.encode()[4..24]));
+        }
+
+        None
+    }
+}
+
 parameter_types! {
 	pub const ChainId: u64 = 2160;
     pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);
@@ -793,7 +809,7 @@ impl pallet_evm::Config for Runtime {
 	type FeeCalculator = BaseFee;
 	type GasWeightMapping = GasWeightMapping;
 	type OnChargeTransaction = OnChargeEVMTransaction<DealWithFees>;
-	type FindAuthor = ();
+	type FindAuthor = FindAuthorTruncated<Aura>;
 	type PrecompilesType = FrontierPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
 }
