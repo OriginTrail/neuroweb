@@ -1,0 +1,19 @@
+[package]
+name = "pallet-evm-utility-macro"
+version = "1.0.0"
+authors = ["TraceLabs"]
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0.20"
+syn = { version = "1.0.96", features = [
+    "full",
+    "fold",
+    "extra-traits",
+    "visit",
+] }
+proc-macro2 = "1.0.40"
+pallet-evm-utility = { path = ".." }
