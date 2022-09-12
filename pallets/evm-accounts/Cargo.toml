@@ -1,0 +1,53 @@
+[package]
+name = "pallet-evm-accounts"
+version = "1.0.0"
+authors = ["TraceLabs"]
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.136", optional = true }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+libsecp256k1 = { version = "0.7", default-features = false, features = [
+    "hmac",
+    "static-context",
+], optional = true }
+scale-info = { version = "2.1", default-features = false, features = [
+    "derive",
+] }
+sha3 = { version = "0.9.1", default-features = false }
+
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+pallet-evm = { default-features = false, git = "https://github.com/OriginTrail/frontier.git", branch = "polkadot-v0.9.27" }
+impl-trait-for-tuples = "0.1.3"
+pallet-evm-utility-macro = { path = "../evm-utility/macro" }
+
+[dev-dependencies]
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+
+[features]
+default = ["std"]
+std = [
+    "serde",
+    "codec/std",
+    "libsecp256k1",
+    "libsecp256k1/std",
+    "scale-info/std",
+    "sp-core/std",
+    "sp-runtime/std",
+    "sp-io/std",
+    "sp-std/std",
+    "frame-support/std",
+    "frame-system/std",
+    "pallet-evm/std",
+]
+runtime-benchmarks = [
+    "libsecp256k1",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+]
+try-runtime = ["frame-support/try-runtime"]
