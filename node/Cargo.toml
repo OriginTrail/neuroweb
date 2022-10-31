@@ -1,6 +1,6 @@
 [package]
 name = "origintrail-parachain-node"
-version = "1.0.4"
+version = "1.0.5"
 authors = ["TraceLabs"]
 description = "OriginTrail Parachain - Cumulus FRAME-based Substrate Node"
 license = "GPL-3.0-only"
