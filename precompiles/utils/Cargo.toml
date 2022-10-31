@@ -1,6 +1,6 @@
 [package]
 name = "precompile-utils"
-authors = ["StakeTechnologies", "PureStake"]
+authors = ["TraceLabs", "StakeTechnologies", "PureStake"]
 description = "Utils to write EVM precompiles."
 edition = "2021"
 version = "0.4.3"

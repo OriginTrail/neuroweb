@@ -2,7 +2,7 @@
 //!
 //! ## Overview
 //!
-//! This pallet provides mappings between local asset Id and remove asset location.
+//! This pallet provides mappings between local asset Id and remote asset location.
 //! E.g. a multilocation like `{parents: 0, interior: X1::(Junction::Parachain(1000))}` could ba mapped to local asset Id `789`.
 //!
 //! Additionally, it stores information whether a foreign asset is supported as a payment currency for execution on local network.
