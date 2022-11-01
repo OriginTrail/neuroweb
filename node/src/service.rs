@@ -36,7 +36,7 @@ use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
 use futures::StreamExt;
 use sc_cli::SubstrateCli;
-use fc_rpc_core::types::{FeeHistoryCache};
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_rpc::{
 	OverrideHandle, RuntimeApiStorageOverride,
 };
@@ -333,6 +333,7 @@ where
 			warp_sync: None,
 		}
 	)?;
+	let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
 	let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
 
 	// Frontier offchain DB task. Essential.
@@ -351,6 +352,19 @@ where
             fc_mapping_sync::SyncStrategy::Parachain,
         )
         .for_each(|()| futures::future::ready(())),
+    );
+
+	// Frontier `EthFilterApi` maintenance. Manages the pool of user-created Filters.
+    // Each filter is allowed to stay in the pool for 100 blocks.
+    const FILTER_RETAIN_THRESHOLD: u64 = 100;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-filter-pool",
+        Some("frontier"),
+        fc_rpc::EthTask::filter_pool_task(
+            client.clone(),
+            filter_pool.clone(),
+            FILTER_RETAIN_THRESHOLD,
+        ),
     );
 
 	let overrides = Arc::new(OverrideHandle {
@@ -393,6 +407,7 @@ where
 				is_authority,
 				network: network.clone(),
 				backend: frontier_backend.clone(),
+				filter_pool: filter_pool.clone(),
 				fee_history_cache_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),
 				overrides: overrides.clone(),

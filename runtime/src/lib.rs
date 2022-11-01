@@ -36,7 +36,7 @@ pub use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::{
     construct_runtime, parameter_types, transactional,
     traits::{Currency as PalletCurrency, Everything, FindAuthor,
-        ReservableCurrency, Imbalance, OnUnbalanced},
+        ReservableCurrency, Imbalance, OnUnbalanced, ConstU128},
     weights::{
         constants::WEIGHT_PER_SECOND,
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -71,9 +71,10 @@ use pallet_evm::{
 use pallet_ethereum::{Call::transact, EthereumBlockHashMapping, Transaction as EthereumTransaction};
 use fp_rpc::TransactionStatus;
 use pallet_evm_accounts::{EvmAddressMapping, MergeAccount};
+use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
 mod precompiles;
-use precompiles::FrontierPrecompiles;
+use precompiles::{FrontierPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 
 /// Import the template pallet.
 pub use pallet_template;
@@ -248,7 +249,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("origintrail-parachain"),
     impl_name: create_runtime_str!("origintrail-parachain"),
     authoring_version: 1,
-    spec_version: 104,
+    spec_version: 105,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -819,6 +820,81 @@ impl pallet_ethereum::Config for Runtime {
 	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
 }
 
+/// Id used for identifying assets.
+///
+/// AssetId allocation:
+/// [1; 2^32-1]     Custom user assets (permissionless)
+/// [2^32; 2^64-1]  Statemine assets (simple map)
+/// [2^64; 2^128-1] Ecosystem assets
+/// 2^128-1         Relay chain token (DOT)
+pub type AssetId = u128;
+
+impl AddressToAssetId<AssetId> for Runtime {
+    fn address_to_asset_id(address: H160) -> Option<AssetId> {
+        let mut data = [0u8; 16];
+        let address_bytes: [u8; 20] = address.into();
+        if ASSET_PRECOMPILE_ADDRESS_PREFIX.eq(&address_bytes[0..4]) {
+            data.copy_from_slice(&address_bytes[4..20]);
+            Some(u128::from_be_bytes(data))
+        } else {
+            None
+        }
+    }
+
+    fn asset_id_to_address(asset_id: AssetId) -> H160 {
+        let mut data = [0u8; 20];
+        data[0..4].copy_from_slice(ASSET_PRECOMPILE_ADDRESS_PREFIX);
+        data[4..20].copy_from_slice(&asset_id.to_be_bytes());
+        H160::from(data)
+    }
+}
+
+parameter_types! {
+	pub const AssetDeposit: Balance = 100 * OTP;
+	pub const ApprovalDeposit: Balance = 0;
+	pub const StringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = 10 * OTP;
+	pub const MetadataDepositPerByte: Balance = 1 * OTP;
+}
+
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = u128;
+	type AssetId = AssetId;
+	type Currency = Balances;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type AssetAccountDeposit = ConstU128<OTP>;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
+pub struct EvmRevertCodeHandler;
+impl pallet_xc_asset_config::XcAssetChanged<Runtime> for EvmRevertCodeHandler {
+    fn xc_asset_registered(asset_id: AssetId) {
+        let address = Runtime::asset_id_to_address(asset_id);
+        pallet_evm::AccountCodes::<Runtime>::insert(address, vec![0x60, 0x00, 0x60, 0x00, 0xfd]);
+    }
+
+    fn xc_asset_unregistered(asset_id: AssetId) {
+        let address = Runtime::asset_id_to_address(asset_id);
+        pallet_evm::AccountCodes::<Runtime>::remove(address);
+    }
+}
+
+impl pallet_xc_asset_config::Config for Runtime {
+    type Event = Event;
+    type AssetId = AssetId;
+    type XcAssetChanged = EvmRevertCodeHandler;
+    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
+}
+
 /// Configure the pallet template in pallets/template.
 impl pallet_template::Config for Runtime {
     type Event = Event;
@@ -844,6 +920,8 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 12,
         Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 13,
+        Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 14,
+        XcAssetConfig: pallet_xc_asset_config = 15,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,

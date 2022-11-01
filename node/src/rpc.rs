@@ -14,10 +14,10 @@ use sc_client_api::{
 };
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use fc_rpc::{
-	EthBlockDataCacheTask, OverrideHandle,
+	EthBlockDataCacheTask, OverrideHandle, EthFilter, EthFilterApiServer,
 };
 use sp_runtime::traits::BlakeTwo256;
-use fc_rpc_core::types::{FeeHistoryCache};
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
@@ -44,6 +44,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
 	pub network: Arc<NetworkService<Block, Hash>>,
 	/// Backend.
 	pub backend: Arc<fc_db::Backend<Block>>,
+	/// EthFilterApi pool.
+    pub filter_pool: FilterPool,
 	/// Maximum fee history cache size.                                                                                    
     pub fee_history_cache_limit: u64,
     /// Fee history cache.
@@ -84,8 +86,8 @@ where
 	use fc_rpc::{Eth, EthApiServer, Net, NetApiServer};
 
 	let mut module = RpcExtension::new(());
-	let FullDeps { client, pool, graph, deny_unsafe, network, backend, is_authority, fee_history_cache,
-		fee_history_cache_limit, overrides, block_data_cache
+	let FullDeps { client, pool, graph, deny_unsafe, network, backend, is_authority, filter_pool,
+		fee_history_cache, fee_history_cache_limit, overrides, block_data_cache
 	} = deps;
 
 	module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
@@ -108,6 +110,20 @@ where
             fee_history_cache,
             fee_history_cache_limit,
         ).into_rpc()
+    )?;
+
+	let max_past_logs: u32 = 10_000;
+    let max_stored_filters: usize = 500;
+    module.merge(
+        EthFilter::new(
+            client.clone(),
+            backend,
+            filter_pool,
+            max_stored_filters,
+            max_past_logs,
+            block_data_cache,
+        )
+        .into_rpc(),
     )?;
 
 	module.merge(
