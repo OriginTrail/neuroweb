@@ -1,7 +1,7 @@
 // Copyright 2019-2022 PureStake Inc.
 // Copyright 2022      Stake Technologies
 // This file is part of AssetsERC20 package, originally developed by Purestake Inc.
-// AssetsERC20 package used in Astar Network in terms of GPLv3.
+// AssetsERC20 package used in OriginTrail Parachain Network in terms of GPLv3.
 //
 // AssetsERC20 is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 use super::*;
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{construct_runtime, parameter_types, traits::Everything};
+use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
 
 use frame_system::EnsureRoot;
 use pallet_evm::{AddressMapping, EnsureAddressNever, EnsureAddressRoot};
@@ -147,16 +147,16 @@ parameter_types! {
 impl frame_system::Config for Runtime {
     type BaseCallFilter = Everything;
     type DbWeight = ();
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type Index = u64;
     type BlockNumber = BlockNumber;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -191,7 +191,7 @@ impl pallet_balances::Config for Runtime {
     type ReserveIdentifier = ();
     type MaxLocks = ();
     type Balance = Balance;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
@@ -201,7 +201,7 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     pub const PrecompilesValue: Erc20AssetsPrecompileSet<Runtime> =
         Erc20AssetsPrecompileSet(PhantomData);
-    pub const WeightPerGas: u64 = 1;
+    pub const WeightPerGas: Weight = Weight::from_ref_time(1);
     pub BlockGasLimit: U256 = U256::max_value();
 }
 
@@ -213,7 +213,7 @@ impl pallet_evm::Config for Runtime {
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AccountId;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Erc20AssetsPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
@@ -236,7 +236,7 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type AssetId = AssetId;
     type Currency = Balances;

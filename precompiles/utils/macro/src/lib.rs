@@ -1,7 +1,7 @@
 // Copyright 2019-2022 PureStake Inc.
 // Copyright 2022      Stake Technologies
 // This file is part of Utils package, originally developed by Purestake Inc.
-// Utils package used in Astar Network in terms of GPLv3.
+// Utils package used in OriginTrail Network in terms of GPLv3.
 //
 // Utils is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

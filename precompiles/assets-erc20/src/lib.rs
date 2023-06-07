@@ -90,8 +90,8 @@ pub trait AddressToAssetId<AssetId> {
 
 /// The following distribution has been decided for the precompiles
 /// 0-1023: Ethereum Mainnet Precompiles
-/// 1024-2047 Precompiles that are not in Ethereum Mainnet but are neither Astar specific
-/// 2048-4095 Astar specific precompiles
+/// 1024-2047 Precompiles that are not in Ethereum Mainnet but are neither OriginTrail Parachain specific
+/// 2048-4095 OriginTrail Parachain specific precompiles
 /// Asset precompiles can only fall between
 ///     0xFFFFFFFF00000000000000000000000000000000 - 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 /// The precompile for AssetId X, where X is a u128 (i.e.16 bytes), if 0XFFFFFFFF + Bytes(AssetId)
@@ -337,7 +337,7 @@ where
                     handle,
                     Some(origin.clone()).into(),
                     pallet_assets::Call::<Runtime, Instance>::cancel_approval {
-                        id: asset_id,
+                        id: asset_id.into(),
                         delegate: Runtime::Lookup::unlookup(spender.clone()),
                     },
                 )?;
@@ -347,7 +347,7 @@ where
                 handle,
                 Some(origin).into(),
                 pallet_assets::Call::<Runtime, Instance>::approve_transfer {
-                    id: asset_id,
+                    id: asset_id.into(),
                     delegate: Runtime::Lookup::unlookup(spender),
                     amount,
                 },
@@ -388,7 +388,7 @@ where
                 handle,
                 Some(origin).into(),
                 pallet_assets::Call::<Runtime, Instance>::transfer {
-                    id: asset_id,
+                    id: asset_id.into(),
                     target: Runtime::Lookup::unlookup(to),
                     amount,
                 },
@@ -433,7 +433,7 @@ where
                     handle,
                     Some(caller).into(),
                     pallet_assets::Call::<Runtime, Instance>::transfer_approved {
-                        id: asset_id,
+                        id: asset_id.into(),
                         owner: Runtime::Lookup::unlookup(from),
                         destination: Runtime::Lookup::unlookup(to),
                         amount,
@@ -445,7 +445,7 @@ where
                     handle,
                     Some(from).into(),
                     pallet_assets::Call::<Runtime, Instance>::transfer {
-                        id: asset_id,
+                        id: asset_id.into(),
                         target: Runtime::Lookup::unlookup(to),
                         amount,
                     },
@@ -546,7 +546,7 @@ where
             handle,
             Some(origin).into(),
             pallet_assets::Call::<Runtime, Instance>::mint {
-                id: asset_id,
+                id: asset_id.into(),
                 beneficiary: Runtime::Lookup::unlookup(beneficiary),
                 amount,
             },
@@ -573,7 +573,7 @@ where
             handle,
             Some(origin).into(),
             pallet_assets::Call::<Runtime, Instance>::burn {
-                id: asset_id,
+                id: asset_id.into(),
                 who: Runtime::Lookup::unlookup(who),
                 amount,
             },

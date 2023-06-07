@@ -32,7 +32,7 @@ fn precompiles() -> Erc20AssetsPrecompileSet<Runtime> {
 fn selector_less_than_four_bytes() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             0u128,
             Account::Alice.into(),
             true,
@@ -49,7 +49,7 @@ fn selector_less_than_four_bytes() {
 fn no_selector_exists_but_length_is_right() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             0u128,
             Account::Alice.into(),
             true,
@@ -100,14 +100,14 @@ fn get_total_supply() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1000
@@ -132,14 +132,14 @@ fn get_balances_known_user() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1000
@@ -166,7 +166,7 @@ fn get_balances_unknown_user() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
@@ -194,14 +194,14 @@ fn approve() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1000
@@ -233,14 +233,14 @@ fn approve_saturating() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1000
@@ -285,14 +285,14 @@ fn check_allowance_existing() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1000
@@ -331,7 +331,7 @@ fn check_allowance_not_existing() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
@@ -360,14 +360,14 @@ fn increase_allowance() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1200
@@ -416,14 +416,14 @@ fn increase_allowance_saturating() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1200
@@ -502,14 +502,14 @@ fn decrease_allowance() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1200
@@ -559,14 +559,14 @@ fn decrease_allowance_saturating() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1200
@@ -616,14 +616,14 @@ fn transfer() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1000
@@ -679,14 +679,14 @@ fn transfer_not_enough_founds() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1
@@ -717,14 +717,14 @@ fn transfer_from() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1000
@@ -815,14 +815,14 @@ fn transfer_from_non_incremental_approval() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1000
@@ -895,14 +895,14 @@ fn transfer_from_above_allowance() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1000
@@ -946,14 +946,14 @@ fn transfer_from_self() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::mint(
-                Origin::signed(Account::Alice),
+                RuntimeOrigin::signed(Account::Alice),
                 0u128,
                 Account::Alice.into(),
                 1000
@@ -1010,14 +1010,14 @@ fn get_metadata() {
         .build()
         .execute_with(|| {
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 Account::Alice.into(),
                 true,
                 1
             ));
             assert_ok!(Assets::force_set_metadata(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 0u128,
                 b"TestToken".to_vec(),
                 b"Test".to_vec(),
@@ -1066,7 +1066,7 @@ fn minimum_balance_is_right() {
     ExtBuilder::default().build().execute_with(|| {
         let expected_min_balance = 19;
         assert_ok!(Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             0u128,
             Account::Alice.into(),
             true,
@@ -1090,7 +1090,7 @@ fn mint_is_ok() {
     ExtBuilder::default().build().execute_with(|| {
         let asset_id = 0;
         assert_ok!(Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             Account::Alice.into(),
             true,
@@ -1124,7 +1124,7 @@ fn mint_non_admin_is_not_ok() {
     ExtBuilder::default().build().execute_with(|| {
         let asset_id = 0;
         assert_ok!(Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             Account::Alice.into(),
             true,
@@ -1150,7 +1150,7 @@ fn burn_is_ok() {
     ExtBuilder::default().build().execute_with(|| {
         let asset_id = 0;
         assert_ok!(Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             Account::Alice.into(),
             true,
@@ -1160,7 +1160,7 @@ fn burn_is_ok() {
         // Issue some initial assets for Bob
         let init_amount = 123;
         assert_ok!(Assets::mint(
-            Origin::signed(Account::Alice),
+            RuntimeOrigin::signed(Account::Alice),
             asset_id,
             Account::Bob.into(),
             init_amount,
@@ -1194,14 +1194,14 @@ fn burn_non_admin_is_not_ok() {
     ExtBuilder::default().build().execute_with(|| {
         let asset_id = 0;
         assert_ok!(Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             Account::Alice.into(),
             true,
             1,
         ));
         assert_ok!(Assets::mint(
-            Origin::signed(Account::Alice),
+            RuntimeOrigin::signed(Account::Alice),
             asset_id,
             Account::Bob.into(),
             1000000,
