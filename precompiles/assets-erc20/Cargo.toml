@@ -3,7 +3,7 @@ name = "pallet-evm-precompile-assets-erc20"
 authors = ["TraceLabs", "Stake Technologies", "PureStake"]
 description = "A Precompile to expose a Assets pallet through an ERC20-compliant interface."
 edition = "2021"
-version = "1.0.0"
+version = "1.1.1"
 
 [dependencies]
 log = "0.4.16"
