@@ -72,7 +72,7 @@ use pallet_evm::{
 	EnsureAddressRoot, EnsureAddressNever, Account as EVMAccount, EVMCurrencyAdapter,
     FeeCalculator, OnChargeEVMTransaction as OnChargeEVMTransactionT, Runner
 };
-use pallet_ethereum::{Call::transact, EthereumBlockHashMapping, Transaction as EthereumTransaction};
+use pallet_ethereum::{Call::transact, PostLogContent, EthereumBlockHashMapping, Transaction as EthereumTransaction};
 use fp_rpc::TransactionStatus;
 use pallet_evm_accounts::{EvmAddressMapping, MergeAccount};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
@@ -296,7 +296,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 of a second of compute with a 12 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 	WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-	cumulus_primitives_core::relay_chain::v2::MAX_POV_SIZE as u64,
+	cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64,
 );
 
 /// The version information used to identify this runtime when compiled natively.
@@ -409,8 +409,6 @@ impl pallet_timestamp::Config for Runtime {
 
 impl pallet_authorship::Config for Runtime {
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-    type UncleGenerations = ConstU32<0>;
-    type FilterUncle = ();
     type EventHandler = (CollatorSelection,);
 }
 
@@ -526,6 +524,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
     type WeightInfo = ();
+    type PriceForSiblingDelivery = ();
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -778,7 +777,7 @@ parameter_types! {
 	pub const ChainId: u64 = 2043;
     pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS);
     pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
-    pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
+    pub WeightPerGas: Weight = Weight::from_parts(WEIGHT_PER_GAS, 0);
 }
 
 impl pallet_evm::Config for Runtime {
@@ -798,14 +797,23 @@ impl pallet_evm::Config for Runtime {
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type WeightPerGas = WeightPerGas;
 	type OnChargeTransaction = OnChargeEVMTransaction<DealWithFees>;
+    type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated<Aura>;
 	type PrecompilesType = FrontierPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
+    type Timestamp = Timestamp;
+    type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
 }
 
 impl pallet_ethereum::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type PostLogContent = PostBlockAndTxnHashes;
+    type ExtraDataLength = ConstU32<30>;
 }
 
 /// Id used for identifying assets.
@@ -863,7 +871,7 @@ impl pallet_assets::Config for Runtime {
 	type Extra = ();
     type CallbackHandle = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-    type RemoveItemsLimit = ConstU32<1000>;
+    type RemoveItemsLimit = ConstU32<656>;
 }
 
 pub struct EvmRevertCodeHandler;
@@ -916,7 +924,7 @@ construct_runtime!(
         XcAssetConfig: pallet_xc_asset_config = 15,
 
         // Collator support. The order of these 4 are important and shall not change.
-        Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+        Authorship: pallet_authorship::{Pallet, Storage} = 20,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
@@ -951,7 +959,7 @@ extern crate frame_benchmarking;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
-    define_benchmarks!(
+    frame_benchmarking::define_benchmarks!(
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
         [pallet_session, SessionBench::<Runtime>]
@@ -1211,6 +1219,12 @@ impl_runtime_apis! {
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
         }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
+		}
     }
 
     impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
@@ -1227,6 +1241,12 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_call_fee_details(call, len)
+		}
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
 		}
 	}
 
@@ -1284,18 +1304,8 @@ impl_runtime_apis! {
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
-            let whitelist: Vec<TrackedStorageKey> = vec![
-                // Block Number
-                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac").to_vec().into(),
-                // Total Issuance
-                hex_literal::hex!("c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80").to_vec().into(),
-                // Execution Phase
-                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a").to_vec().into(),
-                // Event Count
-                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850").to_vec().into(),
-                // System Events
-                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
-            ];
+            use frame_support::traits::WhitelistedStorageKeys;
+			let whitelist = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();
             let params = (&config, &whitelist);

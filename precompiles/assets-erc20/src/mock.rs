@@ -20,9 +20,9 @@
 use super::*;
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
+use frame_support::{construct_runtime, parameter_types, traits::{Everything, AsEnsureOriginWithArg}, weights::Weight};
 
-use frame_system::EnsureRoot;
+use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_evm::{AddressMapping, EnsureAddressNever, EnsureAddressRoot};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
@@ -201,7 +201,7 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     pub const PrecompilesValue: Erc20AssetsPrecompileSet<Runtime> =
         Erc20AssetsPrecompileSet(PhantomData);
-    pub const WeightPerGas: Weight = Weight::from_ref_time(1);
+    pub const WeightPerGas: Weight = Weight::from_parts(1, 0);
     pub BlockGasLimit: U256 = U256::max_value();
 }
 
@@ -222,6 +222,8 @@ impl pallet_evm::Config for Runtime {
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
     type FindAuthor = ();
+    type OnCreate = ();
+    type WeightInfo = ();
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments
@@ -238,8 +240,9 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
-    type AssetId = AssetId;
+	type AssetIdParameter = AssetId;
     type Currency = Balances;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
     type AssetAccountDeposit = AssetAccountDeposit;
@@ -249,7 +252,9 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
+    type CallbackHandle = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<656>;
 }
 
 // Configure a mock runtime to test the pallet.

@@ -5,6 +5,9 @@
 //! This pallet provides mappings between local asset Id and remote asset location.
 //! E.g. a multilocation like `{parents: 0, interior: X1::(Junction::Parachain(1000))}` could ba mapped to local asset Id `789`.
 //!
+//! The pallet ensures that the latest MultiLocation version is always used. Developers must ensure to properly migrate legacy versions
+//! to newest when they become available.
+//!
 //! Additionally, it stores information whether a foreign asset is supported as a payment currency for execution on local network.
 //!
 //! ## Interface
@@ -42,6 +45,8 @@ pub mod mock;
 #[cfg(test)]
 pub mod tests;
 
+pub mod migrations;
+
 pub mod weights;
 pub use weights::WeightInfo;
 
@@ -53,9 +58,12 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use parity_scale_codec::HasCompact;
     use sp_std::boxed::Box;
-    use xcm::{v1::MultiLocation, VersionedMultiLocation};
+    use xcm::{v3::MultiLocation, VersionedMultiLocation};
+
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
     #[pallet::pallet]
+    #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
 
@@ -66,6 +74,12 @@ pub mod pallet {
 
         /// Will be called by pallet when asset Id has been unregistered
         fn xc_asset_unregistered(asset_id: T::AssetId);
+    }
+
+    /// Implementation that does nothing
+    impl<T: Config> XcAssetChanged<T> for () {
+        fn xc_asset_registered(_: T::AssetId) {}
+        fn xc_asset_unregistered(_: T::AssetId) {}
     }
 
     /// Defines conversion between asset Id and cross-chain asset location
@@ -89,13 +103,13 @@ pub mod pallet {
         }
 
         fn get_asset_id(asset_location: MultiLocation) -> Option<T::AssetId> {
-            AssetLocationToId::<T>::get(asset_location.versioned())
+            AssetLocationToId::<T>::get(asset_location.into_versioned())
         }
     }
 
     impl<T: Config> ExecutionPaymentRate for Pallet<T> {
         fn get_units_per_second(asset_location: MultiLocation) -> Option<u128> {
-            AssetLocationUnitsPerSecond::<T>::get(asset_location.versioned())
+            AssetLocationUnitsPerSecond::<T>::get(asset_location.into_versioned())
         }
     }
 
@@ -124,6 +138,8 @@ pub mod pallet {
         AssetAlreadyRegistered,
         /// Asset does not exist (hasn't been registered).
         AssetDoesNotExist,
+        /// Failed to convert to latest versioned MultiLocation
+        MultiLocationNotSupported,
     }
 
     #[pallet::event]
@@ -201,7 +217,9 @@ pub mod pallet {
                 Error::<T>::AssetAlreadyRegistered
             );
 
-            let asset_location = *asset_location;
+            let v3_asset_loc = MultiLocation::try_from(*asset_location)
+                .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
+            let asset_location = VersionedMultiLocation::V3(v3_asset_loc);
 
             AssetIdToLocation::<T>::insert(&asset_id, asset_location.clone());
             AssetLocationToId::<T>::insert(&asset_location, asset_id);
@@ -226,7 +244,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let asset_location = *asset_location;
+            let v3_asset_loc = MultiLocation::try_from(*asset_location)
+                .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
+            let asset_location = VersionedMultiLocation::V3(v3_asset_loc);
 
             ensure!(
                 AssetLocationToId::<T>::contains_key(&asset_location),
@@ -253,7 +273,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let new_asset_location = *new_asset_location;
+            let v3_asset_loc = MultiLocation::try_from(*new_asset_location)
+                .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
+            let new_asset_location = VersionedMultiLocation::V3(v3_asset_loc);
 
             let previous_asset_location =
                 AssetIdToLocation::<T>::get(&asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
@@ -289,7 +311,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let asset_location = *asset_location;
+            let v3_asset_loc = MultiLocation::try_from(*asset_location)
+                .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
+            let asset_location = VersionedMultiLocation::V3(v3_asset_loc);
 
             AssetLocationUnitsPerSecond::<T>::remove(&asset_location);
 

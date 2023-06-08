@@ -35,7 +35,7 @@ impl<T: frame_system::Config> pallet_evm_accounts::WeightInfo for WeightInfo<T> 
 	// Storage: System BlockHash (r:1 w:0)
 	// Storage: System Account (r:1 w:0)
 	fn claim_account() -> Weight {
-		Weight::from_ref_time(74_709_000)
+		Weight::from_parts(74_709_000, 0)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -43,7 +43,7 @@ impl<T: frame_system::Config> pallet_evm_accounts::WeightInfo for WeightInfo<T> 
 	// Storage: EvmAccounts EvmAddresses (r:1 w:1)
 	// Storage: EvmAccounts Accounts (r:0 w:1)
 	fn claim_default_account() -> Weight {
-		Weight::from_ref_time(16_405_000)
+		Weight::from_parts(16_405_000, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
