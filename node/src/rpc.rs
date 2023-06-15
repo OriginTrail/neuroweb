@@ -38,7 +38,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
 	/// Graph pool instance.
 	pub graph: Arc<Pool<A>>,
 	/// Chain syncing service
-    pub sync: Arc<SyncingService<Block>>,
+	pub sync: Arc<SyncingService<Block>>,
 	/// Whether to deny unsafe calls
 	pub deny_unsafe: DenyUnsafe,
 	/// The Node authority flag

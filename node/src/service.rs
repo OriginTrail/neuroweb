@@ -278,11 +278,6 @@ async fn start_node_impl(
         ),
     );
 
-	// let overrides = Arc::new(OverrideHandle {
-	// 	schemas: BTreeMap::new(),
-	// 	fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
-	// });
-
 	const FEE_HISTORY_LIMIT: u64 = 2048;
 	task_manager.spawn_essential_handle().spawn(
         "frontier-fee-history",
