@@ -83,16 +83,16 @@ pallet-collator-selection = { git = "https://github.com/paritytech/cumulus.git",
 parachain-info = { git = "https://github.com/paritytech/cumulus.git", default-features = false, branch = "polkadot-v0.9.40" }
 
 # Frontier
-pallet-base-fee = { git = "https://github.com/AstarNetwork/frontier", default-features = false, branch = "polkadot-v0.9.40" }
-pallet-evm = { git = "https://github.com/AstarNetwork/frontier", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-base-fee = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-evm = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-evm-accounts = { path = "../pallets/evm-accounts", default-features = false }
 pallet-evm-precompile-assets-erc20 = { path = "../precompiles/assets-erc20", default-features = false }
-pallet-evm-precompile-simple = { git = "https://github.com/AstarNetwork/frontier", default-features = false, branch = "polkadot-v0.9.40" }
-pallet-evm-precompile-modexp = { git = "https://github.com/AstarNetwork/frontier", default-features = false, branch = "polkadot-v0.9.40" }
-pallet-evm-precompile-sha3fips = { git = "https://github.com/AstarNetwork/frontier", default-features = false, branch = "polkadot-v0.9.40" }
-pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", default-features = false, branch = "polkadot-v0.9.40" }
-fp-rpc = { git = "https://github.com/AstarNetwork/frontier", default-features = false, branch = "polkadot-v0.9.40" }
-fp-self-contained = { git = "https://github.com/AstarNetwork/frontier", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-evm-precompile-simple = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-evm-precompile-modexp = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-evm-precompile-sha3fips = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-ethereum = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
+fp-rpc = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
+fp-self-contained = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
 
 [features]
 default = ["std"]
