@@ -1,5 +1,6 @@
 // Copyright 2019-2022 PureStake Inc.
 // Copyright 2022      Stake Technologies
+// Copyright 2022      TraceLabs
 // This file is part of AssetsERC20 package, originally developed by Purestake Inc.
 // AssetsERC20 package used in OriginTrail Parachain Network in terms of GPLv3.
 //
@@ -29,7 +30,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256};
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup, ConstU32},
 };
 
 pub type AccountId = Account;
@@ -221,6 +222,7 @@ impl pallet_evm::Config for Runtime {
     type OnChargeTransaction = ();
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
+    type Timestamp = Timestamp;
     type FindAuthor = ();
     type OnCreate = ();
     type WeightInfo = ();
@@ -240,7 +242,8 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
-	type AssetIdParameter = AssetId;
+	type AssetId = AssetId;
+    type AssetIdParameter = AssetId;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type ForceOrigin = EnsureRoot<AccountId>;

@@ -1,7 +1,8 @@
 // Copyright 2019-2022 PureStake Inc.
 // Copyright 2022      Stake Technologies
+// Copyright 2022      TraceLabs
 // This file is part of Utils package, originally developed by Purestake Inc.
-// Utils package used in Astar Network in terms of GPLv3.
+// Utils package used in OriginTrail Parachain Network in terms of GPLv3.
 //
 // Utils is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,9 +16,7 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Utils.  If not, see <http://www.gnu.org/licenses/>.
-
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(assert_matches)]
 
 extern crate alloc;
 
@@ -195,10 +194,11 @@ where
         // However while Substrate handle checking weight while not making the sender pay for it,
         // the EVM doesn't. It seems this safer to always record the costs to avoid unmetered
         // computations.
-        let used_weight = call
+        let result = call
             .dispatch(origin)
-            .map_err(|e| revert(alloc::format!("Dispatched call failed with error: {:?}", e)))?
-            .actual_weight;
+            .map_err(|e| revert(alloc::format!("Dispatched call failed with error: {:?}", e)))?;
+
+        let used_weight = result.actual_weight;
 
         let used_gas =
             Runtime::GasWeightMapping::weight_to_gas(used_weight.unwrap_or(dispatch_info.weight));

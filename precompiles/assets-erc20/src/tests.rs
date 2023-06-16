@@ -1,5 +1,6 @@
 // Copyright 2019-2022 PureStake Inc.
 // Copyright 2022      Stake Technologies
+// Copyright 2022      TraceLabs
 // This file is part of AssetsERC20 package, originally developed by Purestake Inc.
 // AssetsERC20 package used in OriginTrail Parachain in terms of GPLv3.
 //
