@@ -88,7 +88,7 @@ fc-mapping-sync = { git = "https://github.com/OriginTrail/frontier", branch = "p
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
 
 [features]
-default = []
+default = ["fc-rpc/rpc-binary-search-estimate"]
 runtime-benchmarks = [
 	"try-runtime-cli/try-runtime",
 	"origintrail-parachain-runtime/runtime-benchmarks",
