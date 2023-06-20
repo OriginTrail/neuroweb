@@ -95,6 +95,22 @@ by going to:
 
 Ensure you set the `ParaId to 2000` and the `parachain: Bool to Yes`.
 
+### Containerize
+
+#### Build
+```shell
+docker build -t origintrail-parachain .
+```
+#### Run
+```shell
+docker run -it -p 30333:30333 -p 9933:9933 -p 9944:9944 -p 9615:9615 -v /data:/data origintrail-parachain:latest\
+  --base-path=/data --rpc-external --ws-external\
+  --ws-max-connections=1000 --rpc-cors=all\
+  --prometheus-external --rpc-methods=Unsafe\
+  --chain=/config/origintrail-parachain-2043-raw.json\
+  --no-mdns --execution=wasm --pruning=archive\
+  -- --execution=wasm --wasm-execution=Compiled --chain=polkadot
+```
 
 ## Learn More
 
