@@ -47,8 +47,8 @@ To run a full network with multiple OriginTrail parachain nodes (collators and n
 
 #### Run A Relay Chain
 
-To start a relay chain we recommend reading and following instructions in [Cumulus Workshop](https://substrate.dev/cumulus-workshop/).
-OriginTrail parachain is currently compatible with Polkadot v0.9.18 version.
+To start a relay chain we recommend reading and following instructions in [Cumulus Workshop](https://docs.substrate.io/tutorials/build-a-parachain/prepare-a-local-relay-chain/).
+OriginTrail parachain is currently compatible with Polkadot v0.9.40 version.
 
 #### Parachain Nodes (Collators)
 
@@ -88,13 +88,12 @@ Then you need to register on Local Relay Chain as it is presented in Cumulus Wor
 ```
 
 In order to produce blocks you will need to register the parachain as detailed in the
-[Substrate Cumulus Worship](https://substrate.dev/cumulus-workshop/#/en/3-parachains/2-register)
+[Substrate Cumulus Workshop](https://docs.substrate.io/tutorials/build-a-parachain/connect-a-local-parachain/)
 by going to:
 
 `Developer -> sudo -> paraSudoWrapper -> sudoScheduleParaInitialize(id, genesis)`
 
 Ensure you set the `ParaId to 2000` and the `parachain: Bool to Yes`.
-
 
 
 ## Learn More
@@ -104,7 +103,3 @@ Ensure you set the `ParaId to 2000` and the `parachain: Bool to Yes`.
 - More about OriginTrail Parachain and Decentralized Knowledge Graph read in [whitepaper](https://parachain.origintrail.io/whitepaper)
 - More detailed instructions to use Cumulus parachains are found in the
 [Cumulus Workshop](https://substrate.dev/cumulus-workshop/#/en/3-parachains/2-register)
-- Refer to the upstream
-[Substrate Developer Hub Node Template](https://github.com/substrate-developer-hub/substrate-node-template)
-to learn more about the structure of this project, the capabilities it encapsulates and the way in
-which those capabilities are implemented.
