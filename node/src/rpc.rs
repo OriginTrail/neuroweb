@@ -5,7 +5,7 @@
 
 #![warn(missing_docs)]
 
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
 use origintrail_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Index as Nonce};
 
@@ -16,6 +16,7 @@ pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use fc_rpc::{
 	EthBlockDataCacheTask, OverrideHandle, EthFilter, EthFilterApiServer,
 };
+use sp_core::H256;
 use sp_runtime::traits::BlakeTwo256;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use sc_network_sync::SyncingService;
@@ -57,6 +58,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
 	pub overrides: Arc<OverrideHandle<Block>>,
     /// Cache for Ethereum block data.
 	pub block_data_cache: Arc<EthBlockDataCacheTask<Block>>,
+	/// Mandated parent hashes for a given block hash.
+	pub forced_parent_hashes: Option<BTreeMap<H256, H256>>,
 }
 
 /// Instantiate all RPC extensions.
@@ -92,7 +95,7 @@ where
 
 	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, graph, deny_unsafe, network, backend, is_authority, filter_pool,
-		sync, fee_history_cache, fee_history_cache_limit, overrides, block_data_cache
+		sync, fee_history_cache, fee_history_cache_limit, overrides, block_data_cache, forced_parent_hashes
 	} = deps;
 
 	module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
@@ -117,6 +120,7 @@ where
             fee_history_cache_limit,
 			// Allow 10x max allowed weight for non-transactional calls
 			10,
+			forced_parent_hashes,
         ).into_rpc()
     )?;
 
