@@ -20,7 +20,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(test, feature(assert_matches))]
 
-use fp_evm::{PrecompileHandle, PrecompileOutput};
+use fp_evm::{IsPrecompileResult, PrecompileHandle, PrecompileOutput};
 use frame_support::traits::fungibles::approvals::Inspect as ApprovalInspect;
 use frame_support::traits::fungibles::metadata::Inspect as MetadataInspect;
 use frame_support::traits::fungibles::Inspect;
@@ -90,8 +90,8 @@ pub trait AddressToAssetId<AssetId> {
 
 /// The following distribution has been decided for the precompiles
 /// 0-1023: Ethereum Mainnet Precompiles
-/// 1024-2047 Precompiles that are not in Ethereum Mainnet but are neither Astar specific
-/// 2048-4095 Astar specific precompiles
+/// 1024-2047 Precompiles that are not in Ethereum Mainnet but are neither OriginTrail Parachain specific
+/// 2048-4095 OriginTrail Parachain specific precompiles
 /// Asset precompiles can only fall between
 ///     0xFFFFFFFF00000000000000000000000000000000 - 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 /// The precompile for AssetId X, where X is a u128 (i.e.16 bytes), if 0XFFFFFFFF + Bytes(AssetId)
@@ -116,12 +116,12 @@ impl<Runtime, Instance> PrecompileSet for Erc20AssetsPrecompileSet<Runtime, Inst
 where
     Instance: 'static,
     Runtime: pallet_assets::Config<Instance> + pallet_evm::Config + frame_system::Config,
-    Runtime::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
-    Runtime::Call: From<pallet_assets::Call<Runtime, Instance>>,
-    <Runtime::Call as Dispatchable>::Origin: From<Option<Runtime::AccountId>>,
+    Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
+    Runtime::RuntimeCall: From<pallet_assets::Call<Runtime, Instance>>,
+    <Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<Runtime::AccountId>>,
     BalanceOf<Runtime, Instance>: TryFrom<U256> + Into<U256> + EvmData,
     Runtime: AddressToAssetId<AssetIdOf<Runtime, Instance>>,
-    <<Runtime as frame_system::Config>::Call as Dispatchable>::Origin: OriginTrait,
+    <<Runtime as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin: OriginTrait,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<EvmResult<PrecompileOutput>> {
         let address = handle.code_address();
@@ -174,8 +174,8 @@ where
         None
     }
 
-    fn is_precompile(&self, address: H160) -> bool {
-        if let Some(asset_id) = Runtime::address_to_asset_id(address) {
+    fn is_precompile(&self, address: H160, _gas: u64) -> IsPrecompileResult {
+        let is_precompile = if let Some(asset_id) = Runtime::address_to_asset_id(address) {
             // If the assetId has non-zero supply
             // "total_supply" returns both 0 if the assetId does not exist or if the supply is 0
             // The assumption I am making here is that a 0 supply asset is not interesting from
@@ -186,6 +186,11 @@ where
             !pallet_assets::Pallet::<Runtime, Instance>::total_supply(asset_id).is_zero()
         } else {
             false
+        };
+
+        IsPrecompileResult::Answer {
+            is_precompile,
+            extra_cost: 0,
         }
     }
 }
@@ -194,12 +199,12 @@ impl<Runtime, Instance> Erc20AssetsPrecompileSet<Runtime, Instance>
 where
     Instance: 'static,
     Runtime: pallet_assets::Config<Instance> + pallet_evm::Config + frame_system::Config,
-    Runtime::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
-    Runtime::Call: From<pallet_assets::Call<Runtime, Instance>>,
-    <Runtime::Call as Dispatchable>::Origin: From<Option<Runtime::AccountId>>,
+    Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
+    Runtime::RuntimeCall: From<pallet_assets::Call<Runtime, Instance>>,
+    <Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<Runtime::AccountId>>,
     BalanceOf<Runtime, Instance>: TryFrom<U256> + Into<U256> + EvmData,
     Runtime: AddressToAssetId<AssetIdOf<Runtime, Instance>>,
-    <<Runtime as frame_system::Config>::Call as Dispatchable>::Origin: OriginTrait,
+    <<Runtime as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin: OriginTrait,
 {
     fn total_supply(
         asset_id: AssetIdOf<Runtime, Instance>,
@@ -337,7 +342,7 @@ where
                     handle,
                     Some(origin.clone()).into(),
                     pallet_assets::Call::<Runtime, Instance>::cancel_approval {
-                        id: asset_id,
+                        id: asset_id.into(),
                         delegate: Runtime::Lookup::unlookup(spender.clone()),
                     },
                 )?;
@@ -347,7 +352,7 @@ where
                 handle,
                 Some(origin).into(),
                 pallet_assets::Call::<Runtime, Instance>::approve_transfer {
-                    id: asset_id,
+                    id: asset_id.into(),
                     delegate: Runtime::Lookup::unlookup(spender),
                     amount,
                 },
@@ -388,7 +393,7 @@ where
                 handle,
                 Some(origin).into(),
                 pallet_assets::Call::<Runtime, Instance>::transfer {
-                    id: asset_id,
+                    id: asset_id.into(),
                     target: Runtime::Lookup::unlookup(to),
                     amount,
                 },
@@ -433,7 +438,7 @@ where
                     handle,
                     Some(caller).into(),
                     pallet_assets::Call::<Runtime, Instance>::transfer_approved {
-                        id: asset_id,
+                        id: asset_id.into(),
                         owner: Runtime::Lookup::unlookup(from),
                         destination: Runtime::Lookup::unlookup(to),
                         amount,
@@ -445,7 +450,7 @@ where
                     handle,
                     Some(from).into(),
                     pallet_assets::Call::<Runtime, Instance>::transfer {
-                        id: asset_id,
+                        id: asset_id.into(),
                         target: Runtime::Lookup::unlookup(to),
                         amount,
                     },
@@ -546,7 +551,7 @@ where
             handle,
             Some(origin).into(),
             pallet_assets::Call::<Runtime, Instance>::mint {
-                id: asset_id,
+                id: asset_id.into(),
                 beneficiary: Runtime::Lookup::unlookup(beneficiary),
                 amount,
             },
@@ -573,7 +578,7 @@ where
             handle,
             Some(origin).into(),
             pallet_assets::Call::<Runtime, Instance>::burn {
-                id: asset_id,
+                id: asset_id.into(),
                 who: Runtime::Lookup::unlookup(who),
                 amount,
             },
