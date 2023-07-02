@@ -47,8 +47,8 @@ To run a full network with multiple OriginTrail parachain nodes (collators and n
 
 #### Run A Relay Chain
 
-To start a relay chain we recommend reading and following instructions in [Cumulus Workshop](https://substrate.dev/cumulus-workshop/).
-OriginTrail parachain is currently compatible with Polkadot v0.9.18 version.
+To start a relay chain we recommend reading and following instructions in [Cumulus Workshop](https://docs.substrate.io/tutorials/build-a-parachain/prepare-a-local-relay-chain/).
+OriginTrail parachain is currently compatible with Polkadot v0.9.40 version.
 
 #### Parachain Nodes (Collators)
 
@@ -88,23 +88,32 @@ Then you need to register on Local Relay Chain as it is presented in Cumulus Wor
 ```
 
 In order to produce blocks you will need to register the parachain as detailed in the
-[Substrate Cumulus Worship](https://substrate.dev/cumulus-workshop/#/en/3-parachains/2-register)
+[Substrate Cumulus Workshop](https://docs.substrate.io/tutorials/build-a-parachain/connect-a-local-parachain/)
 by going to:
 
 `Developer -> sudo -> paraSudoWrapper -> sudoScheduleParaInitialize(id, genesis)`
 
 Ensure you set the `ParaId to 2000` and the `parachain: Bool to Yes`.
 
+### Containerize
 
+#### Build
+```shell
+docker build -t origintrail-parachain .
+```
+#### Run
+```shell
+docker run -it -p 30333:30333 -p 9933:9933 -p 9944:9944 -p 9615:9615 -v /data:/data origintrail-parachain:latest\
+  --base-path=/data --rpc-external --ws-external\
+  --ws-max-connections=1000 --rpc-cors=all\
+  --prometheus-external --rpc-methods=Unsafe\
+  --chain=/config/origintrail-parachain-2043-raw.json\
+  --no-mdns --execution=wasm --pruning=archive\
+  -- --execution=wasm --wasm-execution=Compiled --chain=polkadot
+```
 
 ## Learn More
 
 - More about expanding the multi-chain OriginTrail with Polkadot and OriginTrail Parachain development roadmap you can find on 
   [parachain.origintrail.io](https://parachain.origintrail.io/)
 - More about OriginTrail Parachain and Decentralized Knowledge Graph read in [whitepaper](https://parachain.origintrail.io/whitepaper)
-- More detailed instructions to use Cumulus parachains are found in the
-[Cumulus Workshop](https://substrate.dev/cumulus-workshop/#/en/3-parachains/2-register)
-- Refer to the upstream
-[Substrate Developer Hub Node Template](https://github.com/substrate-developer-hub/substrate-node-template)
-to learn more about the structure of this project, the capabilities it encapsulates and the way in
-which those capabilities are implemented.

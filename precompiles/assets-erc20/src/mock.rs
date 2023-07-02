@@ -1,7 +1,8 @@
 // Copyright 2019-2022 PureStake Inc.
 // Copyright 2022      Stake Technologies
+// Copyright 2022      TraceLabs
 // This file is part of AssetsERC20 package, originally developed by Purestake Inc.
-// AssetsERC20 package used in Astar Network in terms of GPLv3.
+// AssetsERC20 package used in OriginTrail Parachain Network in terms of GPLv3.
 //
 // AssetsERC20 is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,16 +21,16 @@
 use super::*;
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{construct_runtime, parameter_types, traits::Everything};
+use frame_support::{construct_runtime, parameter_types, traits::{Everything, AsEnsureOriginWithArg}, weights::Weight};
 
-use frame_system::EnsureRoot;
+use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_evm::{AddressMapping, EnsureAddressNever, EnsureAddressRoot};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256};
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup, ConstU32},
 };
 
 pub type AccountId = Account;
@@ -147,16 +148,16 @@ parameter_types! {
 impl frame_system::Config for Runtime {
     type BaseCallFilter = Everything;
     type DbWeight = ();
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type Index = u64;
     type BlockNumber = BlockNumber;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -191,7 +192,7 @@ impl pallet_balances::Config for Runtime {
     type ReserveIdentifier = ();
     type MaxLocks = ();
     type Balance = Balance;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
@@ -201,24 +202,30 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     pub const PrecompilesValue: Erc20AssetsPrecompileSet<Runtime> =
         Erc20AssetsPrecompileSet(PhantomData);
+    pub const WeightPerGas: Weight = Weight::from_parts(1, 0);
+    pub BlockGasLimit: U256 = U256::max_value();
 }
 
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();
-    type GasWeightMapping = ();
+    type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
+	type WeightPerGas = WeightPerGas;
     type CallOrigin = EnsureAddressRoot<AccountId>;
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AccountId;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Erc20AssetsPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ();
     type OnChargeTransaction = ();
-    type BlockGasLimit = ();
+    type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
+    type Timestamp = Timestamp;
     type FindAuthor = ();
+    type OnCreate = ();
+    type WeightInfo = ();
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments
@@ -233,10 +240,12 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
-    type AssetId = AssetId;
+	type AssetId = AssetId;
+    type AssetIdParameter = AssetId;
     type Currency = Balances;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
     type AssetAccountDeposit = AssetAccountDeposit;
@@ -246,7 +255,9 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
+    type CallbackHandle = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<656>;
 }
 
 // Configure a mock runtime to test the pallet.

@@ -28,7 +28,7 @@
 // --extrinsic
 // *
 // --output
-// .
+// pallet_xc_asset_config_weights.rs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
@@ -40,7 +40,7 @@ use frame_support::{
 };
 use sp_std::marker::PhantomData;
 
-/// Weight functions needed for pallet_asset_manager.
+/// Weight functions needed for pallet_xc_asset_config.
 pub trait WeightInfo {
 	fn register_asset_location() -> Weight;
 	fn set_asset_units_per_second() -> Weight;
@@ -49,81 +49,131 @@ pub trait WeightInfo {
 	fn remove_asset() -> Weight;
 }
 
-/// Weights for pallet_asset_manager using the Substrate node and recommended hardware.
+/// Weights for pallet_xc_asset_config using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: XcAssetConfig AssetIdToLocation (r:1 w:1)
+	// Proof Skipped: XcAssetConfig AssetIdToLocation (max_values: None, max_size: None, mode: Measured)
+	// Storage: EVM AccountCodes (r:0 w:1)
+	// Proof Skipped: EVM AccountCodes (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationToId (r:0 w:1)
+	// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
 	fn register_asset_location() -> Weight {
-		(14_557_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		// Minimum execution time: 15_540 nanoseconds.
+		Weight::from_parts(16_114_000, 0)
+			.saturating_add(Weight::from_parts(2493, 0))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	// Storage: XcAssetConfig AssetLocationToId (r:1 w:0)
+	// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationUnitsPerSecond (r:0 w:1)
+	// Proof Skipped: XcAssetConfig AssetLocationUnitsPerSecond (max_values: None, max_size: None, mode: Measured)
 	fn set_asset_units_per_second() -> Weight {
-		(17_533_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		// Minimum execution time: 15_297 nanoseconds.
+		Weight::from_parts(15_551_000, 0)
+			.saturating_add(Weight::from_parts(2661, 0))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: XcAssetConfig AssetIdToLocation (r:1 w:1)
+	// Proof Skipped: XcAssetConfig AssetIdToLocation (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationUnitsPerSecond (r:1 w:2)
+	// Proof Skipped: XcAssetConfig AssetLocationUnitsPerSecond (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationToId (r:0 w:2)
+	// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
 	fn change_existing_asset_location() -> Weight {
-		(25_998_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+		// Minimum execution time: 22_357 nanoseconds.
+		Weight::from_parts(22_572_000, 0)
+			.saturating_add(Weight::from_parts(5373, 0))
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 	// Storage: XcAssetConfig AssetLocationUnitsPerSecond (r:0 w:1)
+	// Proof Skipped: XcAssetConfig AssetLocationUnitsPerSecond (max_values: None, max_size: None, mode: Measured)
 	fn remove_payment_asset() -> Weight {
-		(11_301_000 as Weight)
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		// Minimum execution time: 9_707 nanoseconds.
+		Weight::from_parts(10_005_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: XcAssetConfig AssetIdToLocation (r:1 w:1)
+	// Proof Skipped: XcAssetConfig AssetIdToLocation (max_values: None, max_size: None, mode: Measured)
+	// Storage: EVM AccountCodes (r:0 w:1)
+	// Proof Skipped: EVM AccountCodes (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationUnitsPerSecond (r:0 w:1)
+	// Proof Skipped: XcAssetConfig AssetLocationUnitsPerSecond (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationToId (r:0 w:1)
+	// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
 	fn remove_asset() -> Weight {
-		(16_500_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		// Minimum execution time: 18_645 nanoseconds.
+		Weight::from_parts(18_878_000, 0)
+			.saturating_add(Weight::from_parts(2987, 0))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	// Storage: XcAssetConfig AssetIdToLocation (r:1 w:1)
+	// Proof Skipped: XcAssetConfig AssetIdToLocation (max_values: None, max_size: None, mode: Measured)
+	// Storage: EVM AccountCodes (r:0 w:1)
+	// Proof Skipped: EVM AccountCodes (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationToId (r:0 w:1)
+	// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
 	fn register_asset_location() -> Weight {
-		(14_557_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+		// Minimum execution time: 15_540 nanoseconds.
+		Weight::from_parts(16_114_000, 0)
+			.saturating_add(Weight::from_parts(2493, 0))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	// Storage: XcAssetConfig AssetLocationToId (r:1 w:0)
+	// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationUnitsPerSecond (r:0 w:1)
+	// Proof Skipped: XcAssetConfig AssetLocationUnitsPerSecond (max_values: None, max_size: None, mode: Measured)
 	fn set_asset_units_per_second() -> Weight {
-		(17_533_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		// Minimum execution time: 15_297 nanoseconds.
+		Weight::from_parts(15_551_000, 0)
+			.saturating_add(Weight::from_parts(2661, 0))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: XcAssetConfig AssetIdToLocation (r:1 w:1)
+	// Proof Skipped: XcAssetConfig AssetIdToLocation (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationUnitsPerSecond (r:1 w:2)
+	// Proof Skipped: XcAssetConfig AssetLocationUnitsPerSecond (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationToId (r:0 w:2)
+	// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
 	fn change_existing_asset_location() -> Weight {
-		(25_998_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(5 as Weight))
+		// Minimum execution time: 22_357 nanoseconds.
+		Weight::from_parts(22_572_000, 0)
+			.saturating_add(Weight::from_parts(5373, 0))
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
 	// Storage: XcAssetConfig AssetLocationUnitsPerSecond (r:0 w:1)
+	// Proof Skipped: XcAssetConfig AssetLocationUnitsPerSecond (max_values: None, max_size: None, mode: Measured)
 	fn remove_payment_asset() -> Weight {
-		(11_301_000 as Weight)
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		// Minimum execution time: 9_707 nanoseconds.
+		Weight::from_parts(10_005_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: XcAssetConfig AssetIdToLocation (r:1 w:1)
+	// Proof Skipped: XcAssetConfig AssetIdToLocation (max_values: None, max_size: None, mode: Measured)
+	// Storage: EVM AccountCodes (r:0 w:1)
+	// Proof Skipped: EVM AccountCodes (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationUnitsPerSecond (r:0 w:1)
+	// Proof Skipped: XcAssetConfig AssetLocationUnitsPerSecond (max_values: None, max_size: None, mode: Measured)
 	// Storage: XcAssetConfig AssetLocationToId (r:0 w:1)
+	// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
 	fn remove_asset() -> Weight {
-		(16_500_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		// Minimum execution time: 18_645 nanoseconds.
+		Weight::from_parts(18_878_000, 0)
+			.saturating_add(Weight::from_parts(2987, 0))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 }

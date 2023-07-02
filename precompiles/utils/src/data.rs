@@ -1,7 +1,8 @@
 // Copyright 2019-2022 PureStake Inc.
 // Copyright 2022      Stake Technologies
+// Copyright 2022      TraceLabs
 // This file is part of Utils package, originally developed by Purestake Inc.
-// Utils package used in Astar Network in terms of GPLv3.
+// Utils package used in OriginTrail Parachain Network in terms of GPLv3.
 //
 // Utils is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,8 +24,6 @@ use core::{any::type_name, ops::Range};
 use impl_trait_for_tuples::impl_for_tuples;
 use sp_core::{H160, H256, U256};
 use sp_std::{convert::TryInto, vec, vec::Vec};
-
-// pub mod xcm;
 
 /// The `address` type of Solidity.
 /// H160 could represent 2 types of data (bytes20 and address) that are not encoded the same way.
