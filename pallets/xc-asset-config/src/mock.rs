@@ -1,6 +1,6 @@
 use crate::{self as pallet_xc_asset_config};
 
-use frame_support::{construct_runtime, parameter_types};
+use frame_support::{construct_runtime, parameter_types, weights::Weight};
 use sp_core::H256;
 
 use sp_io::TestExternalities;
@@ -34,23 +34,23 @@ construct_runtime!(
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
-    frame_system::limits::BlockWeights::simple_max(1024);
+    frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 
 impl frame_system::Config for Test {
     type BaseCallFilter = frame_support::traits::Everything;
     type BlockWeights = ();
     type BlockLength = ();
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type Index = u64;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type BlockNumber = BlockNumber;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -74,7 +74,7 @@ impl pallet_balances::Config for Test {
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
@@ -83,13 +83,8 @@ impl pallet_balances::Config for Test {
 
 type AssetId = u128;
 
-impl pallet_xc_asset_config::XcAssetChanged<Test> for () {
-    fn xc_asset_registered(_asset_id: AssetId) {}
-    fn xc_asset_unregistered(_asset_id: AssetId) {}
-}
-
 impl pallet_xc_asset_config::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type XcAssetChanged = ();
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;

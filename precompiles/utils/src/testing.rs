@@ -1,7 +1,8 @@
 // Copyright 2019-2022 PureStake Inc.
 // Copyright 2022      Stake Technologies
+// Copyright 2022      TraceLabs
 // This file is part of Utils package, originally developed by Purestake Inc.
-// Utils package used in Astar Network in terms of GPLv3.
+// Utils package used in OriginTrail Parachain Network in terms of GPLv3.
 //
 // Utils is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,9 +16,8 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Utils.  If not, see <http://www.gnu.org/licenses/>.
-
 use super::*;
-use core::assert_matches::assert_matches;
+use assert_matches::assert_matches;
 use fp_evm::{
     ExitReason, ExitSucceed, PrecompileOutput, PrecompileResult, PrecompileSet, Transfer,
 };

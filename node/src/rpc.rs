@@ -10,7 +10,7 @@ use std::sync::Arc;
 use origintrail_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Index as Nonce};
 
 use sc_client_api::{
-	backend::{AuxStore, Backend, StateBackend, StorageProvider},
+	AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider,
 };
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use fc_rpc::{
@@ -18,9 +18,10 @@ use fc_rpc::{
 };
 use sp_runtime::traits::BlakeTwo256;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+use sc_network_sync::SyncingService;
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sc_network::NetworkService;
@@ -36,6 +37,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
 	pub pool: Arc<P>,
 	/// Graph pool instance.
 	pub graph: Arc<Pool<A>>,
+	/// Chain syncing service
+	pub sync: Arc<SyncingService<Block>>,
 	/// Whether to deny unsafe calls
 	pub deny_unsafe: DenyUnsafe,
 	/// The Node authority flag
@@ -67,18 +70,20 @@ where
 	C: ProvideRuntimeApi<Block>
 		+ HeaderBackend<Block>
 		+ AuxStore
+		+ BlockchainEvents<Block>
+		+ CallApiAt<Block>
 		+ HeaderMetadata<Block, Error = BlockChainError>
 		+ Send
 		+ Sync
 		+ 'static,
 	C: StorageProvider<Block, BE>,
+	C: sc_client_api::BlockBackend<Block>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
 	C::Api: fp_rpc::ConvertTransactionRuntimeApi<Block>,
 	P: TransactionPool<Block = Block> + Sync + Send + 'static,
-	P: TransactionPool + Sync + Send + 'static,
 	A: ChainApi<Block = Block> + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -87,21 +92,22 @@ where
 
 	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, graph, deny_unsafe, network, backend, is_authority, filter_pool,
-		fee_history_cache, fee_history_cache_limit, overrides, block_data_cache
+		sync, fee_history_cache, fee_history_cache_limit, overrides, block_data_cache
 	} = deps;
 
 	module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 
 	let signers = Vec::new();
+	let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
 	module.merge(
         Eth::<_, _, _, fp_rpc::NoTransactionConverter, _, _, _>::new(
             client.clone(),
 			pool.clone(),
             graph,
-            None,
-            network.clone(),
+            no_tx_converter,
+            sync.clone(),
             signers,
             overrides.clone(),
 			backend.clone(),
@@ -109,6 +115,8 @@ where
             block_data_cache.clone(),
             fee_history_cache,
             fee_history_cache_limit,
+			// Allow 10x max allowed weight for non-transactional calls
+			10,
         ).into_rpc()
     )?;
 
