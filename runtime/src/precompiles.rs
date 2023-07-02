@@ -1,4 +1,4 @@
-use pallet_evm::{ExitRevert, Precompile, PrecompileFailure, PrecompileHandle, PrecompileResult, PrecompileSet};
+use pallet_evm::{ExitRevert, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle, PrecompileResult, PrecompileSet};
 use sp_core::H160;
 use sp_std::marker::PhantomData;
 
@@ -20,12 +20,13 @@ where
 	pub fn new() -> Self {
 		Self(Default::default())
 	}
-	pub fn used_addresses() -> sp_std::vec::Vec<H160> {
-		sp_std::vec![1, 2, 3, 4, 5, 1024, 1025]
-			.into_iter()
-			.map(hash)
-			.collect()
-	}
+	/// Return all addresses that contain precompiles. This can be used to populate dummy code
+    /// under the precompile.
+    pub fn used_addresses() -> impl Iterator<Item = H160> {
+        sp_std::vec![1, 2, 3, 4, 5, 1024, 1025]
+            .into_iter()
+            .map(hash)
+    }
 }
 impl<R> PrecompileSet for FrontierPrecompiles<R>
 where
@@ -36,11 +37,15 @@ where
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		let address = handle.code_address();
-        if self.is_precompile(address) && address > hash(9) && handle.context().address != address {
-            return Some(Err(PrecompileFailure::Revert {
-                exit_status: ExitRevert::Reverted,
-                output: b"cannot be called with DELEGATECALL or CALLCODE".to_vec(),
-            }));
+		if let IsPrecompileResult::Answer { is_precompile, .. } =
+            self.is_precompile(address, u64::MAX)
+        {
+            if is_precompile && address > hash(9) && handle.context().address != address {
+                return Some(Err(PrecompileFailure::Revert {
+                    exit_status: ExitRevert::Reverted,
+                    output: b"cannot be called with DELEGATECALL or CALLCODE".to_vec(),
+                }));
+            }
         }
 		match address {
 			// Ethereum precompiles :
@@ -60,10 +65,18 @@ where
 		}
 	}
 
-	fn is_precompile(&self, address: H160) -> bool {
-		Self::used_addresses().contains(&address)
-			|| Erc20AssetsPrecompileSet::<R>::new().is_precompile(address)
-	}
+	fn is_precompile(&self, address: H160, gas: u64) -> IsPrecompileResult {
+        let assets_precompile =
+            match Erc20AssetsPrecompileSet::<R>::new().is_precompile(address, gas) {
+                IsPrecompileResult::Answer { is_precompile, .. } => is_precompile,
+                _ => false,
+            };
+
+        IsPrecompileResult::Answer {
+            is_precompile: assets_precompile || Self::used_addresses().any(|x| x == address),
+            extra_cost: 0,
+        }
+    }
 }
 
 fn hash(a: u64) -> H160 {

@@ -3,10 +3,18 @@ name: Check Links
 on:
   pull_request:
     branches:
-    - master
+    - develop
+    - release/alphanet
+    - release/devnet
+    - release/testnet
+    - release/mainnet
   push:
     branches:
-    - master
+    - develop
+    - release/alphanet
+    - release/devnet
+    - release/testnet
+    - release/mainnet
 
 jobs:
   markdown-link-check:
