@@ -37,7 +37,6 @@ pallet-assets = { git = "https://github.com/paritytech/substrate", default-featu
 pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
-pallet-preimage = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
@@ -45,6 +44,7 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-utility = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-xc-asset-config = { path = "../pallets/xc-asset-config", default-features = false }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
@@ -92,6 +92,9 @@ pallet-ethereum = { git = "https://github.com/OriginTrail/frontier", default-fea
 fp-rpc = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
 fp-self-contained = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
 
+# Governance
+pallet-preimage = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.40" }
+
 [features]
 default = ["std"]
 std = [
@@ -132,6 +135,7 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-treasury/std",
+	"pallet-utility/std",
 	"pallet-vesting/std",
 	"pallet-xc-asset-config/std",
 	"pallet-xcm/std",
@@ -169,6 +173,7 @@ runtime-benchmarks = [
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
+	"pallet-utility/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
@@ -195,6 +200,8 @@ try-runtime = [
 	"pallet-scheduler/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
+	"pallet-utility/try-runtime",
+	"pallet-vesting/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-xcm/try-runtime",
