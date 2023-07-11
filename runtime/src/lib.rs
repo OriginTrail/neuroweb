@@ -80,9 +80,6 @@ use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 mod precompiles;
 use precompiles::{FrontierPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 
-/// Import the template pallet.
-pub use pallet_template;
-
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
 
@@ -895,9 +892,19 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
-/// Configure the pallet template in pallets/template.
-impl pallet_template::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
+parameter_types! {
+	pub const PreimageMaxSize: u32 = 4096 * 1024;
+	pub const PreimageBaseDeposit: Balance = 1 * OTP;
+	pub const PreimageByteDeposit: Balance = 1 * MILLIOTP;
+}
+
+impl pallet_preimage::Config for Runtime {
+	type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type ManagerOrigin = EnsureRoot<AccountId>;
+	type BaseDeposit = PreimageBaseDeposit;
+	type ByteDeposit = PreimageByteDeposit;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -936,8 +943,8 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-        // Template.
-        TemplatePallet: pallet_template::{Pallet, Call, Storage, Event<T>}  = 40,
+        // Governance.
+        Preimage: pallet_preimage = 40,
 
         // Frontier
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 50,
@@ -962,6 +969,7 @@ mod benches {
     frame_benchmarking::define_benchmarks!(
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
+        [pallet_preimage, Preimage]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_timestamp, Timestamp]
         [pallet_collator_selection, CollatorSelection]
