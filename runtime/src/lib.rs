@@ -914,6 +914,25 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const CouncilMotionDuration: BlockNumber = 28 * DAYS;
+	pub const CouncilMaxProposals: u32 = 100;
+	pub const CouncilMaxMembers: u32 = 100;
+}
+
+type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type MotionDuration = CouncilMotionDuration;
+	type MaxProposals = CouncilMaxProposals;
+	type MaxMembers = CouncilMaxMembers;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -951,17 +970,16 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-        // Governance.
-        Preimage: pallet_preimage = 40,
-
         // Frontier
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 50,
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, Origin} = 51,
         EvmAccounts: pallet_evm_accounts::{Pallet, Call, Storage, Event<T>} = 52,
         BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 53,
 
-        // Governance stuff.
+        // Governance
         Scheduler: pallet_scheduler::{Pallet, Storage, Event<T>, Call} = 60,
+        Preimage: pallet_preimage = 61,
+        Council: pallet_collective::<Instance1> = 62,
 
         // Temporary.
         Sudo: pallet_sudo = 255,
@@ -977,6 +995,7 @@ mod benches {
     frame_benchmarking::define_benchmarks!(
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
+        [pallet_collective, CouncilCollective]
         [pallet_preimage, Preimage]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_timestamp, Timestamp]

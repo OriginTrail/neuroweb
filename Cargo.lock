@@ -6043,6 +6043,7 @@ dependencies = [
  "pallet-balances",
  "pallet-base-fee",
  "pallet-collator-selection",
+ "pallet-collective",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-accounts",
