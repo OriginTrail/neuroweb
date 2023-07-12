@@ -36,7 +36,7 @@ pub use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::{
     construct_runtime, parameter_types, transactional,
     traits::{
-        AsEnsureOriginWithArg, Currency as PalletCurrency, Everything, FindAuthor,
+        AsEnsureOriginWithArg, Currency as PalletCurrency, EitherOfDiverse, Everything, FindAuthor,
         ReservableCurrency, Imbalance, OnUnbalanced, ConstU128, ConstU32, ConstU64, ConstU8,
         WithdrawReasons
     },
@@ -295,6 +295,10 @@ const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 	WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
 	cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64,
 );
+
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+    items as Balance * 15 * MILLIOTP + (bytes as Balance) * 6 * MILLIOTP
+}
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -894,7 +898,7 @@ impl pallet_xc_asset_config::Config for Runtime {
 
 parameter_types! {
 	pub const PreimageMaxSize: u32 = 4096 * 1024;
-	pub const PreimageBaseDeposit: Balance = 1 * OTP;
+	pub const PreimageBaseDeposit: Balance = deposit(2, 64);
 	pub const PreimageByteDeposit: Balance = 1 * MILLIOTP;
 }
 
@@ -915,9 +919,9 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-	pub const CouncilMotionDuration: BlockNumber = 28 * DAYS;
+	pub const CouncilMotionDuration: BlockNumber = 3 * DAYS;
 	pub const CouncilMaxProposals: u32 = 100;
-	pub const CouncilMaxMembers: u32 = 100;
+	pub const CouncilMaxMembers: u32 = 5;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -928,9 +932,100 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MotionDuration = CouncilMotionDuration;
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = CouncilMaxMembers;
-	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+}
+
+parameter_types! {
+	pub const LaunchPeriod: BlockNumber = 5 * DAYS;
+	pub const VotingPeriod: BlockNumber = 5 * DAYS;
+    pub const VotingLockingPeriod: BlockNumber = 1 * DAYS;
+	pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
+	pub const MinimumDeposit: Balance = 1000 * OTP;
+	pub const EnactmentPeriod: BlockNumber = 2 * DAYS;
+	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
+	pub const MaxProposals: u32 = 100;
+}
+
+type EnsureRootOrTwoFiftsOfCouncil = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 2, 5>,
+>;
+type EnsureRootOrThreeFiftsOfCouncil = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 3, 5>,
+>;
+type EnsureRootOrFourFiftsOfCouncil = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 4, 5>,
+>;
+
+impl pallet_democracy::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type EnactmentPeriod = EnactmentPeriod;
+	type LaunchPeriod = LaunchPeriod;
+	type VotingPeriod = VotingPeriod;
+	type VoteLockingPeriod = VotingLockingPeriod; // Same as EnactmentPeriod
+	type MinimumDeposit = MinimumDeposit;
+	/// A straight majority of the council can decide what their next motion is.
+	type ExternalOrigin = EnsureRootOrTwoFiftsOfCouncil;
+	/// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
+	type ExternalMajorityOrigin = EnsureRootOrThreeFiftsOfCouncil;
+	/// A unanimous council can have the next scheduled referendum be a straight default-carries
+	/// (NTB) vote.
+	type ExternalDefaultOrigin = EnsureRootOrThreeFiftsOfCouncil;
+	type SubmitOrigin = EnsureSigned<AccountId>;
+	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
+	/// be tabled immediately and with a shorter voting/enactment period.
+	type FastTrackOrigin = EnsureRootOrThreeFiftsOfCouncil;
+	type InstantOrigin = EnsureRootOrFourFiftsOfCouncil;
+	type InstantAllowed = frame_support::traits::ConstBool<true>;
+	type FastTrackVotingPeriod = FastTrackVotingPeriod;
+	// To cancel a proposal which has been passed, 3/5 of the council must agree to it.
+	type CancellationOrigin = EnsureRootOrThreeFiftsOfCouncil;
+	// To cancel a proposal before it has been passed, the technical committee must be unanimous or
+	// Root must agree.
+	type CancelProposalOrigin = EnsureRootOrThreeFiftsOfCouncil;
+	type BlacklistOrigin = EnsureRoot<AccountId>;
+	// Any single technical committee member may veto a coming council proposal, however they can
+	// only do it once and it lasts only for the cool-off period.
+	type VetoOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
+	type CooloffPeriod = CooloffPeriod;
+	type Slash = Treasury;
+	type Scheduler = Scheduler;
+	type PalletsOrigin = OriginCaller;
+	type MaxVotes = ConstU32<100>;
+	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+	type MaxProposals = MaxProposals;
+	type Preimages = Preimage;
+	type MaxDeposits = ConstU32<100>;
+	type MaxBlacklisted = ConstU32<100>;
+}
+
+parameter_types! {
+	pub const BasicDeposit: Balance = deposit(1, 258);      // 258 bytes on-chain
+	pub const FieldDeposit: Balance = deposit(1, 66);      // 66 bytes on-chain
+	pub const SubAccountDeposit: Balance = deposit(1, 53);   // 53 bytes on-chain
+	pub const MaxSubAccounts: u32 = 100;
+	pub const MaxAdditionalFields: u32 = 100;
+	pub const MaxRegistrars: u32 = 20;
+}
+
+impl pallet_identity::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type BasicDeposit = BasicDeposit;
+	type FieldDeposit = FieldDeposit;
+	type SubAccountDeposit = SubAccountDeposit;
+	type MaxSubAccounts = MaxSubAccounts;
+	type MaxAdditionalFields = MaxAdditionalFields;
+	type MaxRegistrars = MaxRegistrars;
+	type Slashed = Treasury;
+	type ForceOrigin = EnsureRootOrThreeFiftsOfCouncil;
+	type RegistrarOrigin = EnsureRootOrThreeFiftsOfCouncil;
+	type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -980,6 +1075,8 @@ construct_runtime!(
         Scheduler: pallet_scheduler::{Pallet, Storage, Event<T>, Call} = 60,
         Preimage: pallet_preimage = 61,
         Council: pallet_collective::<Instance1> = 62,
+        Democracy: pallet_democracy = 63,
+        Identity: pallet_identity = 64,
 
         // Temporary.
         Sudo: pallet_sudo = 255,
@@ -996,6 +1093,8 @@ mod benches {
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
         [pallet_collective, CouncilCollective]
+        [pallet_democracy, Democracy]
+        [pallet_identity, Identity]
         [pallet_preimage, Preimage]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_timestamp, Timestamp]
