@@ -459,6 +459,7 @@ type NegativeImbalance = <Balances as PalletCurrency<AccountId>>::NegativeImbala
 
 pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
+    // this is called for substrate-based transactions
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
         if let Some(mut fees) = fees_then_tips.next() {
             if let Some(tips) = fees_then_tips.next() {
@@ -479,6 +480,20 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
             <DkgIncentivesPot as OnUnbalanced<_>>::on_unbalanced(dkg_incentives_fees);
         }
     }
+
+    // this is called from pallet_evm for Ethereum-based transactions
+    // (technically, it calls on_unbalanced, which calls this when non-zero)
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let split = amount.ration(60, 40);
+        let (dkg_incentives_fees, collators_incentives_fees) = split.0.ration(50, 50);
+        let (future_auctions_fees, treasury_fees) = split.1.ration(75, 25);
+
+        Treasury::on_unbalanced(treasury_fees);
+        <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators_incentives_fees);
+        <FutureAuctionsPot as OnUnbalanced<_>>::on_unbalanced(future_auctions_fees);
+        <DkgIncentivesPot as OnUnbalanced<_>>::on_unbalanced(dkg_incentives_fees);
+    }
+
 }
 
 parameter_types! {
@@ -604,6 +619,11 @@ impl pallet_scheduler::Config for Runtime {
     type WeightInfo = ();
     type Preimages = ();
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
+}
+
+impl pallet_sudo::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
 }
 
 impl pallet_sudo::Config for Runtime {
