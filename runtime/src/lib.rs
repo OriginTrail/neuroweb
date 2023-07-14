@@ -616,7 +616,7 @@ impl pallet_scheduler::Config for Runtime {
     type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
     type WeightInfo = ();
-    type Preimages = ();
+    type Preimages = Preimage;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
 }
 
