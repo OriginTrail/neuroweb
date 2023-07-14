@@ -625,11 +625,6 @@ impl pallet_sudo::Config for Runtime {
     type RuntimeCall = RuntimeCall;
 }
 
-impl pallet_sudo::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-}
-
 parameter_types! {
     pub const MinVestedTransfer: Balance = 15 * OTP;
     pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
