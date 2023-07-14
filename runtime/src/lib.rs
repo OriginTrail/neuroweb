@@ -250,7 +250,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("origintrail-parachain"),
     impl_name: create_runtime_str!("origintrail-parachain"),
     authoring_version: 1,
-    spec_version: 111,
+    spec_version: 112,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -493,7 +493,6 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
         <FutureAuctionsPot as OnUnbalanced<_>>::on_unbalanced(future_auctions_fees);
         <DkgIncentivesPot as OnUnbalanced<_>>::on_unbalanced(dkg_incentives_fees);
     }
-
 }
 
 parameter_types! {
@@ -663,7 +662,7 @@ impl pallet_treasury::Config for Runtime {
     type ApproveOrigin = EnsureRoot<AccountId>;
     type RejectOrigin = EnsureRoot<AccountId>;
     type RuntimeEvent = RuntimeEvent;
-    type OnSlash = ();
+    type OnSlash = Treasury;
     type ProposalBond = ProposalBond;
     type ProposalBondMinimum = ProposalBondMinimum;
     type ProposalBondMaximum = ProposalBondMaximum;
