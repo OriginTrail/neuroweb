@@ -620,11 +620,6 @@ impl pallet_scheduler::Config for Runtime {
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
 }
 
-impl pallet_sudo::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-}
-
 parameter_types! {
     pub const MinVestedTransfer: Balance = 15 * OTP;
     pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
@@ -1091,9 +1086,6 @@ construct_runtime!(
         Council: pallet_collective::<Instance1> = 62,
         Democracy: pallet_democracy = 63,
         Identity: pallet_identity = 64,
-
-        // Temporary.
-        Sudo: pallet_sudo = 255,
     }
 );
 
