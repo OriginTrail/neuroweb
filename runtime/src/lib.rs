@@ -917,12 +917,12 @@ parameter_types! {
 }
 
 impl pallet_preimage::Config for Runtime {
-	type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type ManagerOrigin = EnsureRoot<AccountId>;
 	type BaseDeposit = PreimageBaseDeposit;
 	type ByteDeposit = PreimageByteDeposit;
+    type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -947,8 +947,8 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
-	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
-	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1011,11 +1011,11 @@ impl pallet_democracy::Config for Runtime {
 	type Scheduler = Scheduler;
 	type PalletsOrigin = OriginCaller;
 	type MaxVotes = ConstU32<100>;
-	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
 	type MaxProposals = MaxProposals;
 	type Preimages = Preimage;
 	type MaxDeposits = ConstU32<100>;
 	type MaxBlacklisted = ConstU32<100>;
+    type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
