@@ -964,15 +964,15 @@ parameter_types! {
 
 type EnsureRootOrTwoFiftsOfCouncil = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 2, 5>,
+	pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 5>,
 >;
 type EnsureRootOrThreeFiftsOfCouncil = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 3, 5>,
+	pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
 >;
 type EnsureRootOrFourFiftsOfCouncil = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 4, 5>,
+	pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 4, 5>,
 >;
 
 impl pallet_democracy::Config for Runtime {
