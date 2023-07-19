@@ -1,6 +1,6 @@
 [package]
 name = "origintrail-parachain-runtime"
-version = "1.1.1"
+version = "1.1.2"
 authors = ["TraceLabs"]
 description = "OriginTrail Parachain Runtime - Cumulus FRAME-based Substrate Runtime"
 license = "GPL-3.0-only"
@@ -25,9 +25,6 @@ scale-info = { version = "2.3.1", default-features = false, features = [
 ] }
 smallvec = "1.10.0"
 
-# Local
-pallet-template = { path = "../pallets/template", default-features = false }
-
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.40" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
@@ -47,6 +44,7 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-utility = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-xc-asset-config = { path = "../pallets/xc-asset-config", default-features = false }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
@@ -94,6 +92,12 @@ pallet-ethereum = { git = "https://github.com/OriginTrail/frontier", default-fea
 fp-rpc = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
 fp-self-contained = { git = "https://github.com/OriginTrail/frontier", default-features = false, branch = "polkadot-v0.9.40" }
 
+# Governance
+pallet-collective = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-democracy = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-identity = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-preimage = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.40" }
+
 [features]
 default = ["std"]
 std = [
@@ -120,20 +124,24 @@ std = [
 	"pallet-balances/std",
 	"pallet-base-fee/std",
 	"pallet-collator-selection/std",
+	"pallet-collective/std",
+	"pallet-democracy/std",
 	"pallet-evm/std",
 	"pallet-evm-accounts/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-simple/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-ethereum/std",
+	"pallet-identity/std",
+	"pallet-preimage/std",
 	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
-	"pallet-template/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-treasury/std",
+	"pallet-utility/std",
 	"pallet-vesting/std",
 	"pallet-xc-asset-config/std",
 	"pallet-xcm/std",
@@ -165,11 +173,16 @@ runtime-benchmarks = [
 	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-collective/runtime-benchmarks",
+	"pallet-democracy/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
-	"pallet-template/runtime-benchmarks",
+	"pallet-identity/runtime-benchmarks",
+	"pallet-preimage/runtime-benchmarks",
+	"pallet-scheduler/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
+	"pallet-utility/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
@@ -192,9 +205,15 @@ try-runtime = [
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-collator-selection/try-runtime",
+	"pallet-collective/try-runtime",
+	"pallet-democracy/runtime-benchmarks",
+	"pallet-identity/runtime-benchmarks",
+	"pallet-preimage/try-runtime",
+	"pallet-scheduler/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
-	"pallet-template/try-runtime",
+	"pallet-utility/try-runtime",
+	"pallet-vesting/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-xcm/try-runtime",
