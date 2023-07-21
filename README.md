@@ -116,4 +116,4 @@ docker run -it -p 30333:30333 -p 9933:9933 -p 9944:9944 -p 9615:9615 -v /data:/d
 
 - More about expanding the multi-chain OriginTrail with Polkadot and OriginTrail Parachain development roadmap you can find on 
   [parachain.origintrail.io](https://parachain.origintrail.io/)
-- More about OriginTrail Parachain and Decentralized Knowledge Graph read in [whitepaper](https://parachain.origintrail.io/whitepaper)
+- More about OriginTrail Parachain and Decentralized Knowledge Graph read in [whitepaper](https://origintrail.io/ecosystem/whitepaper)
