@@ -250,7 +250,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("origintrail-parachain"),
     impl_name: create_runtime_str!("origintrail-parachain"),
     authoring_version: 1,
-    spec_version: 112,
+    spec_version: 120,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -618,11 +618,6 @@ impl pallet_scheduler::Config for Runtime {
     type WeightInfo = ();
     type Preimages = Preimage;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
-}
-
-impl pallet_sudo::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
 }
 
 parameter_types! {
@@ -1091,9 +1086,6 @@ construct_runtime!(
         Council: pallet_collective::<Instance1> = 62,
         Democracy: pallet_democracy = 63,
         Identity: pallet_identity = 64,
-
-        // Temporary.
-        Sudo: pallet_sudo = 255,
     }
 );
 
