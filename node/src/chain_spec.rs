@@ -1,6 +1,6 @@
 use cumulus_primitives_core::ParaId;
 use origintrail_parachain_runtime::{AccountId, AuraId,
-	EVMConfig, EthereumConfig, Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
+	EVMConfig, EthereumConfig, Signature, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -181,7 +181,7 @@ pub fn local_testnet_config() -> ChainSpec {
 
 fn testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
-	root_key: AccountId,
+	_root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> origintrail_parachain_runtime::GenesisConfig {
@@ -220,10 +220,10 @@ fn testnet_genesis(
 		polkadot_xcm: origintrail_parachain_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
-		sudo: SudoConfig {
-			// Assign network admin rights.
-			key: Some(root_key),
-		},
+		// sudo: SudoConfig {
+		// 	// Assign network admin rights.
+		// 	key: Some(root_key),
+		// },
 		vesting: Default::default(),
 		treasury: Default::default(),
 		evm: EVMConfig {
