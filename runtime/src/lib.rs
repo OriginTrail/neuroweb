@@ -250,7 +250,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("origintrail-parachain"),
     impl_name: create_runtime_str!("origintrail-parachain"),
     authoring_version: 1,
-    spec_version: 120,
+    spec_version: 121,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -1037,6 +1037,11 @@ impl pallet_identity::Config for Runtime {
 	type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_sudo::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -1086,6 +1091,8 @@ construct_runtime!(
         Council: pallet_collective::<Instance1> = 62,
         Democracy: pallet_democracy = 63,
         Identity: pallet_identity = 64,
+
+        Sudo: pallet_sudo = 255,
     }
 );
 
