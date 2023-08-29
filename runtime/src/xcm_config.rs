@@ -1,6 +1,6 @@
 use super::{
-    AccountId, AllPalletsWithSystem, Balances, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-    ParachainInfo, ParachainSystem, PolkadotXcm, WeightToFee, XcmpQueue,
+    AccountId, AllPalletsWithSystem, Balances, DealWithFees, Runtime, RuntimeCall, RuntimeEvent, 
+    RuntimeOrigin, ParachainInfo, ParachainSystem, PolkadotXcm, WeightToFee, XcmpQueue,
 };
 use frame_support::{
     match_types, parameter_types,
@@ -9,7 +9,6 @@ use frame_support::{
 };
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
-use polkadot_runtime_common::impls::ToAuthor;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom,
@@ -23,6 +22,10 @@ use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 parameter_types! {
     pub const RelayLocation: MultiLocation = MultiLocation::parent();
     pub const RelayNetwork: Option<NetworkId> = None;
+    /// The location of the OTPDOT token, from the context of this chain. Since this token is native to this
+	/// chain, we make it synonymous with it and thus it is the `Here` location, which means "equivalent to
+	/// the context".
+	pub const TokenLocation: MultiLocation = Here.into_location();
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
     pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 }
@@ -169,7 +172,7 @@ impl xcm_executor::Config for XcmConfig {
     type Barrier = Barrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     type Trader =
-        UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
+        UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>;
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
     type AssetClaims = PolkadotXcm;
