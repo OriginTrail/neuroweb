@@ -21,10 +21,7 @@ use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
 parameter_types! {
     pub const RelayLocation: MultiLocation = MultiLocation::parent();
-    pub const RelayNetwork: Option<NetworkId> = None;
-    /// The location of the OTP token, from the context   cof this chain. Since this token is native to this
-	/// chain, we make it synonymous with it and thus it is the `Here` location, which means "equivalent to
-	/// the context".
+    pub const RelayNetwork: NetworkId = NetworkId::Westend;
     pub TokenLocation: MultiLocation = MultiLocation {
 		parents:0,
 		interior: Junctions::X1(
@@ -32,7 +29,7 @@ parameter_types! {
 		)
 	};
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-    pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+    pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
