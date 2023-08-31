@@ -95,6 +95,23 @@ match_types! {
     };
 }
 
+pub type Barrier = (
+    // Weight that is paid for may be consumed.
+    TakeWeightCredit,
+    // Expected responses are OK.
+    AllowKnownQueryResponses<PolkadotXcm>,
+    WithComputedOrigin<
+        (
+            // If the message is one that immediately attemps to pay for execution, then allow it.
+            AllowTopLevelPaidExecutionFrom<Everything>,
+            // Subscriptions for version tracking are OK.
+            AllowSubscriptionsFrom<Everything>,
+        ),
+        UniversalLocation,
+        ConstU32<8>,
+    >,
+);
+
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we
 /// properly account for proof size weights.
 ///
@@ -143,23 +160,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 		}
 	}
 }
-
-pub type Barrier = (
-    // Weight that is paid for may be consumed.
-    TakeWeightCredit,
-    // Expected responses are OK.
-    AllowKnownQueryResponses<PolkadotXcm>,
-    WithComputedOrigin<
-        (
-            // If the message is one that immediately attemps to pay for execution, then allow it.
-            AllowTopLevelPaidExecutionFrom<Everything>,
-            // Subscriptions for version tracking are OK.
-            AllowSubscriptionsFrom<Everything>,
-        ),
-        UniversalLocation,
-        ConstU32<8>,
-    >,
-);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -230,7 +230,7 @@ impl pallet_xcm::Config for Runtime {
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
     type MaxLockers = ConstU32<8>;
-    type WeightInfo = pallet_xcm::TestWeightInfo;
+    type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;    
 }
