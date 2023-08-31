@@ -1,6 +1,6 @@
 [package]
 name = "origintrail-parachain-runtime"
-version = "1.2.0"
+version = "1.2.1"
 authors = ["TraceLabs"]
 description = "OriginTrail Parachain Runtime - Cumulus FRAME-based Substrate Runtime"
 license = "GPL-3.0-only"
