@@ -21,7 +21,11 @@
 use super::*;
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{construct_runtime, parameter_types, traits::{Everything, AsEnsureOriginWithArg}, weights::Weight};
+use frame_support::{
+    construct_runtime, parameter_types,
+    traits::{AsEnsureOriginWithArg, Everything},
+    weights::Weight,
+};
 
 use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_evm::{AddressMapping, EnsureAddressNever, EnsureAddressRoot};
@@ -30,7 +34,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256};
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup, ConstU32},
+    traits::{BlakeTwo256, ConstU32, IdentityLookup},
 };
 
 pub type AccountId = Account;
@@ -209,7 +213,7 @@ parameter_types! {
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
-	type WeightPerGas = WeightPerGas;
+    type WeightPerGas = WeightPerGas;
     type CallOrigin = EnsureAddressRoot<AccountId>;
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AccountId;
@@ -242,7 +246,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
-	type AssetId = AssetId;
+    type AssetId = AssetId;
     type AssetIdParameter = AssetId;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;

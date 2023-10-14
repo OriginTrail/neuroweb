@@ -1,6 +1,6 @@
 use super::{
-    AccountId, AllPalletsWithSystem, Balances, DealWithFees, Runtime, RuntimeCall, RuntimeEvent, 
-    RuntimeOrigin, ParachainInfo, ParachainSystem, PolkadotXcm, WeightToFee, XcmpQueue,
+    AccountId, AllPalletsWithSystem, Balances, DealWithFees, ParachainInfo, ParachainSystem,
+    PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
 use frame_support::{
     match_types, parameter_types,
@@ -11,11 +11,11 @@ use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom,
-    CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents, WithComputedOrigin,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
+    IsConcrete, NativeAsset, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -121,44 +121,47 @@ pub type Barrier = (
 /// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
 pub struct SafeCallFilter;
 impl Contains<RuntimeCall> for SafeCallFilter {
-	fn contains(call: &RuntimeCall) -> bool {
-		#[cfg(feature = "runtime-benchmarks")]
-		{
-			if matches!(call, RuntimeCall::System(frame_system::Call::remark_with_event { .. })) {
-				return true
-			}
-		}
+    fn contains(call: &RuntimeCall) -> bool {
+        #[cfg(feature = "runtime-benchmarks")]
+        {
+            if matches!(
+                call,
+                RuntimeCall::System(frame_system::Call::remark_with_event { .. })
+            ) {
+                return true;
+            }
+        }
 
-		match call {
-			RuntimeCall::System(
-				frame_system::Call::kill_prefix { .. } | frame_system::Call::set_heap_pages { .. },
-			) |
-			RuntimeCall::Timestamp(..) |
-			RuntimeCall::Balances(..) |
-			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::Treasury(..) |
-            RuntimeCall::Vesting(..) |
-			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
-			RuntimeCall::Identity(
-				pallet_identity::Call::add_registrar { .. } |
-				pallet_identity::Call::set_identity { .. } |
-				pallet_identity::Call::clear_identity { .. } |
-				pallet_identity::Call::request_judgement { .. } |
-				pallet_identity::Call::cancel_request { .. } |
-				pallet_identity::Call::set_fee { .. } |
-				pallet_identity::Call::set_account_id { .. } |
-				pallet_identity::Call::set_fields { .. } |
-				pallet_identity::Call::provide_judgement { .. } |
-				pallet_identity::Call::kill_identity { .. } |
-				pallet_identity::Call::add_sub { .. } |
-				pallet_identity::Call::rename_sub { .. } |
-				pallet_identity::Call::remove_sub { .. } |
-				pallet_identity::Call::quit_sub { .. },
-			) |
-			RuntimeCall::PolkadotXcm(..) => true,
-			_ => false,
-		}
-	}
+        match call {
+            RuntimeCall::System(
+                frame_system::Call::kill_prefix { .. } | frame_system::Call::set_heap_pages { .. },
+            )
+            | RuntimeCall::Timestamp(..)
+            | RuntimeCall::Balances(..)
+            | RuntimeCall::Session(pallet_session::Call::purge_keys { .. })
+            | RuntimeCall::Treasury(..)
+            | RuntimeCall::Vesting(..)
+            | RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. })
+            | RuntimeCall::Identity(
+                pallet_identity::Call::add_registrar { .. }
+                | pallet_identity::Call::set_identity { .. }
+                | pallet_identity::Call::clear_identity { .. }
+                | pallet_identity::Call::request_judgement { .. }
+                | pallet_identity::Call::cancel_request { .. }
+                | pallet_identity::Call::set_fee { .. }
+                | pallet_identity::Call::set_account_id { .. }
+                | pallet_identity::Call::set_fields { .. }
+                | pallet_identity::Call::provide_judgement { .. }
+                | pallet_identity::Call::kill_identity { .. }
+                | pallet_identity::Call::add_sub { .. }
+                | pallet_identity::Call::rename_sub { .. }
+                | pallet_identity::Call::remove_sub { .. }
+                | pallet_identity::Call::quit_sub { .. },
+            )
+            | RuntimeCall::PolkadotXcm(..) => true,
+            _ => false,
+        }
+    }
 }
 
 pub struct XcmConfig;
@@ -173,8 +176,7 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
-    type Trader =
-        UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>;
+    type Trader = UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>;
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
     type AssetClaims = PolkadotXcm;
@@ -204,7 +206,7 @@ pub type XcmRouter = (
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
-	pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
+    pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
 
 impl pallet_xcm::Config for Runtime {
@@ -232,7 +234,7 @@ impl pallet_xcm::Config for Runtime {
     type MaxLockers = ConstU32<8>;
     type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
-    type ReachableDest = ReachableDest;    
+    type ReachableDest = ReachableDest;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
