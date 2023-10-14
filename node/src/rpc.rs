@@ -104,12 +104,12 @@ where
 	module.merge(
         Eth::<_, _, _, fp_rpc::NoTransactionConverter, _, _, _>::new(
             client.clone(),
-			pool.clone(),
+			pool,
             graph,
             no_tx_converter,
-            sync.clone(),
+            sync,
             signers,
-            overrides.clone(),
+            overrides,
 			backend.clone(),
             is_authority,
             block_data_cache.clone(),
@@ -136,8 +136,8 @@ where
 
 	module.merge(
 		Net::new(
-			client.clone(),
-			network.clone(),
+			client,
+			network,
 			// Whether to format the `peer_count` response as Hex (default) or not.
 			true,
 		)

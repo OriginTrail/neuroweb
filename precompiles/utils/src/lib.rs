@@ -196,7 +196,7 @@ where
         // computations.
         let result = call
             .dispatch(origin)
-            .map_err(|e| revert(alloc::format!("Dispatched call failed with error: {:?}", e)))?;
+            .map_err(|e| revert(alloc::format!("Dispatched call failed with error: {e:?}")))?;
 
         let used_weight = result.actual_weight;
 
