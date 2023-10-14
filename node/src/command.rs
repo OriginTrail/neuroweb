@@ -1,4 +1,8 @@
-use std::net::SocketAddr;
+use crate::{
+    chain_spec,
+    cli::{Cli, RelayChainCli, Subcommand},
+    service::{new_partial, ParachainNativeExecutor},
+};
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
@@ -12,11 +16,7 @@ use sc_cli::{
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
-use crate::{
-	chain_spec,
-	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, ParachainNativeExecutor},
-};
+use std::net::SocketAddr;
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     Ok(match id {
@@ -44,8 +44,8 @@ impl SubstrateCli for Cli {
             passed to the parachain node, while the arguments provided after -- will be passed \
             to the relay chain node.\n\n\
             {} <parachain-args> -- <relay-chain-args>",
-			Self::executable_name()
-		)
+            Self::executable_name()
+        )
     }
 
     fn author() -> String {
@@ -83,8 +83,9 @@ impl SubstrateCli for RelayChainCli {
             "OriginTrail Parachain \n\nThe command-line arguments provided first will be \
             passed to the parachain node, while the arguments provided after -- will be passed \
             to the relay chain node.\n\n\
-            {} <parachain-args> -- <relay-chain-args>", Self::executable_name()
-		)   
+            {} <parachain-args> -- <relay-chain-args>",
+            Self::executable_name()
+        )
     }
 
     fn author() -> String {
@@ -170,25 +171,25 @@ pub fn run() -> Result<()> {
             })
         }
         Some(Subcommand::Revert(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, components.backend, None))
-			})
-		},
+            construct_async_run!(|components, cli, cmd, config| {
+                Ok(cmd.run(components.client, components.backend, None))
+            })
+        }
         Some(Subcommand::ExportGenesisState(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|_config| {
-				let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
-				let state_version = Cli::native_runtime_version(&spec).state_version();
-				cmd.run::<Block>(&*spec, state_version)
-			})
-		},
-		Some(Subcommand::ExportGenesisWasm(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|_config| {
-				let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
-				cmd.run(&*spec)
-			})
-		},
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|_config| {
+                let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+                let state_version = Cli::native_runtime_version(&spec).state_version();
+                cmd.run::<Block>(&*spec, state_version)
+            })
+        }
+        Some(Subcommand::ExportGenesisWasm(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|_config| {
+                let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+                cmd.run(&*spec)
+            })
+        }
         Some(Subcommand::Benchmark(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             // Switch on the concrete benchmark sub-command-
@@ -207,14 +208,15 @@ pub fn run() -> Result<()> {
                     cmd.run(partials.client)
                 }),
                 #[cfg(not(feature = "runtime-benchmarks"))]
-				BenchmarkCmd::Storage(_) =>
-					return Err(sc_cli::Error::Input(
-						"Compile with --features=runtime-benchmarks \
+                BenchmarkCmd::Storage(_) => {
+                    return Err(sc_cli::Error::Input(
+                        "Compile with --features=runtime-benchmarks \
 						to enable storage benchmarks."
-							.into(),
-					)
-					.into()),
-				#[cfg(feature = "runtime-benchmarks")]
+                            .into(),
+                    )
+                    .into())
+                }
+                #[cfg(feature = "runtime-benchmarks")]
                 BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
                     let partials = new_partial(&config)?;
                     let db = partials.backend.expose_db();
@@ -222,47 +224,52 @@ pub fn run() -> Result<()> {
 
                     cmd.run(config, partials.client.clone(), db, storage)
                 }),
-                BenchmarkCmd::Machine(cmd) =>
-					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
+                BenchmarkCmd::Machine(cmd) => {
+                    runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
+                }
                 // NOTE: this allows the Client to leniently implement
-				// new benchmark commands without requiring a companion MR.
-				#[allow(unreachable_patterns)]
-				_ => Err("Benchmarking sub-command unsupported".into()),
+                // new benchmark commands without requiring a companion MR.
+                #[allow(unreachable_patterns)]
+                _ => Err("Benchmarking sub-command unsupported".into()),
             }
         }
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
             use origintrail_parachain_runtime::MILLISECS_PER_BLOCK;
-			use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
-			use try_runtime_cli::block_building_info::timestamp_with_aura_info;
+            use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+            use try_runtime_cli::block_building_info::timestamp_with_aura_info;
 
-			let runner = cli.create_runner(cmd)?;
+            let runner = cli.create_runner(cmd)?;
 
-			type HostFunctionsOf<E> = ExtendedHostFunctions<
-				sp_io::SubstrateHostFunctions,
-				<E as NativeExecutionDispatch>::ExtendHostFunctions,
-			>;
+            type HostFunctionsOf<E> = ExtendedHostFunctions<
+                sp_io::SubstrateHostFunctions,
+                <E as NativeExecutionDispatch>::ExtendHostFunctions,
+            >;
 
-			// grab the task manager.
-			let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
-			let task_manager =
-				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-					.map_err(|e| format!("Error: {:?}", e))?;
+            // grab the task manager.
+            let registry = &runner
+                .config()
+                .prometheus_config
+                .as_ref()
+                .map(|cfg| &cfg.registry);
+            let task_manager =
+                sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+                    .map_err(|e| format!("Error: {:?}", e))?;
             let info_provider = timestamp_with_aura_info(MILLISECS_PER_BLOCK);
 
-			runner.async_run(|_| {
-				Ok((
-					cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>, _>(Some(
-						info_provider,
-					)),
-					task_manager,
-				))
-			})
-		},
+            runner.async_run(|_| {
+                Ok((
+                    cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>, _>(Some(
+                        info_provider,
+                    )),
+                    task_manager,
+                ))
+            })
+        }
         #[cfg(not(feature = "try-runtime"))]
-		Some(Subcommand::TryRuntime) => Err("Try-runtime was not enabled when building the node. \
+        Some(Subcommand::TryRuntime) => Err("Try-runtime was not enabled when building the node. \
 			You can enable it with `--features try-runtime`."
-			.into()),
+            .into()),
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();

@@ -297,7 +297,12 @@ where
             pallet_assets::Pallet::<Runtime, Instance>::allowance(asset_id, &owner, &spender).into()
         };
 
-        Self::_approve(handle, asset_id, spender, amount.saturating_add(added_value))
+        Self::_approve(
+            handle,
+            asset_id,
+            spender,
+            amount.saturating_add(added_value),
+        )
     }
 
     fn decrease_allowance(
@@ -320,10 +325,20 @@ where
             pallet_assets::Pallet::<Runtime, Instance>::allowance(asset_id, &owner, &spender).into()
         };
 
-        Self::_approve(handle, asset_id, spender, amount.saturating_sub(subtracted_value))
+        Self::_approve(
+            handle,
+            asset_id,
+            spender,
+            amount.saturating_sub(subtracted_value),
+        )
     }
 
-    fn _approve(handle: &mut impl PrecompileHandle, asset_id: AssetIdOf<Runtime, Instance>, spender: H160, amount: U256) -> EvmResult<PrecompileOutput> {
+    fn _approve(
+        handle: &mut impl PrecompileHandle,
+        asset_id: AssetIdOf<Runtime, Instance>,
+        spender: H160,
+        amount: U256,
+    ) -> EvmResult<PrecompileOutput> {
         {
             let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
             let spender: Runtime::AccountId = Runtime::AddressMapping::into_account_id(spender);
