@@ -1,23 +1,23 @@
-# OriginTrail Parachain Node
+# NeuroWeb Node
 
 <div align="center">
-  <img src="https://parachain.origintrail.io/images/navigation-logo.svg">
+  <img src="https://140069760-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FqMnH71Mmd7Au6HK5UAji%2Fuploads%2FEmgmn8pgCqu9eJaQPNSO%2FNeuroWeb%20X%20visual%20(1).jpg?alt=media&token=320f5009-0932-4ecc-a5a6-3bbb7a56cf45">
 
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Substrate version](https://img.shields.io/badge/Substrate-3.0.0-brightgreen?logo=Parity%20Substrate)](https://substrate.io)
-[![Twitter URL](https://img.shields.io/twitter/follow/OT_Parachain?style=social)](https://twitter.com/OT_Parachain)
+[![Twitter URL](https://img.shields.io/twitter/follow/NeuroWebAI?style=social)](https://twitter.com/NeuroWebAI)
 [![Telegram](https://img.shields.io/endpoint?color=neon&style=flat-square&url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Forigintrail)](https://t.me/origintrail)
 [![Medium](https://badgen.net/badge/icon/medium?icon=medium&label)](https://medium.com/origintrail)
 [![Discord](https://img.shields.io/badge/Discord-gray?logo=discord)](https://discord.gg/FCgYk2S)
   
 </div>
 
-The OriginTrail Parachain is the next-generation L1 blockchain designed to tightly integrate with the OriginTrail DKG. As an OriginTrail-tailored blockchain it is optimized for maximum performance and usability in the OriginTrail consensus layer. It leverages the strong trust model and inherent interoperability of Polkadot, enabling smooth integration with other Polkadot ecosystem projects.
+NeuroWeb Network is a decentralized Artificial Intelligence blockchain designed to incentivise knowledge creation, connectivity and sharing through **Knowledge Mining**. It's utility token NEURO is designed to fuel the AI knowledge economy, rewarding relevant knowledge contributions to the **OriginTrail Decentralized Knowledge Graph**.
 
-![](https://parachain.origintrail.io/storage/whitepaper-content/April2022/img-otl-ayer-2@2x.jpg)
-
-OriginTrail Parachain node is built with [Substrate](https://substrate.dev) framework.
+- NeuroWeb builds on the basis of its predecessor - the OriginTrail Parachain - which was transformed into NeuroWeb via a community Governance vote on OriginTrail Parachain in December 2023.
+- NeuroWeb is a permissionless, EVM enabled blockchain secured by Polkadot validators.
+- NeuroWeb node is built with [Substrate](https://substrate.dev) framework.
 
 ## Build & Run
 
@@ -41,14 +41,14 @@ cargo build --release
 
 ### Run a network
 
-To run a full network with multiple OriginTrail parachain nodes (collators and non-collators), first we need to start relay chain, and after that our parachain.
+To run a full network with multiple NeuroWeb nodes (collators and non-collators), first we need to start relay chain, and after that our parachain.
 
 ![](https://parachain.origintrail.io/storage/whitepaper-content/April2022/img-flow-chart@2x.png)
 
 #### Run A Relay Chain
 
 To start a relay chain we recommend reading and following instructions in [Cumulus Workshop](https://docs.substrate.io/tutorials/build-a-parachain/prepare-a-local-relay-chain/).
-OriginTrail parachain is currently compatible with Polkadot v0.9.40 version.
+NeuroWeb is currently compatible with Polkadot v0.9.40 version.
 
 #### Parachain Nodes (Collators)
 
