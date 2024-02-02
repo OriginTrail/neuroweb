@@ -97,13 +97,10 @@ construct_runtime!(
 	}
 );
 
+#[derive(Default)]
 pub struct ExtBuilder();
 
-impl Default for ExtBuilder {
-	fn default() -> Self {
-		Self()
-	}
-}
+
 
 impl ExtBuilder {
 	pub fn build(self) -> sp_io::TestExternalities {

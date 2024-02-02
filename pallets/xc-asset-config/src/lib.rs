@@ -213,7 +213,7 @@ pub mod pallet {
 
             // Ensure such an assetId does not exist
             ensure!(
-                !AssetIdToLocation::<T>::contains_key(&asset_id),
+                !AssetIdToLocation::<T>::contains_key(asset_id),
                 Error::<T>::AssetAlreadyRegistered
             );
 
@@ -221,7 +221,7 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
             let asset_location = VersionedMultiLocation::V3(v3_asset_loc);
 
-            AssetIdToLocation::<T>::insert(&asset_id, asset_location.clone());
+            AssetIdToLocation::<T>::insert(asset_id, asset_location.clone());
             AssetLocationToId::<T>::insert(&asset_location, asset_id);
 
             T::XcAssetChanged::xc_asset_registered(asset_id);
@@ -278,10 +278,10 @@ pub mod pallet {
             let new_asset_location = VersionedMultiLocation::V3(v3_asset_loc);
 
             let previous_asset_location =
-                AssetIdToLocation::<T>::get(&asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
+                AssetIdToLocation::<T>::get(asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
 
             // Insert new asset type info
-            AssetIdToLocation::<T>::insert(&asset_id, new_asset_location.clone());
+            AssetIdToLocation::<T>::insert(asset_id, new_asset_location.clone());
             AssetLocationToId::<T>::insert(&new_asset_location, asset_id);
 
             // Remove previous asset type info
@@ -331,9 +331,9 @@ pub mod pallet {
             T::ManagerOrigin::ensure_origin(origin)?;
 
             let asset_location =
-                AssetIdToLocation::<T>::get(&asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
+                AssetIdToLocation::<T>::get(asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
 
-            AssetIdToLocation::<T>::remove(&asset_id);
+            AssetIdToLocation::<T>::remove(asset_id);
             AssetLocationToId::<T>::remove(&asset_location);
             AssetLocationUnitsPerSecond::<T>::remove(&asset_location);
             T::XcAssetChanged::xc_asset_unregistered(asset_id);
