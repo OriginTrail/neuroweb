@@ -1,11 +1,11 @@
 [package]
 name = "neuroweb-runtime"
-version = "1.2.1"
+version = "1.3.0"
 authors = ["TraceLabs"]
-description = "OriginTrail Parachain Runtime - Cumulus FRAME-based Substrate Runtime"
+description = "NeuroWeb Runtime - Cumulus FRAME-based Substrate Runtime"
 license = "GPL-3.0-only"
-homepage = "https://parachain.origintrail.io/"
-repository = "https://github.com/OriginTrail/origintrail-parachain/"
+homepage = "https://neuroweb.ai/"
+repository = "https://github.com/OriginTrail/neuroweb/"
 edition = "2021"
 
 [package.metadata.docs.rs]
