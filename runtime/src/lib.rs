@@ -248,9 +248,9 @@ impl_opaque_keys! {
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("origintrail-parachain"),
-    impl_name: create_runtime_str!("origintrail-parachain"),
+    impl_name: create_runtime_str!("neuroweb"),
     authoring_version: 1,
-    spec_version: 121,
+    spec_version: 122,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,

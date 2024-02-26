@@ -5,7 +5,7 @@ use std::{sync::Arc, path::PathBuf, time::Duration, collections::BTreeMap};
 
 use cumulus_client_cli::CollatorOptions;
 // Local Runtime Types
-use origintrail_parachain_runtime::{
+use neuroweb_runtime::{
 	opaque::Block, RuntimeApi,
 };
 
@@ -45,11 +45,11 @@ impl sc_executor::NativeExecutionDispatch for ParachainNativeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		origintrail_parachain_runtime::api::dispatch(method, data)
+		neuroweb_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		origintrail_parachain_runtime::native_version()
+		neuroweb_runtime::native_version()
 	}
 }
 

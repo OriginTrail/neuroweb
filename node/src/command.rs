@@ -4,7 +4,7 @@ use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
-use origintrail_parachain_runtime::Block;
+use neuroweb_runtime::Block;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -31,7 +31,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "OriginTrail Parachain".into()
+        "NeuroWeb".into()
     }
 
     fn impl_version() -> String {
@@ -40,7 +40,7 @@ impl SubstrateCli for Cli {
 
     fn description() -> String {
         format!(
-            "OriginTrail Parachain\n\nThe command-line arguments provided first will be \
+            "NeuroWeb\n\nThe command-line arguments provided first will be \
             passed to the parachain node, while the arguments provided after -- will be passed \
             to the relay chain node.\n\n\
             {} <parachain-args> -- <relay-chain-args>",
@@ -53,7 +53,7 @@ impl SubstrateCli for Cli {
     }
 
     fn support_url() -> String {
-        "https://github.com/OriginTrail/origintrail-parachain/issues/new".into()
+        "https://github.com/OriginTrail/neuroweb/issues/new".into()
     }
 
     fn copyright_start_year() -> i32 {
@@ -65,13 +65,13 @@ impl SubstrateCli for Cli {
     }
 
     fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        &origintrail_parachain_runtime::VERSION
+        &neuroweb_runtime::VERSION
     }
 }
 
 impl SubstrateCli for RelayChainCli {
     fn impl_name() -> String {
-        "OriginTrail Parachain".into()
+        "NeuroWeb".into()
     }
 
     fn impl_version() -> String {
@@ -80,7 +80,7 @@ impl SubstrateCli for RelayChainCli {
 
     fn description() -> String {
         format!(
-            "OriginTrail Parachain \n\nThe command-line arguments provided first will be \
+            "NeuroWeb \n\nThe command-line arguments provided first will be \
             passed to the parachain node, while the arguments provided after -- will be passed \
             to the relay chain node.\n\n\
             {} <parachain-args> -- <relay-chain-args>", Self::executable_name()
@@ -92,7 +92,7 @@ impl SubstrateCli for RelayChainCli {
     }
 
     fn support_url() -> String {
-        "https://github.com/OriginTrail/origintrail-parachain/issues/new".into()
+        "https://github.com/OriginTrail/neuroweb/issues/new".into()
     }
 
     fn copyright_start_year() -> i32 {
@@ -232,7 +232,7 @@ pub fn run() -> Result<()> {
         }
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
-            use origintrail_parachain_runtime::MILLISECS_PER_BLOCK;
+            use neuroweb_runtime::MILLISECS_PER_BLOCK;
 			use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
 			use try_runtime_cli::block_building_info::timestamp_with_aura_info;
 

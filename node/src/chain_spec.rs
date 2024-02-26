@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use origintrail_parachain_runtime::{AccountId, AuraId,
+use neuroweb_runtime::{AccountId, AuraId,
 	EVMConfig, EthereumConfig, Signature, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -10,7 +10,7 @@ use std::{collections::BTreeMap, str::FromStr};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
-	sc_service::GenericChainSpec<origintrail_parachain_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<neuroweb_runtime::GenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -59,8 +59,8 @@ where
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn template_session_keys(keys: AuraId) -> origintrail_parachain_runtime::SessionKeys {
-	origintrail_parachain_runtime::SessionKeys { aura: keys }
+pub fn template_session_keys(keys: AuraId) -> neuroweb_runtime::SessionKeys {
+	neuroweb_runtime::SessionKeys { aura: keys }
 }
 
 pub fn development_config() -> ChainSpec {
@@ -184,23 +184,23 @@ fn testnet_genesis(
 	_root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> origintrail_parachain_runtime::GenesisConfig {
-	origintrail_parachain_runtime::GenesisConfig {
-		system: origintrail_parachain_runtime::SystemConfig {
-			code: origintrail_parachain_runtime::WASM_BINARY
+) -> neuroweb_runtime::GenesisConfig {
+	neuroweb_runtime::GenesisConfig {
+		system: neuroweb_runtime::SystemConfig {
+			code: neuroweb_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: origintrail_parachain_runtime::BalancesConfig {
+		balances: neuroweb_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: origintrail_parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: origintrail_parachain_runtime::CollatorSelectionConfig {
+		parachain_info: neuroweb_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: neuroweb_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
 			..Default::default()
 		},
-		session: origintrail_parachain_runtime::SessionConfig {
+		session: neuroweb_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {
@@ -217,7 +217,7 @@ fn testnet_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		polkadot_xcm: origintrail_parachain_runtime::PolkadotXcmConfig {
+		polkadot_xcm: neuroweb_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		// sudo: SudoConfig {

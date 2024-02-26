@@ -10,7 +10,7 @@
 //! 
 
 // Executed Command:
-// ./target/release/origintrail-parachain
+// ./target/release/neuroweb
 // benchmark
 // pallet
 // --chain

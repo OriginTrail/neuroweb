@@ -1,4 +1,4 @@
-//! OriginTrail Parachain Node CLI
+//! NeuroWeb Node CLI
 
 #![warn(missing_docs)]
 

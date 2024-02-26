@@ -1,5 +1,5 @@
 [package]
-name = "origintrail-parachain-runtime"
+name = "neuroweb-runtime"
 version = "1.2.1"
 authors = ["TraceLabs"]
 description = "OriginTrail Parachain Runtime - Cumulus FRAME-based Substrate Runtime"

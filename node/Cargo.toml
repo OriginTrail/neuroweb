@@ -1,16 +1,16 @@
 [package]
-name = "origintrail-parachain-node"
+name = "neuroweb-node"
 version = "1.1.1"
 authors = ["TraceLabs"]
-description = "OriginTrail Parachain - Cumulus FRAME-based Substrate Node"
+description = "NeuroWeb - Cumulus FRAME-based Substrate Node"
 license = "GPL-3.0-only"
-homepage = "https://parachain.origintrail.io/"
-repository = "https://github.com/OriginTrail/origintrail-parachain/"
+homepage = "https://neuroweb.ai/"
+repository = "https://github.com/OriginTrail/neuroweb/"
 edition = "2021"
 build = "build.rs"
 
 [[bin]]
-name = "origintrail-parachain"
+name = "neuroweb"
 path = "src/main.rs"
 
 [dependencies]
@@ -22,7 +22,7 @@ serde = { version = "1.0.152", features = ["derive"] }
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 
 # Local
-origintrail-parachain-runtime = { path = "../runtime" }
+neuroweb-runtime = { path = "../runtime" }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
@@ -91,10 +91,10 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 default = ["fc-rpc/rpc-binary-search-estimate"]
 runtime-benchmarks = [
 	"try-runtime-cli/try-runtime",
-	"origintrail-parachain-runtime/runtime-benchmarks",
+	"neuroweb-runtime/runtime-benchmarks",
 	"polkadot-cli/runtime-benchmarks",
 ]
 try-runtime = [
 	"try-runtime-cli/try-runtime",
-	"origintrail-parachain-runtime/try-runtime",
+	"neuroweb-runtime/try-runtime",
 ]

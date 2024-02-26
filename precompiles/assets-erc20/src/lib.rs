@@ -2,7 +2,7 @@
 // Copyright 2022      Stake Technologies
 // Copyright 2022      TraceLabs
 // This file is part of AssetsERC20 package, originally developed by Purestake Inc.
-// AssetsERC20 package used in OriginTrail Parachain in terms of GPLv3.
+// AssetsERC20 package used in NeuroWeb Parachain in terms of GPLv3.
 //
 // AssetsERC20 is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -90,8 +90,8 @@ pub trait AddressToAssetId<AssetId> {
 
 /// The following distribution has been decided for the precompiles
 /// 0-1023: Ethereum Mainnet Precompiles
-/// 1024-2047 Precompiles that are not in Ethereum Mainnet but are neither OriginTrail Parachain specific
-/// 2048-4095 OriginTrail Parachain specific precompiles
+/// 1024-2047 Precompiles that are not in Ethereum Mainnet but are neither NeuroWeb Parachain specific
+/// 2048-4095 NeuroWeb Parachain specific precompiles
 /// Asset precompiles can only fall between
 ///     0xFFFFFFFF00000000000000000000000000000000 - 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 /// The precompile for AssetId X, where X is a u128 (i.e.16 bytes), if 0XFFFFFFFF + Bytes(AssetId)

@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use origintrail_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Index as Nonce};
+use neuroweb_runtime::{opaque::Block, AccountId, Balance, Hash, Index as Nonce};
 
 use sc_client_api::{
 	AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider,
