@@ -6653,6 +6653,7 @@ dependencies = [
  "frame-benchmarking 28.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "frame-benchmarking-cli 32.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "futures",
+ "itertools 0.11.0",
  "jsonrpsee",
  "log",
  "neuroweb-runtime",
@@ -6743,6 +6744,7 @@ dependencies = [
  "pallet-identity",
  "pallet-message-queue 31.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "pallet-multisig",
+ "pallet-parachain-staking",
  "pallet-preimage",
  "pallet-proxy",
  "pallet-scheduler",
@@ -8109,6 +8111,32 @@ dependencies = [
  "sp-runtime 31.0.1 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "sp-staking 26.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+]
+
+[[package]]
+name = "pallet-parachain-staking"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking 28.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "frame-support 28.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "frame-system 28.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "log",
+ "pallet-aura",
+ "pallet-authorship 28.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "pallet-balances 28.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "pallet-session 28.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "pallet-timestamp 27.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "similar-asserts",
+ "sp-consensus-aura",
+ "sp-core 28.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "sp-io 30.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "sp-runtime 31.0.1 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "sp-staking 26.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "substrate-fixed",
 ]
 
 [[package]]
@@ -17401,6 +17429,17 @@ version = "11.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
 
 [[package]]
+name = "substrate-fixed"
+version = "0.5.9"
+source = "git+https://github.com/encointer/substrate-fixed#879c58bcc6fd676a74315dcd38b598f28708b0b5"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "substrate-typenum",
+]
+
+[[package]]
 name = "substrate-frame-rpc-system"
 version = "28.0.0"
 source = "git+https://github.com/moonbeam-foundation/polkadot-sdk?branch=moonbeam-polkadot-v1.11.0#ef915632fbda727583b13813417664ecefc000b8"
@@ -17494,6 +17533,16 @@ dependencies = [
  "sp-state-machine 0.35.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "sp-trie 29.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "trie-db",
+]
+
+[[package]]
+name = "substrate-typenum"
+version = "1.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0f0091e93c2c75b233ae39424c52cb8a662c0811fb68add149e20e5d7e8a788"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
 ]
 
 [[package]]

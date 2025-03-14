@@ -1,19 +1,46 @@
 use cumulus_primitives_core::ParaId;
-use neuroweb_runtime::{AccountId, AuraId,
-	EVMConfig, Signature, EXISTENTIAL_DEPOSIT};
+use neuroweb_runtime::{pallet_parachain_staking::{
+		inflation::{perbill_annual_to_perbill_round, BLOCKS_PER_YEAR},
+		InflationInfo, Range,
+	}, AccountId, AuraId, Balance, EVMConfig, MinCandidateStk, Signature, OTP};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public, H160, U256};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{Perbill, Percent, traits::{IdentifyAccount, Verify}};
 use std::{collections::BTreeMap, str::FromStr};
+use itertools::Itertools;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
 	sc_service::GenericChainSpec<neuroweb_runtime::RuntimeGenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+pub const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+pub const COLLATOR_COMMISSION: Perbill = Perbill::from_percent(10);
+pub const PARACHAIN_BOND_RESERVE_PERCENT: Percent = Percent::from_percent(0);
+pub const BLOCKS_PER_ROUND: u32 = 3600; // 6 hours of blocks
+pub const NUM_SELECTED_CANDIDATES: u32 = 1; // For start
+
+pub fn neuroweb_inflation_config() -> InflationInfo<Balance> {
+	fn to_round_inflation(annual: Range<Perbill>) -> Range<Perbill> {
+		perbill_annual_to_perbill_round(
+			annual,
+			// rounds per year
+			BLOCKS_PER_YEAR / BLOCKS_PER_ROUND,
+		)
+	}
+	let annual =
+		Range { min: Perbill::from_percent(2), ideal: Perbill::from_percent(3), max: Perbill::from_percent(3) };
+
+	InflationInfo {
+		// staking expectations
+		expect: Range { min: 100_000 * OTP, ideal: 200_000 * OTP, max: 500_000 * OTP },
+		// annual inflation
+		annual,
+		round: to_round_inflation(annual),
+	}
+}
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -174,13 +201,8 @@ fn testnet_genesis(
 			parachain_id: id,
 			..Default::default()
 		},
-		collator_selection: neuroweb_runtime::CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
-			..Default::default()
-		},
 		session: neuroweb_runtime::SessionConfig {
-			keys: invulnerables
+			keys: invulnerables.clone()
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
@@ -242,6 +264,15 @@ fn testnet_genesis(
 		council: Default::default(),
 		democracy: Default::default(),
 		transaction_payment: Default::default(),
+		parachain_staking: neuroweb_runtime::ParachainStakingConfig {
+			candidates: invulnerables.clone().into_iter().map(|account| (account.0, MinCandidateStk::get())).collect_vec(),
+			delegations: vec![],
+			blocks_per_round: BLOCKS_PER_ROUND,
+			num_selected_candidates: NUM_SELECTED_CANDIDATES,
+			parachain_bond_reserve_percent: PARACHAIN_BOND_RESERVE_PERCENT,
+			collator_commission: COLLATOR_COMMISSION,
+			inflation_config: neuroweb_inflation_config()
+		}
 	};
 
 	serde_json::to_value(&config).expect("Could not build genesis config.")
