@@ -149,14 +149,14 @@ impl frame_system::Config for Runtime {
     type BaseCallFilter = Everything;
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    // type Index = u64;
+    // type BlockNumber = BlockNumber;
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    // type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -170,6 +170,7 @@ impl frame_system::Config for Runtime {
     type SS58Prefix = SS58Prefix;
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type RuntimeTask = RuntimeTask;
 }
 
 parameter_types! {
@@ -197,6 +198,10 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type FreezeIdentifier = ();
+    type RuntimeFreezeReason = RuntimeFreezeReason;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type MaxFreezes = ();
 }
 
 parameter_types! {
@@ -204,6 +209,7 @@ parameter_types! {
         Erc20AssetsPrecompileSet(PhantomData);
     pub const WeightPerGas: Weight = Weight::from_parts(1, 0);
     pub BlockGasLimit: U256 = U256::max_value();
+    pub const GasLimitPovSizeRatio: u64 = 4;
 }
 
 impl pallet_evm::Config for Runtime {
@@ -226,6 +232,9 @@ impl pallet_evm::Config for Runtime {
     type FindAuthor = ();
     type OnCreate = ();
     type WeightInfo = ();
+    type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+    type SuicideQuickClearLimit = ConstU32<0>;
+
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments

@@ -99,6 +99,9 @@ pallet-democracy = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-preimage = { workspace = true }
 
+# Staking
+pallet-parachain-staking = { workspace = true }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -139,6 +142,7 @@ std = [
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-ethereum/std",
 	"pallet-identity/std",
+	"pallet-parachain-staking/std",
 	"pallet-preimage/std",
 	"pallet-proxy/std",
 	"pallet-message-queue/std",
@@ -191,6 +195,7 @@ runtime-benchmarks = [
 	"pallet-identity/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"pallet-parachain-staking/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",

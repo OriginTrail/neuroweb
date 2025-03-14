@@ -188,6 +188,7 @@ pub fn run() -> Result<()> {
             match cmd {
                 BenchmarkCmd::Pallet(cmd) => {
                     if cfg!(feature = "runtime-benchmarks") {
+                        #[allow(deprecated)]
                         runner.sync_run(|config| cmd.run::<HashingFor<Block>, ()>(config))
                     } else {
                         Err("Benchmarking wasn't enabled when building the node. \
