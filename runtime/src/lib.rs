@@ -770,7 +770,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 }
 
 parameter_types! {
-    pub const ChainId: u64 = 2043;
+    pub const ChainId: u64 = 2160;
     pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS);
     pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
     pub WeightPerGas: Weight = Weight::from_parts(WEIGHT_PER_GAS, 0);
@@ -1183,6 +1183,11 @@ impl pallet_parachain_staking::Config for Runtime {
 	type WeightInfo = weights::pallet_parachain_staking::WeightInfo<Runtime>;
 }
 
+impl pallet_sudo::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
+}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1235,6 +1240,9 @@ construct_runtime!(
         Council: pallet_collective::<Instance1> = 62,
         Democracy: pallet_democracy = 63,
         Identity: pallet_identity = 64,
+
+        // Temporary.
+        Sudo: pallet_sudo = 255,
     }
 );
 
@@ -1812,7 +1820,6 @@ impl_runtime_apis! {
         fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
             get_preset::<RuntimeGenesisConfig>(id, |_| None)
         }
-      
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
             vec![]
         }
