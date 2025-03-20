@@ -21,7 +21,7 @@ use sp_runtime::{PerThing, Perbill, RuntimeDebug};
 use substrate_fixed::{transcendental::pow as floatpow, types::I64F64};
 
 const SECONDS_PER_YEAR: u32 = 31557600;
-const SECONDS_PER_BLOCK: u32 = 12;
+const SECONDS_PER_BLOCK: u32 = 6;
 pub const BLOCKS_PER_YEAR: u32 = SECONDS_PER_YEAR / SECONDS_PER_BLOCK;
 
 fn rounds_per_year<T: Config>() -> u32 {
