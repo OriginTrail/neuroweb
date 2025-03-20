@@ -1376,6 +1376,9 @@ pub type UncheckedExtrinsic = fp_self_contained::UncheckedExtrinsic<Address, Run
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
+/// Tuple of migrations (structs that implement `OnRuntimeUpgrade`)
+type Migrations = pallet_parachain_staking::migrations::v1::MigrateV0ToV1<Runtime>;
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -1383,6 +1386,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    Migrations
 >;
 
 impl_runtime_apis! {

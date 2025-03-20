@@ -74,6 +74,8 @@ pub use traits::*;
 pub use types::*;
 pub use RoundIndex;
 
+
+
 #[pallet]
 pub mod pallet {
 	use crate::{
@@ -99,9 +101,12 @@ pub mod pallet {
 	use sp_staking::SessionIndex;
 	use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
+
 	/// Pallet for parachain staking
 	#[pallet::pallet]
 	#[pallet::without_storage_info]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	pub type RoundIndex = u32;
@@ -502,7 +507,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn collator_commission)]
 	/// Commission percent taken off of rewards for all collators
-	type CollatorCommission<T: Config> = StorageValue<_, Perbill, ValueQuery>;
+		pub(crate) type CollatorCommission<T: Config> = StorageValue<_, Perbill, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn total_selected)]
