@@ -3,20 +3,19 @@ use frame_support::{
     traits::{Get, UncheckedOnRuntimeUpgrade},
 };
 
-#[cfg(feature = "try-runtime")]
-use alloc::vec::Vec;
-use sp_runtime::Perbill;
+use sp_runtime::{Perbill, Percent};
+use crate::inflation::{Range, InflationInfo};
 
 mod v0 {
     use super::*;
-	use frame_support::pallet_prelude::ValueQuery;
+		use frame_support::pallet_prelude::ValueQuery;
     use crate::CollatorCommission;
 
 	/// V0 type for [`crate::Value`].
 	#[storage_alias]
 	pub type CollatorCommision<T: crate::Config> = StorageValue<
         crate::Pallet<T>, 
-        CollatorCommission<T>, 
+        CollatorCommission<T>,
         ValueQuery
     >;
 }
@@ -36,9 +35,36 @@ impl<T: crate::Config> UncheckedOnRuntimeUpgrade for InnerMigrateV0ToV1<T> {
 
     fn on_runtime_upgrade() -> frame_support::weights::Weight {
         let new = Perbill::from_percent(30);
-        crate::CollatorCommission::<T>::put(new);
 
-        T::DbWeight::get().writes(1)
+        crate::CollatorCommission::<T>::put(new);
+				crate::InflationConfig::<T>::put(
+						InflationInfo {
+								expect: Range {
+										min: T::Balance::from(999u32), // Convert to Balance
+										ideal: T::Balance::from(999u32),
+										max: T::Balance::from(999u32),
+								},
+								round: Range {
+										min: Perbill::from_percent(74),
+										ideal: Perbill::from_percent(74),
+										max: Perbill::from_percent(74),
+								},
+								annual: Range {
+										min: Perbill::from_percent(75),
+										ideal: Perbill::from_percent(75),
+										max: Perbill::from_percent(75),
+								},
+						}
+				);
+
+				let old_bond_info = crate::ParachainBondInfo::<T>::get();
+				crate::ParachainBondInfo::<T>::put(crate::ParachainBondConfig {
+						account: old_bond_info.account,
+						percent: Percent::from_percent(30)
+				});
+						
+				
+        T::DbWeight::get().writes(3)
 	}
 
     #[cfg(feature = "try-runtime")]

@@ -31,7 +31,7 @@ chain = "dev"
 
 	[[parachains.collators]]
 	name = "neuroweb-collator01"
-	command = "./neuroweb/target/debug/neuroweb"
+	command = "../../target/debug/neuroweb"
 	args = [ "--no-hardware-benchmarks"]
 	ws_port = 9933
 	rpc_port = 8833
@@ -40,5 +40,5 @@ chain = "dev"
 	name = "neuroweb-collator02"
 	ws_port = 9944
 	rpc_port = 8822
-	command = "./neuroweb/target/debug/neuroweb"
+	command = "../../target/debug/neuroweb"
 	args = [ "--no-hardware-benchmarks"]
