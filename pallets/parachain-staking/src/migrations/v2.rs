@@ -19,7 +19,6 @@ impl<T: crate::Config> UncheckedOnRuntimeUpgrade for InnerMigrateV0ToV1<T> {
 	    Ok((commission, inflation, bond_info, total).encode())
     }
 
-    #[cfg(feature = "try-runtime")]
     fn on_runtime_upgrade() -> frame_support::weights::Weight {
         let new = Perbill::from_percent(30);
         crate::CollatorCommission::<T>::put(new);
