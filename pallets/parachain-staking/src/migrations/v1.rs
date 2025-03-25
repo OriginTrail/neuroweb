@@ -1,24 +1,7 @@
-use frame_support::{
-    storage_alias,
-    traits::{Get, UncheckedOnRuntimeUpgrade},
-};
+use frame_support::traits::{Get, UncheckedOnRuntimeUpgrade};
 
 use sp_runtime::{Perbill, Percent};
 use crate::inflation::{Range, InflationInfo};
-
-mod v0 {
-    use super::*;
-		use frame_support::pallet_prelude::ValueQuery;
-    use crate::CollatorCommission;
-
-	/// V0 type for [`crate::Value`].
-	#[storage_alias]
-	pub type CollatorCommision<T: crate::Config> = StorageValue<
-        crate::Pallet<T>, 
-        CollatorCommission<T>,
-        ValueQuery
-    >;
-}
 
 pub struct InnerMigrateV0ToV1<T: crate::Config>(core::marker::PhantomData<T>);
 
@@ -28,43 +11,51 @@ impl<T: crate::Config> UncheckedOnRuntimeUpgrade for InnerMigrateV0ToV1<T> {
     fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
         use codec::Encode;
 
-        let old_value = v0::CollatorCommision::<T>::get();
-
-        Ok(old_value.encode())
+        let comission = crate::CollatorCommision::<T>::get();
+        let inflation = crate::InflationConfig::<T>::get();
+        let bond_info = crate::ParachainBondInfo::<T>::get();
+        let total = crate::TotalSelected::<T>::get();
+				
+	    Ok((commission, inflation, bond_info, total).encode())
     }
 
     fn on_runtime_upgrade() -> frame_support::weights::Weight {
         let new = Perbill::from_percent(30);
-
         crate::CollatorCommission::<T>::put(new);
-				crate::InflationConfig::<T>::put(
-						InflationInfo {
-								expect: Range {
-										min: T::Balance::from(999u32), // Convert to Balance
-										ideal: T::Balance::from(999u32),
-										max: T::Balance::from(999u32),
-								},
-								round: Range {
-										min: Perbill::from_percent(74),
-										ideal: Perbill::from_percent(74),
-										max: Perbill::from_percent(74),
-								},
-								annual: Range {
-										min: Perbill::from_percent(75),
-										ideal: Perbill::from_percent(75),
-										max: Perbill::from_percent(75),
-								},
-						}
-				);
 
-				let old_bond_info = crate::ParachainBondInfo::<T>::get();
-				crate::ParachainBondInfo::<T>::put(crate::ParachainBondConfig {
-						account: old_bond_info.account,
-						percent: Percent::from_percent(30)
-				});
-						
+        crate::InflationConfig::<T>::put(
+            InflationInfo {
+                expect: Range {
+                    min: T::Balance::from(999u32), // Convert to Balance
+                    ideal: T::Balance::from(999u32),
+                    max: T::Balance::from(999u32),
+                },
+                round: Range {
+                    min: Perbill::from_percent(74),
+                    ideal: Perbill::from_percent(74),
+                    max: Perbill::from_percent(74),
+                },
+                annual: Range {
+                    min: Perbill::from_percent(75),
+                    ideal: Perbill::from_percent(75),
+                    max: Perbill::from_percent(75),
+                },
+            }
+        );
+
+        let old_bond_info = crate::ParachainBondInfo::<T>::get();
+        crate::ParachainBondInfo::<T>::put(crate::ParachainBondConfig {
+            account: old_bond_info.account,
+            percent: Percent::from_percent(30)
+        });
+
+        let num_selected_candidates = 1;
+
+        // Must be bigger than MinSelectedCandidates
+        crate::TotalSelected::<T>::put(num_selected_candidates);
+        // crate::Delegations::<T, Balance>::put(Default::default());
 				
-        T::DbWeight::get().writes(3)
+        T::DbWeight::get().reads_writes(1, 4)
 	}
 
     #[cfg(feature = "try-runtime")]
@@ -72,23 +63,17 @@ impl<T: crate::Config> UncheckedOnRuntimeUpgrade for InnerMigrateV0ToV1<T> {
 		use codec::Decode;
 		use frame_support::ensure;
 
-		let maybe_old_value = crate::CollatorCommission::decode(&mut &state[..]).map_err(|_| {
-			sp_runtime::TryRuntimeError::Other("Failed to decode old value from storage")
-		})?;
+        let comission = crate::CollatorCommission::<T>::get();
+        ensure!(comission.is_some(), "Commission value is not set");
 
-		match maybe_old_value {
-			Some(old_value) => {
-				let new_value = crate::CollatorCommission::<T>::get();
-				ensure!(new_value.is_some(), "New value not set");
-				ensure!(
-					new_value == Prebil(from_percent(30)),
-					"New value not set correctly"
-				);
-			},
-			None => {
-				ensure!(crate::CollatorCommission::<T>::get().is_none(), "New value unexpectedly set");
-			}
-		};
+        let inflation = crate::InflationConfig::<T>::get();
+        ensure!(inflation.is_some(), "Inflation value is not set");
+
+        let bond_info = crate::BondInfo::<T>::get();
+        ensure!(bond_info.is_some(), "Bond info value is not set");
+
+        let num_selected_candidates = crate::TotalSelected::<T>::get();
+        ensure!(num_selected_candidates.is_some(), "Total selected candidates value is not set");
 
 		Ok(())
 	}
