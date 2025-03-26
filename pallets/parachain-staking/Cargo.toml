@@ -1,0 +1,79 @@
+[package]
+name = "pallet-parachain-staking"
+description = "Parachain staking pallet for collator selection and reward distribution"
+authors = { workspace = true }
+edition = "2021"
+version = "1.0.0"
+
+[dependencies]
+serde = { workspace = true }
+log = { workspace = true }
+
+codec = { workspace = true, features = [
+	"derive",
+] }
+scale-info = { workspace = true, features = ["derive"] }
+
+# FRAME
+frame-benchmarking = { workspace = true, optional = true }
+frame-support.workspace = true
+frame-system.workspace = true
+sp-runtime.workspace = true
+sp-std.workspace = true
+sp-core.workspace = true
+substrate-fixed.workspace = true
+sp-staking.workspace = true
+pallet-authorship.workspace = true
+pallet-session.workspace = true
+
+[dev-dependencies]
+pallet-balances.workspace = true
+pallet-aura.workspace = true
+pallet-timestamp.workspace = true
+similar-asserts = "1.1.0"
+sp-io.workspace = true
+sp-consensus-aura.workspace = true
+
+[features]
+default = [ "std" ]
+std = [
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"log/std",
+	"pallet-aura/std",
+	"pallet-authorship/std",
+	"pallet-balances/std",
+	"pallet-session/std",
+	"pallet-timestamp/std",
+	"codec/std",
+	"scale-info/std",
+	"serde/std",
+	"sp-consensus-aura/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-staking/std",
+	"sp-std/std",
+	"substrate-fixed/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-benchmarking?/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-balances/runtime-benchmarks",
+	"pallet-timestamp/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"sp-staking/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-aura/try-runtime",
+	"pallet-authorship/try-runtime",
+	"pallet-balances/try-runtime",
+	"pallet-session/try-runtime",
+	"pallet-timestamp/try-runtime",
+	"sp-runtime/try-runtime",
+]

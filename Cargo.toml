@@ -41,6 +41,10 @@ slices = "0.2.0"
 smallvec = "1.10.0"
 serde = { version = "1.0.152", default-features = false }
 serde_json = "1.0.92"
+itertools = { version = "0.11", default-features = false, features = [
+    "use_alloc",
+] }
+rustc-hex = { version = "2.0.1", default-features = false }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
@@ -80,9 +84,11 @@ sp-genesis-builder = { git = "https://github.com/paritytech/polkadot-sdk", defau
 sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0", default-features = false }
 sp-keystore = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0", default-features = false }
 sp-offchain = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 sp-session = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
+sp-staking = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 sp-std = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
 sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
@@ -176,6 +182,13 @@ polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot-sdk", 
 xcm = { package = "staging-xcm", git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 xcm-builder = { package = "staging-xcm-builder", git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
+
+# Staking
+substrate-fixed = { git = "https://github.com/encointer/substrate-fixed", default-features = false }
+pallet-parachain-staking = { path = "pallets/parachain-staking", default-features = false }
+#pallet-evm-precompile-parachain-staking = { path = "precompiles/parachain-staking", default-features = false }
+# num-integer = { version = "0.1", default-features = false }
+# sp-consensus-slots = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 
 # Local
 neuroweb-runtime = { path = "./runtime" }

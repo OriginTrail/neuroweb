@@ -1,0 +1,44 @@
+[settings]
+timeout = 180000
+node_verifier = "None"
+
+[relaychain]
+chain = "rococo-local"
+default_command = "./polkadot"
+args = [ "--no-hardware-benchmarks --offchain-worker always --workers-path ./"]
+
+	[[relaychain.nodes]]
+	name = "alice"
+	validator = true
+
+	[[relaychain.nodes]]
+	name = "bob"
+	validator = true
+
+	[[relaychain.nodes]]
+	name = "charlie"
+	validator = true
+
+	[[relaychain.nodes]]
+	name = "dave"
+	validator = true
+
+[[parachains]]
+id = 2043
+addToGenesis = true
+cumulus_based = true
+chain = "dev"
+
+	[[parachains.collators]]
+	name = "neuroweb-collator01"
+	command = "./neuroweb/target/debug/neuroweb"
+	args = [ "--no-hardware-benchmarks"]
+	ws_port = 9933
+	rpc_port = 8833
+
+	[[parachains.collators]]
+	name = "neuroweb-collator02"
+	ws_port = 9944
+	rpc_port = 8822
+	command = "./neuroweb/target/debug/neuroweb"
+	args = [ "--no-hardware-benchmarks"]
