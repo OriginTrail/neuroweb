@@ -222,10 +222,6 @@ fn testnet_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
-		sudo: neuroweb_runtime::SudoConfig {
-			// Assign network admin rights.
-			key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-		},
 		vesting: Default::default(),
 		treasury: Default::default(),
 		evm: EVMConfig {
