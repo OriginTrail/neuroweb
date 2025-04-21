@@ -55,6 +55,9 @@ pub enum Action {
     DelegatorDelegationCount = "delegator_delegation_count(address)",
     JoinCandidates = "join_candidates(uint256,uint256)",
     Delegate = "delegate(address,uint256,uint256,uint256)",
+    DelegatorBondMore = "delegator_bond_more(address,uint256)",
+    ExecuteDelegationRequest = "execute_delegation_request(address,address)",
+    CancelDelegationRequest = "cancel_delegation_request(address)",
 }
 pub struct ParachainStakingPrecompileSet<Runtime>(PhantomData<Runtime>);
 
@@ -86,7 +89,11 @@ where
             | Action::Round
             | Action::CandidateDelegationCount
             | Action::DelegatorDelegationCount => FunctionModifier::View,
-            Action::Delegate | Action::JoinCandidates => FunctionModifier::NonPayable,
+            Action::Delegate
+            | Action::JoinCandidates
+            | Action::DelegatorBondMore
+            | Action::ExecuteDelegationRequest
+            | Action::CancelDelegationRequest => FunctionModifier::NonPayable,
         }) {
             return Some(Err(err));
         }
@@ -100,6 +107,9 @@ where
             Action::DelegatorDelegationCount => Self::delegator_delegation_count(handle),
             Action::JoinCandidates => Self::join_candidates(handle),
             Action::Delegate => Self::delegate(handle),
+            Action::DelegatorBondMore => Self::delegator_bond_more(handle),
+            Action::ExecuteDelegationRequest => Self::execute_delegation_request(handle),
+            Action::CancelDelegationRequest => Self::cancel_delegation_request(handle),
         };
 
         return Some(result);
@@ -284,6 +294,72 @@ where
                 candidate_delegation_count,
                 delegation_count,
             };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn delegator_bond_more(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(2)?;
+        let candidate = input.read::<Address>()?.0;
+        let candidate = Runtime::AddressMapping::into_account_id(candidate);
+        let more: BalanceOf<Runtime> = input.read()?;
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call =
+                pallet_parachain_staking::Call::<Runtime>::delegator_bond_more { candidate, more };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn execute_delegation_request(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(2)?;
+        let delegator = input.read::<Address>()?.0;
+        let delegator = Runtime::AddressMapping::into_account_id(delegator);
+        let candidate = input.read::<Address>()?.0;
+        let candidate = Runtime::AddressMapping::into_account_id(candidate);
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::execute_delegation_request {
+                delegator,
+                candidate,
+            };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn cancel_delegation_request(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let candidate = input.read::<Address>()?.0;
+        let candidate = Runtime::AddressMapping::into_account_id(candidate);
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call =
+                pallet_parachain_staking::Call::<Runtime>::cancel_delegation_request { candidate };
 
             RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
         }
