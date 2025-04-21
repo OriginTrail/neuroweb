@@ -53,6 +53,9 @@ pub enum Action {
     Round = "round()",
     CandidateDelegationCount = "candidate_delegation_count(address)",
     DelegatorDelegationCount = "delegator_delegation_count(address)",
+    IsDelegator = "is_delegator(address)",
+    IsCandidate = "is_candidate(address)",
+    IsSelectedCandidate = "is_selected_candidate(address)",
     JoinCandidates = "join_candidates(uint256,uint256)",
     ScheduleLeaveCandidates = "schedule_leave_candidates(uint256)",
     ExecuteLeaveCandidates = "execute_leave_candidates(address,uint256)",
@@ -98,6 +101,9 @@ where
 
         if let Err(err) = handle.check_function_modifier(match selector {
             Action::MinDelegation
+            | Action::IsDelegator
+            | Action::IsCandidate
+            | Action::IsSelectedCandidate
             | Action::Points
             | Action::CandidateCount
             | Action::Round
@@ -128,6 +134,9 @@ where
 
         let result = match selector {
             Action::MinDelegation => Self::min_delegation(handle),
+            Action::IsDelegator => Self::is_delegator(handle),
+            Action::IsCandidate => Self::is_candidate(handle),
+            Action::IsSelectedCandidate => Self::is_selected_candidate(handle),
             Action::Points => Self::points(handle),
             Action::CandidateCount => Self::candidate_count(handle),
             Action::Round => Self::round(handle),
@@ -186,6 +195,52 @@ where
 
         // Build output.
         Ok(succeed(EvmDataWriter::new().write(min_nomination).build()))
+    }
+
+    fn is_delegator(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let address = input.read::<Address>()?.0;
+        let address = Runtime::AddressMapping::into_account_id(address);
+
+        // Fetch info.
+        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        let is_delegator = pallet_parachain_staking::Pallet::<Runtime>::is_delegator(&address);
+
+        // Build output.
+        Ok(succeed(EvmDataWriter::new().write(is_delegator).build()))
+    }
+
+    fn is_candidate(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let address = input.read::<Address>()?.0;
+        let address = Runtime::AddressMapping::into_account_id(address);
+
+        // Fetch info.
+        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        let is_candidate = pallet_parachain_staking::Pallet::<Runtime>::is_candidate(&address);
+
+        // Build output.
+        Ok(succeed(EvmDataWriter::new().write(is_candidate).build()))
+    }
+
+    fn is_selected_candidate(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let address = input.read::<Address>()?.0;
+        let address = Runtime::AddressMapping::into_account_id(address);
+
+        // Fetch info.
+        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        let is_selected =
+            pallet_parachain_staking::Pallet::<Runtime>::is_selected_candidate(&address);
+
+        // Build output.
+        Ok(succeed(EvmDataWriter::new().write(is_selected).build()))
     }
 
     fn points(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
