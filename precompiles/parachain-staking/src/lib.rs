@@ -54,6 +54,7 @@ pub enum Action {
     CandidateDelegationCount = "candidate_delegation_count(address)",
     DelegatorDelegationCount = "delegator_delegation_count(address)",
     JoinCandidates = "join_candidates(uint256,uint256)",
+    Delegate = "delegate(address,uint256,uint256,uint256)",
 }
 pub struct ParachainStakingPrecompileSet<Runtime>(PhantomData<Runtime>);
 
@@ -85,7 +86,7 @@ where
             | Action::Round
             | Action::CandidateDelegationCount
             | Action::DelegatorDelegationCount => FunctionModifier::View,
-            Action::JoinCandidates => FunctionModifier::NonPayable,
+            Action::Delegate | Action::JoinCandidates => FunctionModifier::NonPayable,
         }) {
             return Some(Err(err));
         }
@@ -98,6 +99,7 @@ where
             Action::CandidateDelegationCount => Self::candidate_delegation_count(handle),
             Action::DelegatorDelegationCount => Self::delegator_delegation_count(handle),
             Action::JoinCandidates => Self::join_candidates(handle),
+            Action::Delegate => Self::delegate(handle),
         };
 
         return Some(result);
@@ -259,6 +261,31 @@ where
                     candidate_count,
                 },
             )?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn delegate(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(4)?;
+        let candidate = Runtime::AddressMapping::into_account_id(input.read::<Address>()?.0);
+        let amount: BalanceOf<Runtime> = input.read()?;
+        let candidate_delegation_count = input.read()?;
+        let delegation_count = input.read()?;
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::delegate {
+                candidate,
+                amount,
+                candidate_delegation_count,
+                delegation_count,
+            };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
         }
 
         Ok(succeed(EvmDataWriter::new().write(true).build()))
