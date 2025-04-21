@@ -1,45 +1,22 @@
-// Copyright 2019-2022 PureStake Inc.
-// Copyright 2022      Stake Technologies
-// Copyright 2022      TraceLabs
-// This file is part of AssetsERC20 package, originally developed by Purestake Inc.
-// AssetsERC20 package used in NeuroWeb Parachain in terms of GPLv3.
-//
-// AssetsERC20 is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// AssetsERC20 is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with AssetsERC20.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2019-2025 PureStake Inc.
+// Copyright 2025      TraceLabs
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(test, feature(assert_matches))]
 
 use fp_evm::{IsPrecompileResult, PrecompileHandle, PrecompileOutput};
-use frame_support::traits::fungibles::approvals::Inspect as ApprovalInspect;
-use frame_support::traits::fungibles::metadata::Inspect as MetadataInspect;
-use frame_support::traits::fungibles::Inspect;
+use frame_support::dispatch::{GetDispatchInfo, PostDispatchInfo};
 use frame_support::traits::OriginTrait;
-use frame_support::{
-    dispatch::{GetDispatchInfo, PostDispatchInfo},
-    sp_runtime::traits::StaticLookup,
-};
 use pallet_evm::{AddressMapping, PrecompileSet};
 use precompile_utils::{
-    keccak256, revert, succeed, Address, Bytes, EvmData, EvmDataReader, EvmDataWriter, EvmResult,
-    FunctionModifier, LogExt, LogsBuilder, PrecompileHandleExt, RuntimeHelper,
+    revert, succeed, Address, EvmData, EvmDataReader, EvmDataWriter, EvmResult, FunctionModifier,
+    PrecompileHandleExt, RuntimeHelper,
 };
 use sp_core::{Get, H160, U256};
-use sp_runtime::traits::{Bounded, Dispatchable, Zero};
+use sp_runtime::traits::Dispatchable;
 use sp_std::{
     convert::{TryFrom, TryInto},
     marker::PhantomData,
-    vec::Vec,
 };
 
 pub type BalanceOf<Runtime> = <Runtime as pallet_parachain_staking::Config>::Balance;
@@ -56,6 +33,8 @@ pub enum Action {
     IsDelegator = "is_delegator(address)",
     IsCandidate = "is_candidate(address)",
     IsSelectedCandidate = "is_selected_candidate(address)",
+    CandidateExitIsPending = "candidate_exit_is_pending(address)",
+    CandidateRequestIsPending = "candidate_request_is_pending(address)",
     JoinCandidates = "join_candidates(uint256,uint256)",
     ScheduleLeaveCandidates = "schedule_leave_candidates(uint256)",
     ExecuteLeaveCandidates = "execute_leave_candidates(address,uint256)",
@@ -107,6 +86,8 @@ where
             | Action::Points
             | Action::CandidateCount
             | Action::Round
+            | Action::CandidateExitIsPending
+            | Action::CandidateRequestIsPending
             | Action::CandidateDelegationCount
             | Action::DelegatorDelegationCount => FunctionModifier::View,
             Action::Delegate
@@ -142,6 +123,8 @@ where
             Action::Round => Self::round(handle),
             Action::CandidateDelegationCount => Self::candidate_delegation_count(handle),
             Action::DelegatorDelegationCount => Self::delegator_delegation_count(handle),
+            Action::CandidateExitIsPending => Self::candidate_exit_is_pending(handle),
+            Action::CandidateRequestIsPending => Self::candidate_request_is_pending(handle),
             Action::JoinCandidates => Self::join_candidates(handle),
             Action::ScheduleLeaveCandidates => Self::schedule_leave_candidates(handle),
             Action::ExecuteLeaveCandidates => Self::execute_leave_candidates(handle),
@@ -346,6 +329,70 @@ where
 
         // Build output.
         Ok(succeed(EvmDataWriter::new().write(result).build()))
+    }
+
+    fn candidate_exit_is_pending(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+
+        // Only argument is candidate
+        let candidate = Runtime::AddressMapping::into_account_id(input.read::<Address>()?.0);
+
+        // Fetch info.
+        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+
+        // If we are not able to get delegator state, we return false
+        // Users can call `is_candidate` to determine when this happens
+        let pending = if let Some(state) =
+            <pallet_parachain_staking::Pallet<Runtime>>::candidate_info(&candidate)
+        {
+            state.is_leaving()
+        } else {
+            log::trace!(
+                target: "staking-precompile",
+                "Candidate state for {:?} not found, so pending exit is false",
+                candidate
+            );
+            false
+        };
+
+        // Build output.
+        Ok(succeed(EvmDataWriter::new().write(pending).build()))
+    }
+
+    fn candidate_request_is_pending(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+
+        // Only argument is candidate
+        let candidate = Runtime::AddressMapping::into_account_id(input.read::<Address>()?.0);
+
+        // Fetch info.
+        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+
+        // If we are not able to get candidate metadata, we return false
+        // Users can call `is_candidate` to determine when this happens
+        let pending = if let Some(state) =
+            <pallet_parachain_staking::Pallet<Runtime>>::candidate_info(&candidate)
+        {
+            state.request.is_some()
+        } else {
+            log::trace!(
+                target: "staking-precompile",
+                "Candidate metadata for {:?} not found, so pending request is false",
+                candidate
+            );
+            false
+        };
+
+        // Build output.
+        Ok(succeed(EvmDataWriter::new().write(pending).build()))
     }
 
     fn join_candidates(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {

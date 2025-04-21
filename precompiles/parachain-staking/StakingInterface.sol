@@ -1,214 +1,160 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity >=0.8.3;
+pragma solidity >=0.8.0;
 
-/// @dev The ParachainStaking contract's address.
-address constant PARACHAIN_STAKING_ADDRESS = 0x0000000000000000000000000000000000000800;
+/**
+ * @author The Moonbeam Team, modified by: OriginTrail Team
+ * @title The interface through which solidity contracts will interact with Parachain Staking
+ * We follow this same interface including four-byte function selectors, in the precompile that
+ * wraps the pallet
+ * Address :    0x0000000000000000000000000000000000000800
+ */
 
-/// @dev The ParachainStaking contract's instance.
-ParachainStaking constant PARACHAIN_STAKING_CONTRACT = ParachainStaking(
-    PARACHAIN_STAKING_ADDRESS
-);
-
-/// @author The Moonbeam Team
-/// @title Pallet Parachain Staking Interface
-/// @dev The interface through which solidity contracts will interact with Parachain Staking
-/// We follow this same interface including four-byte function selectors, in the precompile that
-/// wraps the pallet
-/// @custom:address 0x0000000000000000000000000000000000000800
 interface ParachainStaking {
     /// @dev Check whether the specified address is currently a staking delegator
-    /// @custom:selector fd8ab482
+    /// Selector: 1f030587
     /// @param delegator the address that we want to confirm is a delegator
     /// @return A boolean confirming whether the address is a delegator
-    function isDelegator(address delegator) external view returns (bool);
+    function is_delegator(address delegator) external view returns (bool);
 
     /// @dev Check whether the specified address is currently a collator candidate
-    /// @custom:selector d51b9e93
+    /// Selector: 8545c833
     /// @param candidate the address that we want to confirm is a collator andidate
     /// @return A boolean confirming whether the address is a collator candidate
-    function isCandidate(address candidate) external view returns (bool);
+    function is_candidate(address candidate) external view returns (bool);
 
     /// @dev Check whether the specifies address is currently a part of the active set
-    /// @custom:selector 740d7d2a
+    /// Selector: 8f6d27c7
     /// @param candidate the address that we want to confirm is a part of the active set
     /// @return A boolean confirming whether the address is a part of the active set
-    function isSelectedCandidate(
+    function is_selected_candidate(
         address candidate
     ) external view returns (bool);
 
     /// @dev Total points awarded to all collators in a particular round
-    /// @custom:selector 9799b4e7
+    /// Selector: 9799b4e7
     /// @param round the round for which we are querying the points total
     /// @return The total points awarded to all collators in the round
     function points(uint256 round) external view returns (uint256);
 
-    /// @dev Total points awarded to a specific collator in a particular round.
-    /// A value of `0` may signify that no blocks were produced or that the storage for that round has been removed
-    /// @custom:selector bfea66ac
-    /// @param round the round for which we are querying the awarded points
-    /// @param candidate The candidate to whom the points are awarded
-    /// @return The total points awarded to the collator for the provided round
-    function awardedPoints(
-        uint32 round,
-        address candidate
-    ) external view returns (uint32);
-
-    /// @dev The amount delegated in support of the candidate by the delegator
-    /// @custom:selector a73e51bc
-    /// @param delegator Who made this delegation
-    /// @param candidate The candidate for which the delegation is in support of
-    /// @return The amount of the delegation in support of the candidate by the delegator
-    function delegationAmount(
-        address delegator,
-        address candidate
-    ) external view returns (uint256);
-
-    /// @dev Whether the delegation is in the top delegations
-    /// @custom:selector 91cc8657
-    /// @param delegator Who made this delegation
-    /// @param candidate The candidate for which the delegation is in support of
-    /// @return If delegation is in top delegations (is counted)
-    function isInTopDelegations(
-        address delegator,
-        address candidate
-    ) external view returns (bool);
-
     /// @dev Get the minimum delegation amount
-    /// @custom:selector 02985992
+    /// Selector: 72ce8933
     /// @return The minimum delegation amount
-    function minDelegation() external view returns (uint256);
+    function min_delegation() external view returns (uint256);
 
     /// @dev Get the CandidateCount weight hint
-    /// @custom:selector a9a981a3
+    /// Selector: 4b1c4c29
     /// @return The CandidateCount weight hint
-    function candidateCount() external view returns (uint256);
+    function candidate_count() external view returns (uint256);
 
     /// @dev Get the current round number
-    /// @custom:selector 146ca531
+    /// Selector: 146ca531
     /// @return The current round number
     function round() external view returns (uint256);
 
     /// @dev Get the CandidateDelegationCount weight hint
-    /// @custom:selector 2ec087eb
+    /// Selector: 815b796c
     /// @param candidate The address for which we are querying the nomination count
     /// @return The number of nominations backing the collator
-    function candidateDelegationCount(
+    function candidate_delegation_count(
         address candidate
-    ) external view returns (uint32);
-
-    /// @dev Get the CandidateAutoCompoundingDelegationCount weight hint
-    /// @custom:selector 905f0806
-    /// @param candidate The address for which we are querying the auto compounding
-    ///     delegation count
-    /// @return The number of auto compounding delegations
-    function candidateAutoCompoundingDelegationCount(
-        address candidate
-    ) external view returns (uint32);
+    ) external view returns (uint256);
 
     /// @dev Get the DelegatorDelegationCount weight hint
-    /// @custom:selector 067ec822
+    /// Selector: fbc51bca
     /// @param delegator The address for which we are querying the delegation count
     /// @return The number of delegations made by the delegator
-    function delegatorDelegationCount(
+    function delegator_delegation_count(
         address delegator
     ) external view returns (uint256);
 
-    /// @dev Get the selected candidates for the current round
-    /// @custom:selector bcf868a6
-    /// @return The selected candidate accounts
-    function selectedCandidates() external view returns (address[] memory);
-
     /// @dev Whether there exists a pending request for a delegation made by a delegator
-    /// @custom:selector 3b16def8
+    /// Selector: 192e1db3
     /// @param delegator the delegator that made the delegation
     /// @param candidate the candidate for which the delegation was made
     /// @return Whether a pending request exists for such delegation
-    function delegationRequestIsPending(
+    function delegation_request_is_pending(
         address delegator,
         address candidate
     ) external view returns (bool);
 
+    /// @dev Whether there exists a pending exit for delegator
+    /// Selector: dc3ec64b
+    /// @param delegator the delegator that made the exit request
+    /// @return Whether a pending exit exists for delegator
+    function delegator_exit_is_pending(
+        address delegator
+    ) external view returns (bool);
+
     /// @dev Whether there exists a pending exit for candidate
-    /// @custom:selector 43443682
+    /// Selector: eb613b8a
     /// @param candidate the candidate for which the exit request was made
     /// @return Whether a pending request exists for such delegation
-    function candidateExitIsPending(
+    function candidate_exit_is_pending(
         address candidate
     ) external view returns (bool);
 
     /// @dev Whether there exists a pending bond less request made by a candidate
-    /// @custom:selector d0deec11
+    /// Selector: 26ab05fb
     /// @param candidate the candidate which made the request
     /// @return Whether a pending bond less request was made by the candidate
-    function candidateRequestIsPending(
+    function candidate_request_is_pending(
         address candidate
     ) external view returns (bool);
 
-    /// @dev Returns the percent value of auto-compound set for a delegation
-    /// @custom:selector b4d4c7fd
-    /// @param delegator the delegator that made the delegation
-    /// @param candidate the candidate for which the delegation was made
-    /// @return Percent of rewarded amount that is auto-compounded on each payout
-    function delegationAutoCompound(
-        address delegator,
-        address candidate
-    ) external view returns (uint8);
-
     /// @dev Join the set of collator candidates
-    /// @custom:selector 1f2f83ad
+    /// Selector: 0a1bff60
     /// @param amount The amount self-bonded by the caller to become a collator candidate
     /// @param candidateCount The number of candidates in the CandidatePool
-    function joinCandidates(uint256 amount, uint256 candidateCount) external;
+    function join_candidates(uint256 amount, uint256 candidateCount) external;
 
     /// @dev Request to leave the set of collator candidates
-    /// @custom:selector b1a3c1b7
+    /// Selector: 60afbac6
     /// @param candidateCount The number of candidates in the CandidatePool
-    function scheduleLeaveCandidates(uint256 candidateCount) external;
+    function schedule_leave_candidates(uint256 candidateCount) external;
 
     /// @dev Execute due request to leave the set of collator candidates
-    /// @custom:selector 3867f308
+    /// Selector: 3fdc4c30
     /// @param candidate The candidate address for which the pending exit request will be executed
     /// @param candidateDelegationCount The number of delegations for the candidate to be revoked
-    function executeLeaveCandidates(
+    function execute_leave_candidates(
         address candidate,
         uint256 candidateDelegationCount
     ) external;
 
     /// @dev Cancel request to leave the set of collator candidates
-    /// @custom:selector 9c76ebb4
+    /// Selector: 0880b3e2
     /// @param candidateCount The number of candidates in the CandidatePool
-    function cancelLeaveCandidates(uint256 candidateCount) external;
+    function cancel_leave_candidates(uint256 candidateCount) external;
 
     /// @dev Temporarily leave the set of collator candidates without unbonding
-    /// @custom:selector a6485ccd
-    function goOffline() external;
+    /// Selector: 767e0450
+    function go_offline() external;
 
-    /// @dev Rejoin the set of collator candidates if previously had called `goOffline`
-    /// @custom:selector 6e5b676b
-    function goOnline() external;
+    /// @dev Rejoin the set of collator candidates if previously had called `go_offline`
+    /// Selector: d2f73ceb
+    function go_online() external;
 
     /// @dev Request to bond more for collator candidates
-    /// @custom:selector a52c8643
+    /// Selector: c57bd3a8
     /// @param more The additional amount self-bonded
-    function candidateBondMore(uint256 more) external;
+    function candidate_bond_more(uint256 more) external;
 
     /// @dev Request to bond less for collator candidates
-    /// @custom:selector 60744ae0
+    /// Selector: 034c47bc
     /// @param less The amount to be subtracted from self-bond and unreserved
-    function scheduleCandidateBondLess(uint256 less) external;
+    function schedule_candidate_bond_less(uint256 less) external;
 
     /// @dev Execute pending candidate bond request
-    /// @custom:selector 2e290290
+    /// Selector: a9a2b8b7
     /// @param candidate The address for the candidate for which the request will be executed
-    function executeCandidateBondLess(address candidate) external;
+    function execute_candidate_bond_less(address candidate) external;
 
     /// @dev Cancel pending candidate bond request
-    /// @custom:selector b5ad5f07
-    function cancelCandidateBondLess() external;
+    /// Selector: 583d0fdc
+    function cancel_candidate_bond_less() external;
 
-    /// @notice DEPRECATED use delegateWithAutoCompound instead for lower weight and better UX
     /// @dev Make a delegation in support of a collator candidate
-    /// @custom:selector 829f5ee3
+    /// Selector: 829f5ee3
     /// @param candidate The address of the supported collator candidate
     /// @param amount The amount bonded in support of the collator candidate
     /// @param candidateDelegationCount The number of delegations in support of the candidate
@@ -220,86 +166,54 @@ interface ParachainStaking {
         uint256 delegatorDelegationCount
     ) external;
 
-    /// @dev Make a delegation in support of a collator candidate
-    /// @custom:selector 4b8bc9bf
-    /// @param candidate The address of the supported collator candidate
-    /// @param amount The amount bonded in support of the collator candidate
-    /// @param autoCompound The percent of reward that should be auto-compounded
-    /// @param candidateDelegationCount The number of delegations in support of the candidate
-    /// @param candidateAutoCompoundingDelegationCount The number of auto-compounding delegations
-    /// in support of the candidate
-    /// @param delegatorDelegationCount The number of existing delegations by the caller
-    function delegateWithAutoCompound(
-        address candidate,
-        uint256 amount,
-        uint8 autoCompound,
-        uint256 candidateDelegationCount,
-        uint256 candidateAutoCompoundingDelegationCount,
+    /// @dev Request to leave the set of delegators
+    /// Selector: 65a5bbd0
+    function schedule_leave_delegators() external;
+
+    /// @dev Execute request to leave the set of delegators and revoke all delegations
+    /// Selector: a84a7468
+    /// @param delegator The leaving delegator
+    /// @param delegatorDelegationCount The number of active delegations to be revoked by delegator
+    function execute_leave_delegators(
+        address delegator,
         uint256 delegatorDelegationCount
     ) external;
 
+    /// @dev Cancel request to leave the set of delegators
+    /// Selector: 2a987643
+    function cancel_leave_delegators() external;
+
     /// @dev Request to revoke an existing delegation
-    /// @custom:selector 1a1c740c
+    /// Selector: 22266e75
     /// @param candidate The address of the collator candidate which will no longer be supported
-    function scheduleRevokeDelegation(address candidate) external;
+    function schedule_revoke_delegation(address candidate) external;
 
     /// @dev Bond more for delegators with respect to a specific collator candidate
-    /// @custom:selector 0465135b
+    /// Selector: f8331108
     /// @param candidate The address of the collator candidate for which delegation shall increase
     /// @param more The amount by which the delegation is increased
-    function delegatorBondMore(address candidate, uint256 more) external;
+    function delegator_bond_more(address candidate, uint256 more) external;
 
     /// @dev Request to bond less for delegators with respect to a specific collator candidate
-    /// @custom:selector c172fd2b
+    /// Selector: 00043acf
     /// @param candidate The address of the collator candidate for which delegation shall decrease
     /// @param less The amount by which the delegation is decreased (upon execution)
-    function scheduleDelegatorBondLess(
+    function schedule_delegator_bond_less(
         address candidate,
         uint256 less
     ) external;
 
     /// @dev Execute pending delegation request (if exists && is due)
-    /// @custom:selector e98c8abe
+    /// Selector: e42366a6
     /// @param delegator The address of the delegator
     /// @param candidate The address of the candidate
-    function executeDelegationRequest(
+    function execute_delegation_request(
         address delegator,
         address candidate
     ) external;
 
     /// @dev Cancel pending delegation request (already made in support of input by caller)
-    /// @custom:selector c90eee83
+    /// Selector: 7284cf50
     /// @param candidate The address of the candidate
-    function cancelDelegationRequest(address candidate) external;
-
-    /// @dev Sets an auto-compound value for a delegation
-    /// @custom:selector faa1786f
-    /// @param candidate The address of the supported collator candidate
-    /// @param value The percent of reward that should be auto-compounded
-    /// @param candidateAutoCompoundingDelegationCount The number of auto-compounding delegations
-    /// in support of the candidate
-    /// @param delegatorDelegationCount The number of existing delegations by the caller
-    function setAutoCompound(
-        address candidate,
-        uint8 value,
-        uint256 candidateAutoCompoundingDelegationCount,
-        uint256 delegatorDelegationCount
-    ) external;
-
-    /// @dev Fetch the total staked amount of a delegator, regardless of the
-    /// candidate.
-    /// @custom:selector e6861713
-    /// @param delegator Address of the delegator.
-    /// @return Total amount of stake.
-    function getDelegatorTotalStaked(
-        address delegator
-    ) external view returns (uint256);
-
-    /// @dev Fetch the total staked towards a candidate.
-    /// @custom:selector bc5a1043
-    /// @param candidate Address of the candidate.
-    /// @return Total amount of stake.
-    function getCandidateTotalCounted(
-        address candidate
-    ) external view returns (uint256);
+    function cancel_delegation_request(address candidate) external;
 }
