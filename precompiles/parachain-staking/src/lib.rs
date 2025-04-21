@@ -54,6 +54,11 @@ pub enum Action {
     CandidateDelegationCount = "candidate_delegation_count(address)",
     DelegatorDelegationCount = "delegator_delegation_count(address)",
     JoinCandidates = "join_candidates(uint256,uint256)",
+    ScheduleLeaveCandidates = "schedule_leave_candidates(uint256)",
+    ExecuteLeaveCandidates = "execute_leave_candidates(address,uint256)",
+    CancelLeaveCandidates = "cancel_leave_candidates(uint256)",
+    GoOffline = "go_offline()",
+    GoOnline = "go_online()",
     ScheduleCandidateBondLess = "schedule_candidate_bond_less(uint256)",
     CandidateBondMore = "candidate_bond_more(uint256)",
     ExecuteCandidateBondLess = "execute_candidate_bond_less(address)",
@@ -100,6 +105,11 @@ where
             | Action::DelegatorDelegationCount => FunctionModifier::View,
             Action::Delegate
             | Action::JoinCandidates
+            | Action::ScheduleLeaveCandidates
+            | Action::ExecuteLeaveCandidates
+            | Action::CancelLeaveCandidates
+            | Action::GoOffline
+            | Action::GoOnline
             | Action::ScheduleCandidateBondLess
             | Action::CandidateBondMore
             | Action::ExecuteCandidateBondLess
@@ -124,6 +134,11 @@ where
             Action::CandidateDelegationCount => Self::candidate_delegation_count(handle),
             Action::DelegatorDelegationCount => Self::delegator_delegation_count(handle),
             Action::JoinCandidates => Self::join_candidates(handle),
+            Action::ScheduleLeaveCandidates => Self::schedule_leave_candidates(handle),
+            Action::ExecuteLeaveCandidates => Self::execute_leave_candidates(handle),
+            Action::CancelLeaveCandidates => Self::cancel_leave_candidates(handle),
+            Action::GoOffline => Self::go_offline(handle),
+            Action::GoOnline => Self::go_online(handle),
             Action::ScheduleCandidateBondLess => Self::schedule_candidate_bond_less(handle),
             Action::CandidateBondMore => Self::candidate_bond_more(handle),
             Action::ExecuteCandidateBondLess => Self::execute_candidate_bond_less(handle),
@@ -293,6 +308,91 @@ where
                 bond,
                 candidate_count,
             };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn schedule_leave_candidates(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let candidate_count = input.read()?;
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::schedule_leave_candidates {
+                candidate_count,
+            };
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn execute_leave_candidates(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let candidate = input.read::<Address>()?.0;
+        let candidate = Runtime::AddressMapping::into_account_id(candidate);
+        let candidate_delegation_count = input.read()?;
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::execute_leave_candidates {
+                candidate,
+                candidate_delegation_count,
+            };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn cancel_leave_candidates(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let candidate_count = input.read()?;
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::cancel_leave_candidates {
+                candidate_count,
+            };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn go_offline(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::go_offline {};
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn go_online(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::go_online {};
 
             RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
         }
