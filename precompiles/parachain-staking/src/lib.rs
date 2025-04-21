@@ -55,6 +55,9 @@ pub enum Action {
     DelegatorDelegationCount = "delegator_delegation_count(address)",
     JoinCandidates = "join_candidates(uint256,uint256)",
     Delegate = "delegate(address,uint256,uint256,uint256)",
+    ScheduleLeaveDelegators = "schedule_leave_delegators()",
+    ExecuteLeaveDelegators = "execute_leave_delegators(address,uint256)",
+    CancelLeaveDelegators = "cancel_leave_delegators()",
     DelegatorBondMore = "delegator_bond_more(address,uint256)",
     ExecuteDelegationRequest = "execute_delegation_request(address,address)",
     CancelDelegationRequest = "cancel_delegation_request(address)",
@@ -91,6 +94,9 @@ where
             | Action::DelegatorDelegationCount => FunctionModifier::View,
             Action::Delegate
             | Action::JoinCandidates
+            | Action::ScheduleLeaveDelegators
+            | Action::ExecuteLeaveDelegators
+            | Action::CancelLeaveDelegators
             | Action::DelegatorBondMore
             | Action::ExecuteDelegationRequest
             | Action::CancelDelegationRequest => FunctionModifier::NonPayable,
@@ -107,6 +113,9 @@ where
             Action::DelegatorDelegationCount => Self::delegator_delegation_count(handle),
             Action::JoinCandidates => Self::join_candidates(handle),
             Action::Delegate => Self::delegate(handle),
+            Action::ScheduleLeaveDelegators => Self::schedule_leave_delegators(handle),
+            Action::ExecuteLeaveDelegators => Self::execute_leave_delegators(handle),
+            Action::CancelLeaveDelegators => Self::cancel_leave_delegators(handle),
             Action::DelegatorBondMore => Self::delegator_bond_more(handle),
             Action::ExecuteDelegationRequest => Self::execute_delegation_request(handle),
             Action::CancelDelegationRequest => Self::cancel_delegation_request(handle),
@@ -294,6 +303,54 @@ where
                 candidate_delegation_count,
                 delegation_count,
             };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn schedule_leave_delegators(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::schedule_leave_delegators {};
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn execute_leave_delegators(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(2)?;
+        let delegator = input.read::<Address>()?.0;
+        let delegator = Runtime::AddressMapping::into_account_id(delegator);
+        let delegation_count = input.read()?;
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::execute_leave_delegators {
+                delegator,
+                delegation_count,
+            };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn cancel_leave_delegators(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::cancel_leave_delegators {};
 
             RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
         }
