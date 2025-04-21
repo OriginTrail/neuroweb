@@ -54,10 +54,16 @@ pub enum Action {
     CandidateDelegationCount = "candidate_delegation_count(address)",
     DelegatorDelegationCount = "delegator_delegation_count(address)",
     JoinCandidates = "join_candidates(uint256,uint256)",
+    ScheduleCandidateBondLess = "schedule_candidate_bond_less(uint256)",
+    CandidateBondMore = "candidate_bond_more(uint256)",
+    ExecuteCandidateBondLess = "execute_candidate_bond_less(address)",
+    CancelCandidateBondLess = "cancel_candidate_bond_less()",
     Delegate = "delegate(address,uint256,uint256,uint256)",
     ScheduleLeaveDelegators = "schedule_leave_delegators()",
     ExecuteLeaveDelegators = "execute_leave_delegators(address,uint256)",
     CancelLeaveDelegators = "cancel_leave_delegators()",
+    ScheduleRevokeDelegation = "schedule_revoke_delegation(address)",
+    ScheduleDelegatorBondLess = "schedule_delegator_bond_less(address,uint256)",
     DelegatorBondMore = "delegator_bond_more(address,uint256)",
     ExecuteDelegationRequest = "execute_delegation_request(address,address)",
     CancelDelegationRequest = "cancel_delegation_request(address)",
@@ -94,9 +100,15 @@ where
             | Action::DelegatorDelegationCount => FunctionModifier::View,
             Action::Delegate
             | Action::JoinCandidates
+            | Action::ScheduleCandidateBondLess
+            | Action::CandidateBondMore
+            | Action::ExecuteCandidateBondLess
+            | Action::CancelCandidateBondLess
             | Action::ScheduleLeaveDelegators
             | Action::ExecuteLeaveDelegators
             | Action::CancelLeaveDelegators
+            | Action::ScheduleRevokeDelegation
+            | Action::ScheduleDelegatorBondLess
             | Action::DelegatorBondMore
             | Action::ExecuteDelegationRequest
             | Action::CancelDelegationRequest => FunctionModifier::NonPayable,
@@ -112,10 +124,16 @@ where
             Action::CandidateDelegationCount => Self::candidate_delegation_count(handle),
             Action::DelegatorDelegationCount => Self::delegator_delegation_count(handle),
             Action::JoinCandidates => Self::join_candidates(handle),
+            Action::ScheduleCandidateBondLess => Self::schedule_candidate_bond_less(handle),
+            Action::CandidateBondMore => Self::candidate_bond_more(handle),
+            Action::ExecuteCandidateBondLess => Self::execute_candidate_bond_less(handle),
+            Action::CancelCandidateBondLess => Self::cancel_candidate_bond_less(handle),
             Action::Delegate => Self::delegate(handle),
             Action::ScheduleLeaveDelegators => Self::schedule_leave_delegators(handle),
             Action::ExecuteLeaveDelegators => Self::execute_leave_delegators(handle),
             Action::CancelLeaveDelegators => Self::cancel_leave_delegators(handle),
+            Action::ScheduleRevokeDelegation => Self::schedule_revoke_delegation(handle),
+            Action::ScheduleDelegatorBondLess => Self::schedule_delegator_bond_less(handle),
             Action::DelegatorBondMore => Self::delegator_bond_more(handle),
             Action::ExecuteDelegationRequest => Self::execute_delegation_request(handle),
             Action::CancelDelegationRequest => Self::cancel_delegation_request(handle),
@@ -271,15 +289,85 @@ where
         {
             // Build call with origin.
             let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::join_candidates {
+                bond,
+                candidate_count,
+            };
 
-            RuntimeHelper::<Runtime>::try_dispatch(
-                handle,
-                Some(origin).into(),
-                pallet_parachain_staking::Call::<Runtime>::join_candidates {
-                    bond,
-                    candidate_count,
-                },
-            )?;
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn candidate_bond_more(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let more: BalanceOf<Runtime> = input.read()?;
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::candidate_bond_more { more };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn schedule_candidate_bond_less(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let less: BalanceOf<Runtime> = input.read()?;
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call =
+                pallet_parachain_staking::Call::<Runtime>::schedule_candidate_bond_less { less };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn execute_candidate_bond_less(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let candidate = input.read::<Address>()?.0;
+        let candidate = Runtime::AddressMapping::into_account_id(candidate);
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::execute_candidate_bond_less {
+                candidate,
+            };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn cancel_candidate_bond_less(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::cancel_candidate_bond_less {};
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
         }
 
         Ok(succeed(EvmDataWriter::new().write(true).build()))
@@ -351,6 +439,51 @@ where
             // Build call with origin.
             let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
             let call = pallet_parachain_staking::Call::<Runtime>::cancel_leave_delegators {};
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn schedule_revoke_delegation(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let collator = input.read::<Address>()?.0;
+        let collator = Runtime::AddressMapping::into_account_id(collator);
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call =
+                pallet_parachain_staking::Call::<Runtime>::schedule_revoke_delegation { collator };
+
+            RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn schedule_delegator_bond_less(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(2)?;
+        let candidate = input.read::<Address>()?.0;
+        let candidate = Runtime::AddressMapping::into_account_id(candidate);
+        let less: BalanceOf<Runtime> = input.read()?;
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+            let call = pallet_parachain_staking::Call::<Runtime>::schedule_delegator_bond_less {
+                candidate,
+                less,
+            };
 
             RuntimeHelper::<Runtime>::try_dispatch(handle, Some(origin).into(), call)?;
         }
