@@ -35,11 +35,10 @@ use precompile_utils::{
     FunctionModifier, LogExt, LogsBuilder, PrecompileHandleExt, RuntimeHelper,
 };
 use sp_runtime::traits::{Bounded, Dispatchable, Zero};
-
 use sp_core::{Get, H160, U256};
 use sp_std::{
     convert::{TryFrom, TryInto},
-    marker::PhantomData,
+    marker::PhantomData, vec::Vec
 };
 
 pub type BalanceOf<Runtime> = <Runtime as pallet_parachain_staking::Config>::Balance;
@@ -51,6 +50,8 @@ pub enum Action {
     Points = "points(uint256)",
     CandidateCount = "candidate_count()",
     Round = "round()",
+    CandidateDelegationCount = "candidate_delegation_count(address)",
+    DelegatorDelegationCount = "delegator_delegation_count(address)",
 }
 pub struct ParachainStakingPrecompileSet<Runtime>(PhantomData<Runtime>);
 
@@ -78,8 +79,10 @@ where
             Action::MinDelegation
             | Action::Points 
             | Action::CandidateCount 
-            | Action::Round => FunctionModifier::NonPayable,
-            _ => FunctionModifier::View,
+            | Action::Round 
+            | Action::CandidateDelegationCount 
+            | Action::DelegatorDelegationCount => FunctionModifier::View,
+            _ => FunctionModifier::NonPayable,
         }) {
             return Some(Err(err));
         }
@@ -89,7 +92,12 @@ where
             Action::Points => Self::points(handle),
             Action::CandidateCount => return Some(Self::candidate_count(handle)),
             Action::Round => Self::round(handle),
-            _ => return Some(Err(revert("Deprecated function"))),
+            Action::CandidateDelegationCount => {
+                return Some(Self::candidate_delegation_count(handle))
+            },
+            Action::DelegatorDelegationCount => {
+                return Some(Self::delegator_delegation_count(handle))
+            }
         };
 
         return Some(result);
@@ -158,4 +166,76 @@ where
         // Build output.
         Ok(succeed(EvmDataWriter::new().write(round).build()))
     }
+
+    fn candidate_delegation_count(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let address = input.read::<Address>()?.0;
+        let address = Runtime::AddressMapping::into_account_id(address);
+
+        // Fetch info.
+        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        let result = if let Some(state) =
+            <pallet_parachain_staking::Pallet<Runtime>>::candidate_info(&address)
+        {
+            let candidate_delegation_count: u32 = state.delegation_count;
+
+            log::trace!(
+                target: "staking-precompile",
+                "Result from pallet is {:?}",
+                candidate_delegation_count
+            );
+            candidate_delegation_count
+        } else {
+            log::trace!(
+                target: "staking-precompile",
+                "Candidate {:?} not found, so delegation count is 0",
+                address
+            );
+            0u32
+        };
+
+        // Build output.
+        Ok(succeed(EvmDataWriter::new().write(result).build()))
+    }
+
+    fn delegator_delegation_count(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let address = input.read::<Address>()?.0;
+        let address = Runtime::AddressMapping::into_account_id(address);
+
+        // Fetch info.
+        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        let result = if let Some(state) =
+            <pallet_parachain_staking::Pallet<Runtime>>::delegator_state(&address)
+        {
+            let delegator_delegation_count: u32 = state.delegations.0.len() as u32;
+
+            log::trace!(
+                target: "staking-precompile",
+                "Result from pallet is {:?}",
+                delegator_delegation_count
+            );
+
+            delegator_delegation_count
+        } else {
+            log::trace!(
+                target: "staking-precompile",
+                "Delegator {:?} not found, so delegation count is 0",
+                address
+            );
+            0u32
+        };
+
+        // Build output.
+        Ok(succeed(EvmDataWriter::new().write(result).build()))
+    }
+
 }
