@@ -34,11 +34,12 @@ use precompile_utils::{
     keccak256, revert, succeed, Address, Bytes, EvmData, EvmDataReader, EvmDataWriter, EvmResult,
     FunctionModifier, LogExt, LogsBuilder, PrecompileHandleExt, RuntimeHelper,
 };
-use sp_runtime::traits::{Bounded, Dispatchable, Zero};
 use sp_core::{Get, H160, U256};
+use sp_runtime::traits::{Bounded, Dispatchable, Zero};
 use sp_std::{
     convert::{TryFrom, TryInto},
-    marker::PhantomData, vec::Vec
+    marker::PhantomData,
+    vec::Vec,
 };
 
 pub type BalanceOf<Runtime> = <Runtime as pallet_parachain_staking::Config>::Balance;
@@ -52,6 +53,7 @@ pub enum Action {
     Round = "round()",
     CandidateDelegationCount = "candidate_delegation_count(address)",
     DelegatorDelegationCount = "delegator_delegation_count(address)",
+    JoinCandidates = "join_candidates(uint256,uint256)",
 }
 pub struct ParachainStakingPrecompileSet<Runtime>(PhantomData<Runtime>);
 
@@ -67,6 +69,7 @@ where
     Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
     <Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<Runtime::AccountId>>,
     BalanceOf<Runtime>: TryFrom<U256> + Into<U256> + EvmData,
+    Runtime::RuntimeCall: From<pallet_parachain_staking::Call<Runtime>>,
     <<Runtime as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin: OriginTrait,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<EvmResult<PrecompileOutput>> {
@@ -77,12 +80,12 @@ where
 
         if let Err(err) = handle.check_function_modifier(match selector {
             Action::MinDelegation
-            | Action::Points 
-            | Action::CandidateCount 
-            | Action::Round 
-            | Action::CandidateDelegationCount 
+            | Action::Points
+            | Action::CandidateCount
+            | Action::Round
+            | Action::CandidateDelegationCount
             | Action::DelegatorDelegationCount => FunctionModifier::View,
-            _ => FunctionModifier::NonPayable,
+            Action::JoinCandidates => FunctionModifier::NonPayable,
         }) {
             return Some(Err(err));
         }
@@ -90,14 +93,11 @@ where
         let result = match selector {
             Action::MinDelegation => Self::min_delegation(handle),
             Action::Points => Self::points(handle),
-            Action::CandidateCount => return Some(Self::candidate_count(handle)),
+            Action::CandidateCount => Self::candidate_count(handle),
             Action::Round => Self::round(handle),
-            Action::CandidateDelegationCount => {
-                return Some(Self::candidate_delegation_count(handle))
-            },
-            Action::DelegatorDelegationCount => {
-                return Some(Self::delegator_delegation_count(handle))
-            }
+            Action::CandidateDelegationCount => Self::candidate_delegation_count(handle),
+            Action::DelegatorDelegationCount => Self::delegator_delegation_count(handle),
+            Action::JoinCandidates => Self::join_candidates(handle),
         };
 
         return Some(result);
@@ -117,6 +117,7 @@ where
     Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
     <Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<Runtime::AccountId>>,
     BalanceOf<Runtime>: TryFrom<U256> + Into<U256> + EvmData,
+    Runtime::RuntimeCall: From<pallet_parachain_staking::Call<Runtime>>,
     <<Runtime as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin: OriginTrait,
 {
     fn min_delegation(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
@@ -238,4 +239,28 @@ where
         Ok(succeed(EvmDataWriter::new().write(result).build()))
     }
 
+    fn join_candidates(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+
+        // Read input.
+        input.expect_arguments(2)?;
+        let bond: BalanceOf<Runtime> = input.read()?;
+        let candidate_count = input.read()?;
+
+        {
+            // Build call with origin.
+            let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
+
+            RuntimeHelper::<Runtime>::try_dispatch(
+                handle,
+                Some(origin).into(),
+                pallet_parachain_staking::Call::<Runtime>::join_candidates {
+                    bond,
+                    candidate_count,
+                },
+            )?;
+        }
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
 }
