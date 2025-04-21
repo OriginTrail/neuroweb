@@ -31,7 +31,7 @@ use frame_support::{
 };
 use pallet_evm::{AddressMapping, PrecompileSet};
 use precompile_utils::{
-    keccak256, revert, succeed, Address, Bytes, EvmData, EvmDataWriter, EvmResult,
+    keccak256, revert, succeed, Address, Bytes, EvmData, EvmDataReader, EvmDataWriter, EvmResult,
     FunctionModifier, LogExt, LogsBuilder, PrecompileHandleExt, RuntimeHelper,
 };
 use sp_runtime::traits::{Bounded, Dispatchable, Zero};
@@ -48,6 +48,8 @@ pub type BalanceOf<Runtime> = <Runtime as pallet_parachain_staking::Config>::Bal
 #[derive(Debug, PartialEq)]
 pub enum Action {
     MinDelegation = "min_delegation()",
+    Points = "points(uint256)",
+    CandidateCount = "candidate_count()",
     Round = "round()",
 }
 pub struct ParachainStakingPrecompileSet<Runtime>(PhantomData<Runtime>);
@@ -73,7 +75,10 @@ where
         };
 
         if let Err(err) = handle.check_function_modifier(match selector {
-            Action::MinDelegation | Action::Round => FunctionModifier::NonPayable,
+            Action::MinDelegation
+            | Action::Points 
+            | Action::CandidateCount 
+            | Action::Round => FunctionModifier::NonPayable,
             _ => FunctionModifier::View,
         }) {
             return Some(Err(err));
@@ -81,7 +86,10 @@ where
 
         let result = match selector {
             Action::MinDelegation => Self::min_delegation(handle),
+            Action::Points => Self::points(handle),
+            Action::CandidateCount => return Some(Self::candidate_count(handle)),
             Action::Round => Self::round(handle),
+            _ => return Some(Err(revert("Deprecated function"))),
         };
 
         return Some(result);
@@ -115,6 +123,31 @@ where
 
         // Build output.
         Ok(succeed(EvmDataWriter::new().write(min_nomination).build()))
+    }
+
+    fn points(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = EvmDataReader::new_skip_selector(handle.input())?;
+        // Read input.
+        input.expect_arguments(1)?;
+        let round = input.read::<u32>()?;
+
+        // Fetch info.
+        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        let points: u32 = pallet_parachain_staking::Pallet::<Runtime>::points(round);
+
+        // Build output.
+        Ok(succeed(EvmDataWriter::new().write(points).build()))
+    }
+
+    fn candidate_count(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // Fetch info.
+        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        let candidate_count: u32 = <pallet_parachain_staking::Pallet<Runtime>>::candidate_pool()
+            .0
+            .len() as u32;
+
+        // Build output.
+        Ok(succeed(EvmDataWriter::new().write(candidate_count).build()))
     }
 
     fn round(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
