@@ -68,7 +68,9 @@ xcm-executor = { workspace = true }
 # Cumulus
 cumulus-pallet-aura-ext = { workspace = true }
 cumulus-pallet-dmp-queue = { workspace = true }
-cumulus-pallet-parachain-system = { workspace = true, features = ["parameterized-consensus-hook"] }
+cumulus-pallet-parachain-system = { workspace = true, features = [
+	"parameterized-consensus-hook",
+] }
 cumulus-pallet-xcm = { workspace = true }
 cumulus-pallet-xcmp-queue = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
@@ -88,6 +90,7 @@ pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
+pallet-evm-precompile-parachain-staking = { workspace = true }
 pallet-ethereum = { workspace = true }
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }

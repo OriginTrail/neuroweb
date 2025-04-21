@@ -2,11 +2,7 @@
 panic = "unwind"
 
 [workspace]
-members = [
-	"node",
-	"pallets/*",
-	"runtime",
-]
+members = ["node", "pallets/*", "runtime"]
 
 resolver = "2"
 
@@ -31,11 +27,13 @@ jsonrpsee = { version = "0.22.5", features = ["server"] }
 libsecp256k1 = { version = "0.7", default-features = false, features = [
     "hmac",
     "static-context",
-]}
+] }
 log = { version = "0.4.20", default-features = false }
 num_enum = { version = "0.5.3", default-features = false }
 sha3 = { version = "0.10.1", default-features = false }
-scale-info = { version = "2.3.1", default-features = false, features = [ "derive" ] }
+scale-info = { version = "2.3.1", default-features = false, features = [
+    "derive",
+] }
 similar-asserts = { version = "1.1.0" }
 slices = "0.2.0"
 smallvec = "1.10.0"
@@ -144,7 +142,9 @@ fc-storage = { git = "https://github.com/polkadot-evm/frontier", branch = "polka
 fc-mapping-sync = { git = "https://github.com/polkadot-evm/frontier", branch = "polkadot-v1.11.0" }
 fp-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "polkadot-v1.11.0", default-features = false }
 fp-rpc = { git = "https://github.com/polkadot-evm/frontier", default-features = false, branch = "polkadot-v1.11.0" }
-fp-self-contained = { git = "https://github.com/polkadot-evm/frontier", default-features = false, branch = "polkadot-v1.11.0", features = ["serde"] }
+fp-self-contained = { git = "https://github.com/polkadot-evm/frontier", default-features = false, branch = "polkadot-v1.11.0", features = [
+    "serde",
+] }
 
 # Cumulus
 cumulus-client-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
@@ -186,7 +186,7 @@ xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/par
 # Staking
 substrate-fixed = { git = "https://github.com/encointer/substrate-fixed", default-features = false }
 pallet-parachain-staking = { path = "pallets/parachain-staking", default-features = false }
-#pallet-evm-precompile-parachain-staking = { path = "precompiles/parachain-staking", default-features = false }
+pallet-evm-precompile-parachain-staking = { path = "precompiles/parachain-staking", default-features = false }
 # num-integer = { version = "0.1", default-features = false }
 # sp-consensus-slots = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 
