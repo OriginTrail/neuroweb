@@ -75,7 +75,7 @@ sp-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", default
 sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
 sp-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
 sp-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, rev = "581fe47eefe5b5e8681953ed2e7532a4085198dc" }
 sp-genesis-builder = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0", default-features = false }
@@ -167,7 +167,7 @@ parachains-common = { git = "https://github.com/paritytech/polkadot-sdk", defaul
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-polkadot-service = { git = "https://github.com/moonbeam-foundation/polkadot-sdk", branch = "moonbeam-polkadot-v1.11.0" }
+polkadot-service = { git = "https://github.com/moonbeam-foundation/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
 
 # XCM
 pallet-xcm = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
@@ -185,9 +185,3 @@ precompile-utils = { path = "./precompiles/utils", default-features = false }
 # Build deps
 substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
 substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-
-# Fix
-[patch.'https://github.com/w3f/fflonk']
-fflonk = { git = "https://www.github.com/w3f/fflonk", rev = "be95d4c971b1d15b5badfc06ff13f5c07987d484" }
-[patch.'https://github.com/w3f/ring-vrf.git']
-bandersnatch_vrfs = { git = "https://github.com/davxy/ring-vrf", rev = "0fef8266d851932ad25d6b41bc4b34d834d1e11d" }
