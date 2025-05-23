@@ -47,7 +47,6 @@ To run a full network with multiple NeuroWeb nodes (collators and non-collators)
 #### Run A Relay Chain
 
 To start a relay chain we recommend reading and following instructions in [Cumulus Workshop](https://docs.substrate.io/tutorials/build-a-parachain/prepare-a-local-relay-chain/).
-
 NeuroWeb is currently compatible with Polkadot v1.11.0 version.
 
 #### Parachain Nodes (Collators)
