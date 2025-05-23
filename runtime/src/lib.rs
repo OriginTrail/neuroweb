@@ -142,7 +142,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("origintrail-parachain"),
     impl_name: create_runtime_str!("neuroweb"),
     authoring_version: 1,
-    spec_version: 137,
+    spec_version: 138,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
