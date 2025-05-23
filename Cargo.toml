@@ -185,3 +185,7 @@ precompile-utils = { path = "./precompiles/utils", default-features = false }
 # Build deps
 substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
 substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
+
+# Fix
+[patch.'https://github.com/w3f/fflonk']
+fflonk = { git = "https://www.github.com/w3f/fflonk", rev = "be95d4c971b1d15b5badfc06ff13f5c07987d484" }
