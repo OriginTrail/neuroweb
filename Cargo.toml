@@ -189,3 +189,5 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-s
 # Fix
 [patch.'https://github.com/w3f/fflonk']
 fflonk = { git = "https://www.github.com/w3f/fflonk", rev = "be95d4c971b1d15b5badfc06ff13f5c07987d484" }
+[patch.https://github.com/w3f/ring-vrf.git']
+bandersnatch_vrfs = { git = "https://github.com/davxy/ring-vrf.git", rev = "48b642a", default-features = false }
