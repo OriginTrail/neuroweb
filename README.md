@@ -114,7 +114,7 @@ docker run -it -p 30333:30333 -p 9933:9933 -p 9944:9944 -p 9615:9615 -v /data:/d
   -- --execution=wasm --wasm-execution=Compiled --chain=polkadot
 ```
 ## Developers
-### Chopsticks Mainnet Fork
+### Local Fork with Chopsticks
 Neuroweb + Relay Chain:
 ```bash
 npx @acala-network/chopsticks@latest --config=neuroweb
@@ -133,7 +133,7 @@ Neuroweb (local config with WASM override) + Relay Chain:
 npx @acala-network/chopsticks@latest --config=launch-configs/chopsticks/neuroweb.yml
 ```
 
-### Mainnet fork with Zombienet
+### Local fork with Zombienet
 Prerequisites:
 * Install [Zombienet](https://github.com/paritytech/zombienet)
 * Clone and build the appropriate version of [Polkadot SDK](https://github.com/paritytech/polkadot-sdk) in the parent directory
