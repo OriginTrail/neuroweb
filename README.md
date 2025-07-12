@@ -136,8 +136,8 @@ npx @acala-network/chopsticks@latest --config=launch-configs/chopsticks/neuroweb
 ### Local fork with Zombienet
 Prerequisites:
 * Install [Zombienet](https://github.com/paritytech/zombienet)
-* Clone and build the appropriate version of [Polkadot SDK](https://github.com/paritytech/polkadot-sdk) in the parent directory
-
+* Clone and build the appropriate version of the [Polkadot runtime](https://github.com/paritytech/polkadot-sdk) in the parent directory
+* Build the Neuroweb runtime
 ```
 cd launch-configs/zombienet
 zombienet spawn neuroweb-local.json
