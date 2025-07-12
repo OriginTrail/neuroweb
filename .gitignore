@@ -16,3 +16,5 @@ local-test
 
 *.lock
 .idea
+
+*db.sqlite*
