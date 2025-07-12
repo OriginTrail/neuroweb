@@ -128,9 +128,17 @@ Neuroweb + Relay Chain + Hydration + Asset Hub:
 npx @acala-network/chopsticks@latest xcm -r polkadot -p neuroweb -p hydradx -p polkadot-asset-hub
 ```
 
-Neuroweb (local config with wasm override) + Relay Chain:
+Neuroweb (local config with WASM override) + Relay Chain:
 ```
 npx @acala-network/chopsticks@latest --config=launch-configs/chopsticks/neuroweb.yml
 ```
 
 ### Mainnet fork with Zombienet
+Prerequisites:
+* Install [Zombienet](https://github.com/paritytech/zombienet)
+* Clone and build the appropriate version of [Polkadot SDK](https://github.com/paritytech/polkadot-sdk) in the parent directory
+
+```
+cd launch-configs/zombienet
+zombienet spawn neuroweb-local.json
+```
