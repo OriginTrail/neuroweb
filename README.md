@@ -113,3 +113,24 @@ docker run -it -p 30333:30333 -p 9933:9933 -p 9944:9944 -p 9615:9615 -v /data:/d
   --no-mdns --execution=wasm --pruning=archive\
   -- --execution=wasm --wasm-execution=Compiled --chain=polkadot
 ```
+## Developers
+### Chopsticks Mainnet Fork
+Neuroweb + Relay Chain:
+```bash
+npx @acala-network/chopsticks@latest --config=neuroweb
+
+# For testnet use
+npx @acala-network/chopsticks@latest --config=neuroweb-testnet
+```
+
+Neuroweb + Relay Chain + Hydration + Asset Hub:
+```
+npx @acala-network/chopsticks@latest xcm -r polkadot -p neuroweb -p hydradx -p polkadot-asset-hub
+```
+
+Neuroweb (local config with wasm override) + Relay Chain:
+```
+npx @acala-network/chopsticks@latest --config=launch-configs/chopsticks/neuroweb.yml
+```
+
+### Mainnet fork with Zombienet
