@@ -59,7 +59,8 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use pallet_transaction_payment::{ConstFeeMultiplier, Multiplier};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
-use xcm_config::{XcmOriginToTransactDispatchOrigin};
+use xcm::v3::MultiLocation;
+use xcm_config::XcmOriginToTransactDispatchOrigin;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -874,6 +875,14 @@ parameter_types! {
 	pub const MetadataDepositPerByte: Balance = 1 * OTP;
 }
 
+pub enum UnifiedAssetId {
+    Native,
+    Local(u32),
+    Foreign(MultiLocation), // now directly holds location
+}
+
+
+// Local Assets
 impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = u128;
@@ -893,6 +902,26 @@ impl pallet_assets::Config for Runtime {
     type CallbackHandle = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<656>;
+}
+
+// Foreign Assets
+type ForeignAssets = pallet_assets::Instance2;
+impl pallet_assets::Config<ForeignAssets> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Balance = Balance;
+    type AssetId = MultiLocation;
+    type Currency = Balances;
+    type CreateOrigin = EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type AssetDeposit = ForeignAssetDeposit;
+    type AssetAccountDeposit = ForeignAssetAccountDeposit;
+    type MetadataDepositBase = ConstU32<0>;
+    type MetadataDepositPerByte = ConstU32<0>;
+    type ApprovalDeposit = ForeignAssetApprovalDeposit;
+    type StringLimit = ForeignAssetStringLimit;
+    type Freezer = ();
+    type Extra = ();
+    type WeightInfo = ();
 }
 
 pub struct EvmRevertCodeHandler;
