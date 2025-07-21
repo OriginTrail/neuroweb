@@ -6,8 +6,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+mod assets;
 mod weights;
 pub mod xcm_config;
+pub use frame_support::traits::Get;
 
 use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 use smallvec::smallvec;
@@ -17,7 +19,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, DispatchResult,
     traits::{
         AccountIdConversion, IdentityLookup, BlakeTwo256, Block as BlockT,
-        ConvertInto, DispatchInfoOf, Dispatchable, IdentifyAccount, 
+        ConvertInto, DispatchInfoOf, Dispatchable, IdentifyAccount,
         PostDispatchInfoOf, UniqueSaturatedInto, Verify, One
     },
     transaction_validity::{
@@ -38,9 +40,9 @@ use frame_support::{
     traits::{
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
         fungible::{Balanced, Credit, HoldConsideration, Inspect},
-        AsEnsureOriginWithArg, Currency as PalletCurrency, EqualPrivilegeOnly, EitherOfDiverse, 
+        Currency as PalletCurrency, EqualPrivilegeOnly, EitherOfDiverse,
         Everything, FindAuthor, ReservableCurrency, Imbalance, InstanceFilter, OnUnbalanced, ConstBool,
-        ConstU128, ConstU32, ConstU64, ConstU8, WithdrawReasons, OnFinalize, LinearStoragePrice,
+        ConstU32, ConstU64, ConstU8, WithdrawReasons, OnFinalize, LinearStoragePrice,
         ExistenceRequirement, TransformOrigin
     },
     dispatch::DispatchClass,
@@ -182,9 +184,6 @@ pub const OTP: Balance = 1_000_000_000_000;
 pub const MILLIOTP: Balance = 1_000_000_000;
 pub const MICROOTP: Balance = 1_000_000;
 
-/// The existential deposit. Set to 1/10 of the Connected Relay Chain.
-pub const EXISTENTIAL_DEPOSIT: Balance = OTP;
-
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
 const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
@@ -324,30 +323,8 @@ impl pallet_authorship::Config for Runtime {
     type EventHandler = (CollatorSelection,);
 }
 
-parameter_types! {
-    pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
-}
-
-impl pallet_balances::Config for Runtime {
-    type MaxLocks = ConstU32<50>;   
-    /// The type for recording an account's balance.
-    type Balance = Balance;
-    /// The ubiquitous event type.
-    type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
-    type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
-    type MaxReserves = ConstU32<50>;
-    type ReserveIdentifier = [u8; 8];
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type RuntimeFreezeReason = RuntimeFreezeReason;
-	type FreezeIdentifier = ();
-	type MaxFreezes = ConstU32<1>;
-}
-
-pub struct ToStakingPot;
-impl OnUnbalanced<Credit<AccountId, Balances>> for ToStakingPot
+pub struct CollatorsIncentivesPot;
+impl OnUnbalanced<Credit<AccountId, Balances>> for CollatorsIncentivesPot
 {
     fn on_nonzero_unbalanced(amount: Credit<AccountId, Balances>) {
         let staking_pot = PotId::get().into_account_truncating();
@@ -360,8 +337,8 @@ impl OnUnbalanced<Credit<AccountId, Balances>> for FutureAuctionsPot
 {
     fn on_nonzero_unbalanced(amount: Credit<AccountId, Balances>) {
         let future_auctions_pot = FutureAuctionsPalletId::get().into_account_truncating();
-        let _ = Balances::resolve(&future_auctions_pot, amount);   
-    }  
+        let _ = Balances::resolve(&future_auctions_pot, amount);
+    }
 }
 
 pub struct DkgIncentivesPot;
@@ -727,7 +704,7 @@ impl pallet_base_fee::Config for Runtime {
 
 type FungibleAccountId<T> = <T as frame_system::Config>::AccountId;
 
-type BalanceFor<T> = 
+type BalanceFor<T> =
     <<T as pallet_evm::Config>::Currency as Inspect<FungibleAccountId<T>>>::Balance;
 
 pub struct OnChargeEVMTransaction<OU>(sp_std::marker::PhantomData<OU>);
@@ -865,63 +842,6 @@ impl AddressToAssetId<AssetId> for Runtime {
         data[4..20].copy_from_slice(&asset_id.to_be_bytes());
         H160::from(data)
     }
-}
-
-parameter_types! {
-	pub const AssetDeposit: Balance = 100 * OTP;
-	pub const ApprovalDeposit: Balance = 0;
-	pub const StringLimit: u32 = 50;
-	pub const MetadataDepositBase: Balance = 10 * OTP;
-	pub const MetadataDepositPerByte: Balance = 1 * OTP;
-}
-
-pub enum UnifiedAssetId {
-    Native,
-    Local(u32),
-    Foreign(MultiLocation), // now directly holds location
-}
-
-
-// Local Assets
-impl pallet_assets::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Balance = u128;
-	type AssetId = AssetId;
-    type AssetIdParameter = codec::Compact<u128>;
-	type Currency = Balances;
-    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-	type ForceOrigin = EnsureRoot<AccountId>;
-	type AssetDeposit = AssetDeposit;
-	type AssetAccountDeposit = ConstU128<OTP>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ApprovalDeposit = ApprovalDeposit;
-	type StringLimit = StringLimit;
-	type Freezer = ();
-	type Extra = ();
-    type CallbackHandle = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-    type RemoveItemsLimit = ConstU32<656>;
-}
-
-// Foreign Assets
-type ForeignAssets = pallet_assets::Instance2;
-impl pallet_assets::Config<ForeignAssets> for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Balance = Balance;
-    type AssetId = MultiLocation;
-    type Currency = Balances;
-    type CreateOrigin = EnsureRoot<AccountId>;
-    type ForceOrigin = EnsureRoot<AccountId>;
-    type AssetDeposit = ForeignAssetDeposit;
-    type AssetAccountDeposit = ForeignAssetAccountDeposit;
-    type MetadataDepositBase = ConstU32<0>;
-    type MetadataDepositPerByte = ConstU32<0>;
-    type ApprovalDeposit = ForeignAssetApprovalDeposit;
-    type StringLimit = ForeignAssetStringLimit;
-    type Freezer = ();
-    type Extra = ();
-    type WeightInfo = ();
 }
 
 pub struct EvmRevertCodeHandler;
@@ -1191,6 +1111,7 @@ construct_runtime!(
         Treasury: pallet_treasury::{Pallet, Call, Storage, Config<T>, Event<T>} = 13,
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 14,
         XcAssetConfig: pallet_xc_asset_config = 15,
+        ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 16,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Storage} = 20,
