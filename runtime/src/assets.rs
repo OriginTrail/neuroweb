@@ -3,13 +3,30 @@ use frame_support::{
     pallet_prelude::*,
     traits::{
         fungible::{Inspect as FungibleInspect, Mutate as FungibleMutate, Unbalanced as FungibleUnbalanced}, fungibles::{Dust, Inspect as FungiblesInspect, Mutate as FungiblesMutate, Unbalanced as FungiblesUnbalanced},
-        tokens::{fungibles, DepositConsequence, Fortitude, Precision, Preservation, Provenance, WithdrawConsequence},
+        tokens::{DepositConsequence, Fortitude, Precision, Preservation, Provenance, WithdrawConsequence},
         AsEnsureOriginWithArg,
     },
 };
+use serde::{Serialize, Deserialize};
+use xcm::v3::{MultiLocation, Junction, NetworkId, Junctions};
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = OTP;
+
+pub const LOCAL_TRAC_ASSET_ID: u128 = 1;
+pub const LOCAL_TRAC_UNIFIED_ASSET_ID: UnifiedAssetId = UnifiedAssetId::Local(LOCAL_TRAC_ASSET_ID);
+
+pub const FOREIGN_TRAC_ASSET_LOCATION: MultiLocation = MultiLocation {
+    parents: 2,
+    interior: Junctions::X2(
+        Junction::GlobalConsensus(NetworkId::Ethereum { chain_id: 1 }),
+        Junction::AccountKey20 {
+            network: None,
+            key: [0xaa, 0x7a, 0x9c, 0xa8, 0x7d, 0x36, 0x94, 0xb5, 0x75, 0x5f, 0x21, 0x3b, 0x5d, 0x04, 0x09, 0x4b, 0x8d, 0x0f, 0x0a, 0x6f]
+        }
+    )
+};
+pub const FOREIGN_TRAC_UNIFIED_ASSET_ID: UnifiedAssetId = UnifiedAssetId::Foreign(FOREIGN_TRAC_ASSET_LOCATION);
 
 parameter_types! {
     pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
@@ -88,15 +105,15 @@ impl pallet_assets::Config<pallet_assets::Instance2> for Runtime {
 }
 
 // MulticurrencyAdapter
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Encode, Decode, TypeInfo, MaxEncodedLen)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Encode, Decode, TypeInfo, MaxEncodedLen, Serialize, Deserialize)]
 pub enum UnifiedAssetId {
     Native,
     Local(u128),
     Foreign(MultiLocation), // now directly holds location
 }
 
-pub struct MulticurrencyAdapter;
-impl FungiblesInspect<AccountId> for MulticurrencyAdapter {
+pub struct MultiCurrencyAdapter;
+impl FungiblesInspect<AccountId> for MultiCurrencyAdapter {
     type AssetId = UnifiedAssetId;
     type Balance = u128;
 
@@ -203,7 +220,7 @@ impl FungiblesInspect<AccountId> for MulticurrencyAdapter {
     }
 }
 
-impl FungiblesMutate<AccountId> for MulticurrencyAdapter {
+impl FungiblesMutate<AccountId> for MultiCurrencyAdapter {
     fn mint_into(
         asset: UnifiedAssetId,
         who: &AccountId,
@@ -290,7 +307,7 @@ impl FungiblesMutate<AccountId> for MulticurrencyAdapter {
     }
 }
 
-impl FungiblesUnbalanced<AccountId> for MulticurrencyAdapter {
+impl FungiblesUnbalanced<AccountId> for MultiCurrencyAdapter {
     fn handle_dust(_dust: Dust<AccountId, Self>) {
         // No-op: You can log it, burn it, or track it if needed
     }

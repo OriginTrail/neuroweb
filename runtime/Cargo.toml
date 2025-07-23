@@ -8,9 +8,6 @@ homepage = "https://neuroweb.ai/"
 repository = "https://github.com/OriginTrail/neuroweb/"
 edition = "2021"
 
-[package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
-
 [dependencies]
 codec = { workspace = true }
 hex-literal = { workspace = true, optional = true }
@@ -98,6 +95,13 @@ pallet-democracy = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-preimage = { workspace = true }
 
+<<<<<<< HEAD
+=======
+# Local
+pallet-parachain-staking = { workspace = true }
+pallet-wrapper = { workspace = true }
+
+>>>>>>> c9d25a0 (add pallet-wrapper)
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -149,6 +153,7 @@ std = [
 	"pallet-treasury/std",
 	"pallet-utility/std",
 	"pallet-vesting/std",
+	"pallet-wrapper/std",
 	"pallet-xc-asset-config/std",
 	"pallet-xcm/std",
 	"parachain-info/std",

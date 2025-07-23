@@ -178,6 +178,7 @@ xcm-builder = { package = "staging-xcm-builder", git = "https://github.com/parit
 xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 
 # Local
+pallet-wrapper = { path = "pallets/wrapper", default-features = false }
 neuroweb-runtime = { path = "./runtime" }
 precompile-utils = { path = "./precompiles/utils", default-features = false }
 
@@ -185,3 +186,4 @@ precompile-utils = { path = "./precompiles/utils", default-features = false }
 # Build deps
 substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
 substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
+

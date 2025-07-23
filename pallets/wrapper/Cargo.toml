@@ -1,0 +1,57 @@
+[package]
+name = "pallet-wrapper"
+version = "0.1.0"
+description = "TRAC token wrapper pallet for converting between foreign and local TRAC assets"
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Substrate Core
+codec = { workspace = true, features = ["derive"], default-features = false }
+scale-info = { workspace = true, features = ["derive"], default-features = false }
+log = { workspace = true, default-features = false }
+
+# Frame Dependencies
+frame-benchmarking = { workspace = true, optional = true, default-features = false }
+frame-support = { workspace = true, default-features = false }
+frame-system = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+sp-std = { workspace = true, default-features = false }
+
+# XCM Dependencies (for MultiLocation support)
+xcm = { workspace = true, default-features = false }
+
+[dev-dependencies]
+# Testing Dependencies
+pallet-balances = { workspace = true, default-features = false }
+pallet-assets = { workspace = true, default-features = false }
+sp-io = { workspace = true, default-features = false }
+sp-keystore = { workspace = true, default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "frame-benchmarking?/std",
+    "frame-support/std",
+    "frame-system/std",
+    "log/std",
+    "scale-info/std",
+    "sp-core/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "xcm/std",
+]
+runtime-benchmarks = [
+    "frame-benchmarking/runtime-benchmarks",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+    "frame-support/try-runtime",
+    "frame-system/try-runtime",
+    "sp-runtime/try-runtime",
+]
