@@ -8,33 +8,33 @@ repository.workspace = true
 
 [dependencies]
 # Substrate Core
-codec = { workspace = true, features = ["derive"], default-features = false }
-scale-info = { workspace = true, features = ["derive"], default-features = false }
-log = { workspace = true, default-features = false }
+codec = { workspace = true, features = ["derive"] }
+scale-info = { workspace = true, features = ["derive"] }
+log = { workspace = true }
 
 # Frame Dependencies
-frame-benchmarking = { workspace = true, optional = true, default-features = false }
-frame-support = { workspace = true, default-features = false }
-frame-system = { workspace = true, default-features = false }
-sp-core = { workspace = true, default-features = false }
-sp-runtime = { workspace = true, default-features = false }
-sp-std = { workspace = true, default-features = false }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 # XCM Dependencies (for MultiLocation support)
-xcm = { workspace = true, default-features = false }
+xcm = { workspace = true }
 
 [dev-dependencies]
 # Testing Dependencies
-pallet-balances = { workspace = true, default-features = false }
-pallet-assets = { workspace = true, default-features = false }
-sp-io = { workspace = true, default-features = false }
-sp-keystore = { workspace = true, default-features = false }
+pallet-balances = { workspace = true }
+pallet-assets = { workspace = true }
+sp-io = { workspace = true }
+sp-keystore = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
     "codec/std",
-    "frame-benchmarking?/std",
+    "frame-benchmarking/std",
     "frame-support/std",
     "frame-system/std",
     "log/std",
@@ -43,6 +43,7 @@ std = [
     "sp-runtime/std",
     "sp-std/std",
     "xcm/std",
+    "pallet-assets/std",
 ]
 runtime-benchmarks = [
     "frame-benchmarking/runtime-benchmarks",

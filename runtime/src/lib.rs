@@ -1099,8 +1099,8 @@ parameter_types! {
 
 impl pallet_wrapper::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type MultiCurrency = assets::MultiCurrencyAdapter;
-    type AssetId = assets::UnifiedAssetId;
+    type Currency = MultiCurrencyAdapter;
+    type AssetId = UnifiedAssetId;
     type Balance = Balance;
     type LocalTracAssetId = LocalTracAssetId; // Local TRAC asset ID
     type ForeignTracAssetId = ForeignTracAssetId; // Define this constant

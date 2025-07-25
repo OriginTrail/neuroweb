@@ -1,7 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Codec;
 use frame_support::{
-    dispatch::{DispatchResult, DispatchResultWithPostInfo},
+    dispatch::DispatchResult,
     pallet_prelude::*,
     traits::{
         fungibles::{Inspect, Mutate},
@@ -9,9 +10,7 @@ use frame_support::{
     },
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::traits::{AccountIdConversion, Zero};
-use codec::Codec;
-use sp_runtime::traits::AtLeast32BitUnsigned;
+use sp_runtime::traits::{AccountIdConversion, AtLeast32BitUnsigned, Zero};
 
 pub use pallet::*;
 
@@ -24,12 +23,6 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-        /// Multi-currency support for handling TRAC assets
-        type MultiCurrency: Inspect<Self::AccountId, AssetId = Self::AssetId, Balance = Self::Balance>
-        + Mutate<Self::AccountId>;
-
         type AssetId: Parameter
             + Member
             + Clone
@@ -40,16 +33,18 @@ pub mod pallet {
 
         /// The balance type
         type Balance: Parameter
-        + Member
-        + AtLeast32BitUnsigned
-        + Codec
-        + Default
-        + Copy
-        + MaybeSerializeDeserialize
-        + MaxEncodedLen
-        + TypeInfo
-        + From<u128>
-        + Into<u128>;
+            + Member
+            + AtLeast32BitUnsigned
+            + Codec
+            + Default
+            + Copy
+            + MaybeSerializeDeserialize
+            + MaxEncodedLen
+            + TypeInfo;
+
+        // Multi-currency support for handling TRAC assets
+        type Currency: Inspect<Self::AccountId, AssetId = Self::AssetId, Balance = Self::Balance>
+            + Mutate<Self::AccountId>;
 
         /// The asset ID for local TRAC token
         #[pallet::constant]
@@ -62,11 +57,9 @@ pub mod pallet {
         /// The pallet ID for account derivation
         #[pallet::constant]
         type PalletId: Get<frame_support::PalletId>;
-    }
 
-    #[pallet::storage]
-    #[pallet::getter(fn something)]
-    pub type Something<T> = StorageValue<_, u32>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+    }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -85,18 +78,10 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Insufficient foreign TRAC balance
-        InsufficientForeignBalance,
-        /// Insufficient local TRAC balance
-        InsufficientLocalBalance,
+        /// Insufficient user balance
+        InsufficientUserBalance,
         /// Insufficient pallet foreign TRAC balance for unwrapping
         InsufficientPalletBalance,
-        /// Transfer failed
-        TransferFailed,
-        /// Mint failed
-        MintFailed,
-        /// Burn failed
-        BurnFailed,
         /// Amount is zero
         ZeroAmount,
     }
@@ -111,41 +96,39 @@ pub mod pallet {
         pub fn trac_wrap(
             origin: OriginFor<T>,
             #[pallet::compact] amount: T::Balance,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
             // Ensure amount is not zero
             ensure!(!amount.is_zero(), Error::<T>::ZeroAmount);
 
             let pallet_account = Self::pallet_account_id();
-            let foreign_trac_asset = T::ForeignTracAssetId::get();
-            let local_trac_asset = T::LocalTracAssetId::get();
+            let foreign_trac_asset_id = T::ForeignTracAssetId::get();
+            let local_trac_asset_id = T::LocalTracAssetId::get();
 
             // Check if user has sufficient foreign TRAC balance
-            let user_foreign_balance = T::MultiCurrency::balance(foreign_trac_asset.clone(), &who);
+            let user_foreign_balance = T::Currency::balance(foreign_trac_asset_id.clone(), &who);
             ensure!(
                 user_foreign_balance >= amount,
-                Error::<T>::InsufficientForeignBalance
+                Error::<T>::InsufficientUserBalance
             );
 
             // Transfer foreign TRAC from user to pallet account
-            T::MultiCurrency::transfer(
-                foreign_trac_asset,
+            T::Currency::transfer(
+                foreign_trac_asset_id,
                 &who,
                 &pallet_account,
                 amount,
                 frame_support::traits::tokens::Preservation::Expendable,
-            )
-                .map_err(|_| Error::<T>::TransferFailed)?;
+            )?;
 
             // Mint local TRAC to user
-            T::MultiCurrency::mint_into(local_trac_asset, &who, amount)
-                .map_err(|_| Error::<T>::MintFailed)?;
+            T::Currency::mint_into(local_trac_asset_id, &who, amount)?;
 
             // Emit event
             Self::deposit_event(Event::TracWrapped { who, amount });
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Unwrap local TRAC tokens back to foreign TRAC tokens
@@ -156,54 +139,53 @@ pub mod pallet {
         pub fn trac_unwrap(
             origin: OriginFor<T>,
             #[pallet::compact] amount: T::Balance,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
             // Ensure amount is not zero
             ensure!(!amount.is_zero(), Error::<T>::ZeroAmount);
 
             let pallet_account = Self::pallet_account_id();
-            let foreign_trac_asset = T::ForeignTracAssetId::get();
-            let local_trac_asset = T::LocalTracAssetId::get();
+            let foreign_trac_asset_id = T::ForeignTracAssetId::get();
+            let local_trac_asset_id = T::LocalTracAssetId::get();
 
             // Check if user has sufficient local TRAC balance
-            let user_local_balance = T::MultiCurrency::balance(local_trac_asset.clone(), &who);
+            let user_local_balance = T::Currency::balance(local_trac_asset_id.clone(), &who);
             ensure!(
                 user_local_balance >= amount,
-                Error::<T>::InsufficientLocalBalance
+                Error::<T>::InsufficientUserBalance
             );
 
             // Check if pallet has sufficient foreign TRAC balance
-            let pallet_foreign_balance = T::MultiCurrency::balance(foreign_trac_asset.clone(), &pallet_account);
+            let pallet_foreign_balance =
+                T::Currency::balance(foreign_trac_asset_id.clone(), &pallet_account);
             ensure!(
                 pallet_foreign_balance >= amount,
                 Error::<T>::InsufficientPalletBalance
             );
 
             // Burn local TRAC from user
-            T::MultiCurrency::burn_from(
-                local_trac_asset,
+            T::Currency::burn_from(
+                local_trac_asset_id,
                 &who,
                 amount,
                 frame_support::traits::tokens::Precision::Exact,
                 frame_support::traits::tokens::Fortitude::Polite,
-            )
-                .map_err(|_| Error::<T>::BurnFailed)?;
+            )?;
 
             // Transfer foreign TRAC from pallet account to user
-            T::MultiCurrency::transfer(
-                foreign_trac_asset,
+            T::Currency::transfer(
+                foreign_trac_asset_id,
                 &pallet_account,
                 &who,
                 amount,
                 frame_support::traits::tokens::Preservation::Expendable,
-            )
-                .map_err(|_| Error::<T>::TransferFailed)?;
+            )?;
 
             // Emit event
             Self::deposit_event(Event::TracUnwrapped { who, amount });
 
-            Ok(().into())
+            Ok(())
         }
     }
 
@@ -215,12 +197,12 @@ pub mod pallet {
 
         /// Get the foreign TRAC balance of the pallet
         pub fn pallet_foreign_trac_balance() -> T::Balance {
-            T::MultiCurrency::balance(T::ForeignTracAssetId::get(), &Self::pallet_account_id())
+            T::Currency::balance(T::ForeignTracAssetId::get(), &Self::pallet_account_id())
         }
 
         /// Get the total supply of local TRAC tokens
         pub fn local_trac_total_supply() -> T::Balance {
-            T::MultiCurrency::total_issuance(T::LocalTracAssetId::get())
+            T::Currency::total_issuance(T::LocalTracAssetId::get())
         }
     }
 }

@@ -89,6 +89,7 @@ impl pallet_assets::Config<pallet_assets::Instance2> for Runtime {
     type AssetId = MultiLocation;
     type AssetIdParameter = MultiLocation;
     type Currency = Balances;
+    // TODO: XCM
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
