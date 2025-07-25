@@ -1091,7 +1091,7 @@ impl pallet_proxy::Config for Runtime {
 
 
 parameter_types! {
-    pub const TracWrapperPalletId: PalletId = PalletId(*b"wrappers");
+    pub const TracWrapperPalletId: PalletId = PalletId(*b"pwrapper");
     pub const LocalTracAssetId: UnifiedAssetId = LOCAL_TRAC_UNIFIED_ASSET_ID;
     pub const ForeignTracAssetId: UnifiedAssetId = FOREIGN_TRAC_UNIFIED_ASSET_ID;
 

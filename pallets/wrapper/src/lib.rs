@@ -14,6 +14,14 @@ use sp_runtime::traits::{AccountIdConversion, AtLeast32BitUnsigned, Zero};
 
 pub use pallet::*;
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+// TODO: Benchmarks
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
