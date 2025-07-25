@@ -80,6 +80,8 @@ impl pallet_assets::Config for Runtime {
     type CallbackHandle = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<656>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = AssetsBenchmarkHelper;
 }
 
 // Foreign Assets
@@ -103,6 +105,8 @@ impl pallet_assets::Config<pallet_assets::Instance2> for Runtime {
     type CallbackHandle = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<656>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = XcmBenchmarkHelper;
 }
 
 // MulticurrencyAdapter
@@ -340,5 +344,26 @@ impl FungiblesUnbalanced<AccountId> for MultiCurrencyAdapter {
             UnifiedAssetId::Foreign(loc) =>
                 <ForeignAssets as FungiblesUnbalanced<AccountId>>::set_total_issuance(loc, amount),
         }
+    }
+}
+
+// Benchmarking helpers
+#[cfg(feature = "runtime-benchmarks")]
+pub struct AssetsBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_assets::BenchmarkHelper<codec::Compact<u128>> for AssetsBenchmarkHelper {
+    fn create_asset_id_parameter(id: u32) -> codec::Compact<u128> {
+        (id as u128).into()
+    }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct XcmBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
+    fn create_asset_id_parameter(id: u32) -> MultiLocation {
+        MultiLocation::new(1, Junction::Parachain(id))
     }
 }
