@@ -6278,6 +6278,7 @@ dependencies = [
  "parity-scale-codec",
  "polkadot-parachain-primitives",
  "polkadot-runtime-common",
+ "primitives",
  "scale-info",
  "serde",
  "smallvec",
@@ -7959,6 +7960,7 @@ dependencies = [
  "pallet-assets",
  "pallet-balances",
  "parity-scale-codec",
+ "primitives",
  "scale-info",
  "sp-core",
  "sp-io",
@@ -9696,6 +9698,18 @@ dependencies = [
  "impl-serde",
  "scale-info",
  "uint",
+]
+
+[[package]]
+name = "primitives"
+version = "0.1.0"
+dependencies = [
+ "frame-support 28.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime 31.0.1 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "staging-xcm 7.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
 ]
 
 [[package]]

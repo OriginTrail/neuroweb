@@ -5,6 +5,7 @@ panic = "unwind"
 members = [
 	"node",
 	"pallets/*",
+    "primitives",
 	"runtime",
 ]
 
@@ -178,6 +179,7 @@ xcm-builder = { package = "staging-xcm-builder", git = "https://github.com/parit
 xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 
 # Local
+primitives = { path = "primitives", default-features = false }
 pallet-wrapper = { path = "pallets/wrapper", default-features = false }
 neuroweb-runtime = { path = "./runtime" }
 precompile-utils = { path = "./precompiles/utils", default-features = false }

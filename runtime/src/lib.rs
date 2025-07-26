@@ -8,6 +8,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 mod assets;
 use assets::*;
+use primitives::UnifiedAssetId;
 
 mod weights;
 pub mod xcm_config;
@@ -1106,8 +1107,6 @@ impl pallet_wrapper::Config for Runtime {
     type ForeignTracAssetId = ForeignTracAssetId; // Define this constant
     type PalletId = TracWrapperPalletId; // Define this constant
 }
-
-
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
