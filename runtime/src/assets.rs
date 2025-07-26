@@ -64,6 +64,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
+    type RemoveItemsLimit = ConstU32<656>;
     type AssetId = AssetId;
     type AssetIdParameter = codec::Compact<u128>;
     type Currency = Balances;
@@ -79,7 +80,6 @@ impl pallet_assets::Config for Runtime {
     type Extra = ();
     type CallbackHandle = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-    type RemoveItemsLimit = ConstU32<656>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = AssetsBenchmarkHelper;
 }
@@ -88,10 +88,10 @@ impl pallet_assets::Config for Runtime {
 impl pallet_assets::Config<pallet_assets::Instance2> for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
+    type RemoveItemsLimit = ConstU32<656>;
     type AssetId = MultiLocation;
     type AssetIdParameter = MultiLocation;
     type Currency = Balances;
-    // TODO: XCM
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
@@ -104,7 +104,6 @@ impl pallet_assets::Config<pallet_assets::Instance2> for Runtime {
     type Extra = ();
     type CallbackHandle = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-    type RemoveItemsLimit = ConstU32<656>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = XcmBenchmarkHelper;
 }

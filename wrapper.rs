@@ -63,8 +63,8 @@ impl<T: frame_system::Config> pallet_wrapper::WeightInfo for NeurowebWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `855`
 		//  Estimated: `7404`
-		// Minimum execution time: 70_000_000 picoseconds.
-		Weight::from_parts(71_000_000, 7404)
+		// Minimum execution time: 69_000_000 picoseconds.
+		Weight::from_parts(70_000_000, 7404)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(7_u64))
 	}
