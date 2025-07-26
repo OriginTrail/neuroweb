@@ -112,6 +112,7 @@ impl crate::Config for Test {
     type LocalTracAssetId = LocalTracAssetId;
     type ForeignTracAssetId = ForeignTracAssetId;
     type PalletId = WrapperPalletId;
+    type WeightInfo = ();
 }
 
 // Test accounts

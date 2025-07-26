@@ -17,6 +17,9 @@ pub use pallet::*;
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 
+pub mod weights;
+pub use weights::*;
+
 #[cfg(test)]
 mod mock;
 
@@ -67,6 +70,9 @@ pub mod pallet {
         #[pallet::constant]
         type PalletId: Get<frame_support::PalletId>;
 
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
+
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
@@ -101,7 +107,7 @@ pub mod pallet {
         ///
         /// Transfers foreign TRAC from sender to pallet account and mints equal amount of local TRAC to sender
         #[pallet::call_index(0)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(T::WeightInfo::trac_wrap())]
         pub fn trac_wrap(
             origin: OriginFor<T>,
             #[pallet::compact] amount: T::Balance,
@@ -144,7 +150,7 @@ pub mod pallet {
         ///
         /// Burns local TRAC from sender and transfers equal amount of foreign TRAC from pallet account to sender
         #[pallet::call_index(1)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(T::WeightInfo::trac_unwrap())]
         pub fn trac_unwrap(
             origin: OriginFor<T>,
             #[pallet::compact] amount: T::Balance,
