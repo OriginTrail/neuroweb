@@ -97,6 +97,7 @@ pallet-preimage = { workspace = true }
 
 # Local
 pallet-wrapper = { workspace = true }
+primitives = { workspace = true }
 
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
@@ -152,6 +153,7 @@ std = [
 	"pallet-wrapper/std",
 	"pallet-xc-asset-config/std",
 	"pallet-xcm/std",
+	"primitives/std",
 	"parachain-info/std",
 	"parachains-common/std",
 	"polkadot-parachain/std",

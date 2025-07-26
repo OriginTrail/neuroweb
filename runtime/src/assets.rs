@@ -7,7 +7,7 @@ use frame_support::{
         AsEnsureOriginWithArg,
     },
 };
-use serde::{Serialize, Deserialize};
+use primitives::UnifiedAssetId;
 use xcm::v3::{MultiLocation, Junction, NetworkId, Junctions};
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
@@ -107,14 +107,6 @@ impl pallet_assets::Config<pallet_assets::Instance2> for Runtime {
     type RemoveItemsLimit = ConstU32<656>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = XcmBenchmarkHelper;
-}
-
-// MulticurrencyAdapter
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Encode, Decode, TypeInfo, MaxEncodedLen, Serialize, Deserialize)]
-pub enum UnifiedAssetId {
-    Native,
-    Local(u128),
-    Foreign(MultiLocation), // now directly holds location
 }
 
 pub struct MultiCurrencyAdapter;

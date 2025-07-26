@@ -23,10 +23,15 @@ sp-std = { workspace = true }
 # XCM Dependencies (for MultiLocation support)
 xcm = { workspace = true }
 
+# For runtime benchmarks
+pallet-assets = { workspace = true, optional = true }
+pallet-balances = { workspace = true, optional = true }
+primitives = { workspace = true }
+
 [dev-dependencies]
-# Testing Dependencies
-pallet-balances = { workspace = true }
+# Testing and Benchmarking Dependencies
 pallet-assets = { workspace = true }
+pallet-balances = { workspace = true }
 sp-io = { workspace = true }
 sp-keystore = { workspace = true }
 
@@ -50,6 +55,8 @@ runtime-benchmarks = [
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
     "sp-runtime/runtime-benchmarks",
+    "pallet-assets/runtime-benchmarks",
+    "pallet-balances/runtime-benchmarks",
 ]
 try-runtime = [
     "frame-support/try-runtime",

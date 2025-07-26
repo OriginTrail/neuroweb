@@ -12,14 +12,27 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode, Decode};
-use scale_info::TypeInfo;
+use codec::{Decode, Encode};
 use frame_support::pallet_prelude::MaxEncodedLen;
-use serde::{Serialize, Deserialize};
+use scale_info::TypeInfo;
+use serde::{Deserialize, Serialize};
 use xcm::v3::MultiLocation;
 
 // Adapter for supporting different currencies
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Encode, Decode, TypeInfo, MaxEncodedLen, Serialize, Deserialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Debug,
+    Encode,
+    Decode,
+    TypeInfo,
+    MaxEncodedLen,
+    Serialize,
+    Deserialize,
+)]
 pub enum UnifiedAssetId {
     Native,
     Local(u128),
