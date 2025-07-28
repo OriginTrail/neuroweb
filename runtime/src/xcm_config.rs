@@ -1,5 +1,5 @@
 use super::{
-    AccountId, AllPalletsWithSystem, Balances, DealWithFees, Runtime, RuntimeCall, RuntimeEvent, 
+    AccountId, AllPalletsWithSystem, Balances, Assets, ForeignAssets, DealWithFees, Runtime, RuntimeCall, RuntimeEvent, 
     RuntimeOrigin, ParachainInfo, ParachainSystem, PolkadotXcm, WeightToFee, XcmpQueue,
 };
 use frame_support::{
@@ -12,11 +12,13 @@ use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom,
-    FungibleAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
+    FungibleAdapter, FungiblesAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents, WithComputedOrigin,
+    UsingComponents, WithComputedOrigin, ConvertedConcreteId, StartsWith,
 };
+use frame_support::traits::TrackedStorageKey;
+use xcm_executor::traits::{JustTry, Identity};
 use frame_system::EnsureRoot;
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -28,6 +30,18 @@ parameter_types! {
         parents:0,
         interior: [
             PalletInstance(<Balances as PalletInfoAccess>::index() as u8)
+        ].into()
+    };
+    pub AssetsLocation: Location = Location {
+        parents: 0,
+        interior: [
+            PalletInstance(<Assets as PalletInfoAccess>::index() as u8)
+        ].into()
+    };
+    pub ForeignAssetsLocation: Location = Location {
+        parents: 0,
+        interior: [
+            PalletInstance(<ForeignAssets as PalletInfoAccess>::index() as u8)
         ].into()
     };
     pub UniversalLocation: InteriorLocation = [GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into())].into();
@@ -45,19 +59,64 @@ pub type LocationToAccountId = (
     AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/// Means for transacting assets on this chain.
-pub type LocalAssetTransactor = FungibleAdapter<
-    // Use this currency:
+// Handle native currency (NEURO) via Balances pallet
+pub type NativeAssetTransactor = FungibleAdapter<
     Balances,
-    // Use this currency when it is a fungible asset matching the given location or name:
     IsConcrete<TokenLocation>,
-    // Do a simple punn to convert an AccountId32 Location into a native chain account ID:
     LocationToAccountId,
-    // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
-    // We don't track any teleports.
     (),
 >;
+
+pub type ForeignAssetTransactor = FungiblesAdapter<
+    ForeignAssets,
+    ConvertedConcreteId<
+        xcm::v3::MultiLocation,
+        u128,
+        StartsWith<ForeignAssetsLocation>,
+        Identity,
+    >,
+    LocationToAccountId,
+    AccountId,
+    xcm_builder::NoChecking,
+    (),
+>;
+
+/// Means for transacting assets on this chain.
+pub type AssetTransactors = (
+    NativeAssetTransactor,
+    ForeignAssetTransactor,
+);
+
+//     // Handle local assets via Assets pallet (Instance1)
+//     FungiblesAdapter<
+//         Assets,
+//         ConvertedConcreteId<
+//             u128,
+//             u128,
+//             StartsWith<AssetsLocation>,
+//             Identity,
+//         >,
+//         LocationToAccountId,
+//         AccountId,
+//         xcm_builder::NoChecking,
+//         (),
+//     >,
+//     // Handle foreign assets via ForeignAssets pallet (Instance2)
+//     FungiblesAdapter<
+//         ForeignAssets,
+//         ConvertedConcreteId<
+//             xcm::v3::MultiLocation,
+//             u128,
+//             JustTry<StartsWith<ForeignAssetsLocation>>,
+//             Identity,
+//         >,
+//         LocationToAccountId,
+//         AccountId,
+//         xcm_builder::NoChecking,
+//         (),
+//     >,
+// );
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -136,6 +195,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			) |
 			RuntimeCall::Timestamp(..) |
 			RuntimeCall::Balances(..) |
+			RuntimeCall::Assets(..) |
+			RuntimeCall::ForeignAssets(..) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 			RuntimeCall::Treasury(..) |
             RuntimeCall::Vesting(..) |
@@ -167,7 +228,7 @@ impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     // How to withdraw and deposit an asset.
-    type AssetTransactor = LocalAssetTransactor;
+    type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type IsReserve = NativeAsset;
     type IsTeleporter = (); // Teleporting is disabled.
