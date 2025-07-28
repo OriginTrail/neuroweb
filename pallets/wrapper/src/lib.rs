@@ -94,10 +94,8 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Insufficient user balance
-        InsufficientUserBalance,
-        /// Insufficient pallet foreign TRAC balance for unwrapping
-        InsufficientPalletBalance,
+        /// Insufficient funds for the operation
+        InsufficientFunds,
         /// Amount is zero
         ZeroAmount,
     }
@@ -122,12 +120,6 @@ pub mod pallet {
             let foreign_trac_asset_id = T::ForeignTracAssetId::get();
             let local_trac_asset_id = T::LocalTracAssetId::get();
 
-            // Check if user has sufficient foreign TRAC balance
-            let user_foreign_balance = T::Currency::balance(foreign_trac_asset_id.clone(), &who);
-            ensure!(
-                user_foreign_balance >= amount,
-                Error::<T>::InsufficientUserBalance
-            );
 
             // Transfer foreign TRAC from user to pallet account
             T::Currency::transfer(
@@ -136,7 +128,7 @@ pub mod pallet {
                 &pallet_account,
                 amount,
                 frame_support::traits::tokens::Preservation::Expendable,
-            )?;
+            ).map_err(|_| Error::<T>::InsufficientFunds)?;
 
             // Mint local TRAC to user
             T::Currency::mint_into(local_trac_asset_id, &who, amount)?;
@@ -165,20 +157,6 @@ pub mod pallet {
             let foreign_trac_asset_id = T::ForeignTracAssetId::get();
             let local_trac_asset_id = T::LocalTracAssetId::get();
 
-            // Check if user has sufficient local TRAC balance
-            let user_local_balance = T::Currency::balance(local_trac_asset_id.clone(), &who);
-            ensure!(
-                user_local_balance >= amount,
-                Error::<T>::InsufficientUserBalance
-            );
-
-            // Check if pallet has sufficient foreign TRAC balance
-            let pallet_foreign_balance =
-                T::Currency::balance(foreign_trac_asset_id.clone(), &pallet_account);
-            ensure!(
-                pallet_foreign_balance >= amount,
-                Error::<T>::InsufficientPalletBalance
-            );
 
             // Burn local TRAC from user
             T::Currency::burn_from(
@@ -187,7 +165,7 @@ pub mod pallet {
                 amount,
                 frame_support::traits::tokens::Precision::Exact,
                 frame_support::traits::tokens::Fortitude::Polite,
-            )?;
+            ).map_err(|_| Error::<T>::InsufficientFunds)?;
 
             // Transfer foreign TRAC from pallet account to user
             T::Currency::transfer(
@@ -196,7 +174,7 @@ pub mod pallet {
                 &who,
                 amount,
                 frame_support::traits::tokens::Preservation::Expendable,
-            )?;
+            ).map_err(|_| Error::<T>::InsufficientFunds)?;
 
             // Emit event
             Self::deposit_event(Event::TracUnwrapped { who, amount });

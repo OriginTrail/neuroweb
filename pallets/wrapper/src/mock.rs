@@ -2,8 +2,7 @@
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32, ConstU64},
-    weights::Weight,
+    traits::{AsEnsureOriginWithArg, ConstU32},
     PalletId,
 };
 use frame_system as system;
@@ -118,7 +117,6 @@ impl crate::Config for Test {
 // Test accounts
 pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
-pub const CHARLIE: AccountId = 3;
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {

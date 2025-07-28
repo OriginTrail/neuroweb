@@ -2,7 +2,6 @@ use super::*;
 use crate::mock::*;
 use frame_support::{
     assert_noop, assert_ok,
-    traits::fungibles::Inspect,
 };
 
 #[test]
@@ -56,7 +55,7 @@ fn trac_wrap_with_insufficient_user_balance_fails() {
         // Should fail with insufficient balance
         assert_noop!(
             Wrapper::trac_wrap(RuntimeOrigin::signed(ALICE), wrap_amount),
-            Error::<Test>::InsufficientUserBalance
+            Error::<Test>::InsufficientFunds
         );
     });
 }
@@ -142,7 +141,7 @@ fn trac_unwrap_with_insufficient_user_balance_fails() {
         // Should fail with insufficient local balance
         assert_noop!(
             Wrapper::trac_unwrap(RuntimeOrigin::signed(ALICE), unwrap_amount),
-            Error::<Test>::InsufficientUserBalance
+            Error::<Test>::InsufficientFunds
         );
     });
 }
@@ -177,7 +176,7 @@ fn trac_unwrap_with_insufficient_pallet_balance_fails() {
         // Should fail with insufficient pallet balance
         assert_noop!(
             Wrapper::trac_unwrap(RuntimeOrigin::signed(ALICE), local_amount),
-            Error::<Test>::InsufficientPalletBalance
+            Error::<Test>::InsufficientFunds
         );
     });
 }
