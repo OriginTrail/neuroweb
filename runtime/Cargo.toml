@@ -15,6 +15,8 @@ log = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
 serde = { workspace = true }
+impl-trait-for-tuples = { workspace = true }
+tracing = { workspace = true }
 
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -76,6 +78,7 @@ cumulus-primitives-utility = { workspace = true }
 pallet-collator-selection = { workspace = true }
 parachain-info = { workspace = true }
 parachains-common = { workspace = true }
+assets-common = { workspace = true }
 
 # Frontier
 pallet-base-fee = { workspace = true }
@@ -108,6 +111,7 @@ std = [
 	"codec/std",
 	"log/std",
 	"scale-info/std",
+	"tracing/std",
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-dmp-queue/std",
 	"cumulus-pallet-parachain-system/std",
@@ -156,6 +160,7 @@ std = [
 	"primitives/std",
 	"parachain-info/std",
 	"parachains-common/std",
+	"assets-common/std",
 	"polkadot-parachain/std",
 	"polkadot-runtime-common/std",
 	"sp-api/std",

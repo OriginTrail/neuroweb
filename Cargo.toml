@@ -42,6 +42,11 @@ slices = "0.2.0"
 smallvec = "1.10.0"
 serde = { version = "1.0.152", default-features = false }
 serde_json = "1.0.92"
+itertools = { version = "0.11", default-features = false, features = [
+    "use_alloc",
+] }
+rustc-hex = { version = "2.0.1", default-features = false }
+tracing = { version = "0.1.37", default-features = false }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
@@ -164,6 +169,7 @@ cumulus-primitives-utility = { git = "https://github.com/paritytech/polkadot-sdk
 pallet-collator-selection = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 parachain-info = { package = "staging-parachain-info", git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 parachains-common = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
+assets-common = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.11.0" }
 
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
