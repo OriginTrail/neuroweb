@@ -181,6 +181,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
                 | pallet_identity::Call::remove_sub { .. }
                 | pallet_identity::Call::quit_sub { .. },
             )
+            | RuntimeCall::Wrapper(..)
             | RuntimeCall::PolkadotXcm(..) => true,
             _ => false,
         }
