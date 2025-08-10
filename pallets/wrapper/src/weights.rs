@@ -24,6 +24,8 @@ use crate::*;
 pub trait WeightInfo {
 	fn trac_wrap() -> Weight;
 	fn trac_unwrap() -> Weight;
+	fn pause() -> Weight;
+	fn unpause() -> Weight;
 }
 
 /// Weights for `pallet_wrapper` using the Neuroweb node and recommended hardware.
@@ -65,5 +67,25 @@ impl WeightInfo for () {
 		Weight::from_parts(79_000_000, 7404)
 			.saturating_add(RocksDbWeight::get().reads(7_u64))
 			.saturating_add(RocksDbWeight::get().writes(7_u64))
+	}
+	/// Storage: `Wrapper::IsPaused` (r:0 w:1)
+	/// Proof: `Wrapper::IsPaused` (`max_values`: Some(1), `max_size`: Some(1), added: 496, mode: `MaxEncodedLen`)
+	fn pause() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 8_000_000 picoseconds.
+		Weight::from_parts(8_000_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Wrapper::IsPaused` (r:0 w:1)
+	/// Proof: `Wrapper::IsPaused` (`max_values`: Some(1), `max_size`: Some(1), added: 496, mode: `MaxEncodedLen`)
+	fn unpause() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 8_000_000 picoseconds.
+		Weight::from_parts(8_000_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

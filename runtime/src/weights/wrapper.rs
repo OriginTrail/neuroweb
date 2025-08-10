@@ -84,4 +84,24 @@ impl<T: frame_system::Config> pallet_wrapper::WeightInfo for NeurowebWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(7_u64))
 	}
+	/// Storage: `Wrapper::IsPaused` (r:0 w:1)
+	/// Proof: `Wrapper::IsPaused` (`max_values`: Some(1), `max_size`: Some(1), added: 496, mode: `MaxEncodedLen`)
+	fn pause() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 8_000_000 picoseconds.
+		Weight::from_parts(8_000_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Wrapper::IsPaused` (r:0 w:1)
+	/// Proof: `Wrapper::IsPaused` (`max_values`: Some(1), `max_size`: Some(1), added: 496, mode: `MaxEncodedLen`)
+	fn unpause() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 8_000_000 picoseconds.
+		Weight::from_parts(8_000_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
 }

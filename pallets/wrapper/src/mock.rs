@@ -111,6 +111,7 @@ impl crate::Config for Test {
     type LocalTracAssetId = LocalTracAssetId;
     type ForeignTracAssetId = ForeignTracAssetId;
     type PalletId = WrapperPalletId;
+    type PauseOrigin = frame_system::EnsureRoot<AccountId>;
     type WeightInfo = ();
 }
 

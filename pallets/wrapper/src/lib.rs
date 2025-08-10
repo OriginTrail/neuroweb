@@ -6,7 +6,7 @@ use frame_support::{
     pallet_prelude::*,
     traits::{
         fungibles::{Inspect, Mutate},
-        Get,
+        Get, EnsureOrigin,
     },
 };
 use frame_system::pallet_prelude::*;
@@ -74,6 +74,9 @@ pub mod pallet {
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
 
+        /// Origin that can pause/unpause the pallet
+        type PauseOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
@@ -90,7 +93,15 @@ pub mod pallet {
             who: T::AccountId,
             amount: T::Balance,
         },
+        /// Pallet paused
+        Paused,
+        /// Pallet unpaused
+        Unpaused,
     }
+
+    #[pallet::storage]
+    #[pallet::getter(fn is_paused)]
+    pub type IsPaused<T> = StorageValue<_, bool, ValueQuery>;
 
     #[pallet::error]
     pub enum Error<T> {
@@ -98,6 +109,8 @@ pub mod pallet {
         InsufficientFunds,
         /// Amount is zero
         ZeroAmount,
+        /// Pallet is paused
+        Paused,
     }
 
     #[pallet::call]
@@ -112,6 +125,9 @@ pub mod pallet {
             #[pallet::compact] amount: T::Balance,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
+
+            // Ensure pallet is not paused
+            ensure!(!Self::is_paused(), Error::<T>::Paused);
 
             // Ensure amount is not zero
             ensure!(!amount.is_zero(), Error::<T>::ZeroAmount);
@@ -150,6 +166,9 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
+            // Ensure pallet is not paused
+            ensure!(!Self::is_paused(), Error::<T>::Paused);
+
             // Ensure amount is not zero
             ensure!(!amount.is_zero(), Error::<T>::ZeroAmount);
 
@@ -178,6 +197,30 @@ pub mod pallet {
 
             // Emit event
             Self::deposit_event(Event::TracUnwrapped { who, amount });
+
+            Ok(())
+        }
+
+        /// Pause the pallet, preventing all transactions
+        #[pallet::call_index(2)]
+        #[pallet::weight(T::WeightInfo::pause())]
+        pub fn pause(origin: OriginFor<T>) -> DispatchResult {
+            T::PauseOrigin::ensure_origin(origin)?;
+
+            IsPaused::<T>::put(true);
+            Self::deposit_event(Event::Paused);
+
+            Ok(())
+        }
+
+        /// Unpause the pallet, allowing transactions again
+        #[pallet::call_index(3)]
+        #[pallet::weight(T::WeightInfo::unpause())]
+        pub fn unpause(origin: OriginFor<T>) -> DispatchResult {
+            T::PauseOrigin::ensure_origin(origin)?;
+
+            IsPaused::<T>::put(false);
+            Self::deposit_event(Event::Unpaused);
 
             Ok(())
         }

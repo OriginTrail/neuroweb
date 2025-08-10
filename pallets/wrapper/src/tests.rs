@@ -350,3 +350,124 @@ fn local_trac_total_supply_helper_is_correct() {
         );
     });
 }
+
+#[test]
+fn pause_works() {
+    new_test_ext().execute_with(|| {
+        // Initially not paused
+        assert!(!Wrapper::is_paused());
+
+        // Root can pause
+        assert_ok!(Wrapper::pause(RuntimeOrigin::root()));
+        assert!(Wrapper::is_paused());
+
+        // Check event
+        System::assert_last_event(RuntimeEvent::Wrapper(Event::Paused));
+    });
+}
+
+#[test]
+fn unpause_works() {
+    new_test_ext().execute_with(|| {
+        // First pause
+        assert_ok!(Wrapper::pause(RuntimeOrigin::root()));
+        assert!(Wrapper::is_paused());
+
+        // Then unpause
+        assert_ok!(Wrapper::unpause(RuntimeOrigin::root()));
+        assert!(!Wrapper::is_paused());
+
+        // Check event
+        System::assert_last_event(RuntimeEvent::Wrapper(Event::Unpaused));
+    });
+}
+
+#[test]
+fn pause_requires_root_origin() {
+    new_test_ext().execute_with(|| {
+        // Non-root cannot pause
+        assert_noop!(
+            Wrapper::pause(RuntimeOrigin::signed(ALICE)),
+            sp_runtime::traits::BadOrigin
+        );
+    });
+}
+
+#[test]
+fn unpause_requires_root_origin() {
+    new_test_ext().execute_with(|| {
+        // First pause with root
+        assert_ok!(Wrapper::pause(RuntimeOrigin::root()));
+
+        // Non-root cannot unpause
+        assert_noop!(
+            Wrapper::unpause(RuntimeOrigin::signed(ALICE)),
+            sp_runtime::traits::BadOrigin
+        );
+    });
+}
+
+#[test]
+fn trac_wrap_fails_when_paused() {
+    new_test_ext().execute_with(|| {
+        // Pause the pallet
+        assert_ok!(Wrapper::pause(RuntimeOrigin::root()));
+
+        // Wrap should fail
+        assert_noop!(
+            Wrapper::trac_wrap(RuntimeOrigin::signed(ALICE), 1000),
+            Error::<Test>::Paused
+        );
+    });
+}
+
+#[test]
+fn trac_unwrap_fails_when_paused() {
+    new_test_ext().execute_with(|| {
+        let wrap_amount = 1000;
+
+        // First wrap some tokens while not paused
+        assert_ok!(Wrapper::trac_wrap(
+            RuntimeOrigin::signed(ALICE),
+            wrap_amount
+        ));
+
+        // Then pause the pallet
+        assert_ok!(Wrapper::pause(RuntimeOrigin::root()));
+
+        // Unwrap should fail
+        assert_noop!(
+            Wrapper::trac_unwrap(RuntimeOrigin::signed(ALICE), 500),
+            Error::<Test>::Paused
+        );
+    });
+}
+
+#[test]
+fn transactions_work_after_unpause() {
+    new_test_ext().execute_with(|| {
+        let wrap_amount = 1000;
+
+        // Pause the pallet
+        assert_ok!(Wrapper::pause(RuntimeOrigin::root()));
+
+        // Operations should fail
+        assert_noop!(
+            Wrapper::trac_wrap(RuntimeOrigin::signed(ALICE), wrap_amount),
+            Error::<Test>::Paused
+        );
+
+        // Unpause
+        assert_ok!(Wrapper::unpause(RuntimeOrigin::root()));
+
+        // Operations should work again
+        assert_ok!(Wrapper::trac_wrap(
+            RuntimeOrigin::signed(ALICE),
+            wrap_amount
+        ));
+        assert_ok!(Wrapper::trac_unwrap(
+            RuntimeOrigin::signed(ALICE),
+            wrap_amount / 2
+        ));
+    });
+}

@@ -68,6 +68,25 @@ benchmarks! {
         assert_eq!(<T as Config>::Currency::balance(T::ForeignTracAssetId::get(), &caller), amount);
         assert!(<T as Config>::Currency::balance(T::ForeignTracAssetId::get(), &Wrapper::<T>::pallet_account_id()).is_zero());
     }
+
+    pause {
+        // Ensure pallet is not paused initially
+        assert!(!Wrapper::<T>::is_paused());
+    }: _(RawOrigin::Root)
+    verify {
+        // Verify pallet is now paused
+        assert!(Wrapper::<T>::is_paused());
+    }
+
+    unpause {
+        // First pause the pallet
+        Wrapper::<T>::pause(RawOrigin::Root.into())?;
+        assert!(Wrapper::<T>::is_paused());
+    }: _(RawOrigin::Root)
+    verify {
+        // Verify pallet is now unpaused
+        assert!(!Wrapper::<T>::is_paused());
+    }
 }
 
 fn setup_assets<T: Config>(caller: T::AccountId) -> DispatchResult

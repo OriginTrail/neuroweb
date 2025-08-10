@@ -1106,6 +1106,7 @@ impl pallet_wrapper::Config for Runtime {
     type LocalTracAssetId = LocalTracAssetId; // Local TRAC asset ID
     type ForeignTracAssetId = ForeignTracAssetId; // Define this constant
     type PalletId = TracWrapperPalletId; // Define this constant
+    type PauseOrigin = EnsureRootOrThreeFiftsOfCouncil;
     type WeightInfo = weights::wrapper::NeurowebWeight<Runtime>;
 }
 
