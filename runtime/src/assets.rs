@@ -66,48 +66,12 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     pub const AssetDeposit: Balance = 100 * OTP;
     pub const AssetAccountDeposit: Balance = 100 * OTP;
-    pub const ApprovalDeposit: Balance = 0;
+    pub const ApprovalDeposit: Balance = 100 * OTP;
     pub const StringLimit: u32 = 50;
     pub const MetadataDepositBase: Balance = 10 * OTP;
     pub const MetadataDepositPerByte: Balance = 1 * OTP;
     pub const LocalAssetsPalletId: PalletId = PalletId(*b"p/locass");
     pub const ForeignAssetsPalletId: PalletId = PalletId(*b"p/fgnass");
-}
-
-pub fn local_assets_pallet_account() -> AccountId {
-    LocalAssetsPalletId::get().into_account_truncating()
-}
-
-pub fn foreign_assets_pallet_account() -> AccountId {
-    ForeignAssetsPalletId::get().into_account_truncating()
-}
-
-// CreateOrigin for local assets
-// Root which returns the local_assets_pallet_account
-pub struct RootWithLocalAssetsPalletAccount;
-impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, u128>
-    for RootWithLocalAssetsPalletAccount
-{
-    type Success = AccountId;
-    fn try_origin(o: RuntimeOrigin, _asset_id: &u128) -> Result<AccountId, RuntimeOrigin> {
-        <EnsureRoot<AccountId> as frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, u128>>::try_origin(o, _asset_id).map(|_| local_assets_pallet_account())
-    }
-}
-
-// CreateOrigin for foreign assets
-// Root which returns the foreign_assets_pallet_account
-pub struct RootWithForeignAssetsPalletsAccount;
-impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, MultiLocation>
-    for RootWithForeignAssetsPalletsAccount
-{
-    type Success = AccountId;
-    fn try_origin(o: RuntimeOrigin, _asset_id: &MultiLocation) -> Result<AccountId, RuntimeOrigin> {
-        <EnsureRoot<AccountId> as frame_support::traits::EnsureOriginWithArg<
-            RuntimeOrigin,
-            MultiLocation,
-        >>::try_origin(o, _asset_id)
-        .map(|_| foreign_assets_pallet_account())
-    }
 }
 
 // Local Assets
@@ -434,6 +398,42 @@ impl FungiblesUnbalanced<AccountId> for MultiCurrencyAdapter {
                 <ForeignAssets as FungiblesUnbalanced<AccountId>>::set_total_issuance(loc, amount)
             }
         }
+    }
+}
+
+pub fn local_assets_pallet_account() -> AccountId {
+    LocalAssetsPalletId::get().into_account_truncating()
+}
+
+pub fn foreign_assets_pallet_account() -> AccountId {
+    ForeignAssetsPalletId::get().into_account_truncating()
+}
+
+// CreateOrigin for local assets
+// Root which returns the local_assets_pallet_account
+pub struct RootWithLocalAssetsPalletAccount;
+impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, u128>
+for RootWithLocalAssetsPalletAccount
+{
+    type Success = AccountId;
+    fn try_origin(o: RuntimeOrigin, _asset_id: &u128) -> Result<AccountId, RuntimeOrigin> {
+        <EnsureRoot<AccountId> as frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, u128>>::try_origin(o, _asset_id).map(|_| local_assets_pallet_account())
+    }
+}
+
+// CreateOrigin for foreign assets
+// Root which returns the foreign_assets_pallet_account
+pub struct RootWithForeignAssetsPalletsAccount;
+impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, MultiLocation>
+for RootWithForeignAssetsPalletsAccount
+{
+    type Success = AccountId;
+    fn try_origin(o: RuntimeOrigin, _asset_id: &MultiLocation) -> Result<AccountId, RuntimeOrigin> {
+        <EnsureRoot<AccountId> as frame_support::traits::EnsureOriginWithArg<
+            RuntimeOrigin,
+            MultiLocation,
+        >>::try_origin(o, _asset_id)
+            .map(|_| foreign_assets_pallet_account())
     }
 }
 
