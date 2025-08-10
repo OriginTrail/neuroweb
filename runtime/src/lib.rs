@@ -1054,7 +1054,9 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				c,
 				RuntimeCall::Balances(..) |
 					RuntimeCall::Assets(..) |
-					RuntimeCall::Vesting(pallet_vesting::Call::vested_transfer { .. })
+                    RuntimeCall::ForeignAssets(..) |
+					RuntimeCall::Vesting(pallet_vesting::Call::vested_transfer { .. }) |
+                    RuntimeCall::Wrapper(..)
 			),
 			ProxyType::Governance => matches!(
 				c,
