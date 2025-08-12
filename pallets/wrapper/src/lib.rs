@@ -1,3 +1,43 @@
+// # Pallet: TRAC Wrapper
+//
+// ## Overview
+// This pallet enables seamless wrapping and unwrapping between **foreign TRAC tokens** (bridged
+// from Ethereum via Snowbridge) and a **local TRAC representation** (native asset on this chain).
+//
+// ## Key Features
+// - **Wrap**: Transfer foreign TRAC from the user to the pallet account and mint the same amount of
+// local TRAC to the user.
+// - **Unwrap**: Burn local TRAC from the user and transfer an equal amount of foreign TRAC from the
+// pallet account to the user.
+// - **Pause/Unpause**: Governance-controlled circuit breaker to halt all operations in emergencies.
+// - **Events**: Emitted on every wrap, unwrap, pause, and unpause action.
+// - **Balance Queries**: Helpers for checking pallet’s foreign TRAC balance and total local TRAC supply.
+//
+// ## Technical Details
+// - Uses the `fungibles` `Inspect`/`Mutate` traits for multi-currency support.
+// - Works with both native and asset-pallet-based currencies via `AssetId` and `Balance` generics.
+// - `LocalTracAssetId` and `ForeignTracAssetId` are runtime constants pointing to the respective assets.
+// - The pallet account is derived from a configurable `PalletId`.
+// - Governance authority for pausing is defined via the `PauseOrigin` associated type.
+//
+// ## Storage
+// - `IsPaused`: `bool` — whether pallet operations are currently paused.
+//
+// ## Events
+// - `TracWrapped { who, amount }` — User wrapped foreign → local TRAC.
+// - `TracUnwrapped { who, amount }` — User unwrapped local → foreign TRAC.
+// - `Paused` / `Unpaused` — Pallet operations toggled.
+//
+// ## Errors
+// - `InsufficientFunds` — Not enough balance for the operation.
+// - `ZeroAmount` — Amount provided was zero.
+// - `Paused` — Attempt to perform an operation while the pallet is paused.
+//
+// ## Security Considerations
+// - Wrap/unwrap operations are **1:1** with no fees or slippage in this pallet.
+// - Pausing capability allows governance to freeze operations during exploits or bridge malfunctions.
+// - Asset IDs must be correctly configured at runtime to prevent misrouting of tokens.
+//
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Codec;
