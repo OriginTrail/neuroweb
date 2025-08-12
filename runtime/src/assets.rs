@@ -419,6 +419,11 @@ for RootWithLocalAssetsPalletAccount
     fn try_origin(o: RuntimeOrigin, _asset_id: &u128) -> Result<AccountId, RuntimeOrigin> {
         <EnsureRoot<AccountId> as frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, u128>>::try_origin(o, _asset_id).map(|_| local_assets_pallet_account())
     }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn try_successful_origin(_asset_id: &u128) -> Result<RuntimeOrigin, ()> {
+        Ok(frame_system::RawOrigin::Root.into())
+    }
 }
 
 // CreateOrigin for foreign assets
@@ -434,6 +439,11 @@ for RootWithForeignAssetsPalletsAccount
             MultiLocation,
         >>::try_origin(o, _asset_id)
             .map(|_| foreign_assets_pallet_account())
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn try_successful_origin(_asset_id: &MultiLocation) -> Result<RuntimeOrigin, ()> {
+        Ok(frame_system::RawOrigin::Root.into())
     }
 }
 
