@@ -12,7 +12,6 @@ use frame_support::{
         tokens::{
             DepositConsequence, Fortitude, Precision, Preservation, Provenance, WithdrawConsequence,
         },
-        AsEnsureOriginWithArg,
     },
 };
 use primitives::UnifiedAssetId;

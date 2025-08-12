@@ -1,5 +1,5 @@
 use super::{
-    AccountId, AllPalletsWithSystem, Assets, Balance, Balances, DealWithFees, ForeignAssets,
+    AccountId, AllPalletsWithSystem, Balance, Balances, DealWithFees, ForeignAssets,
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
     WeightToFee, XcmpQueue,
 };
@@ -17,8 +17,8 @@ use sp_core::blake2_256;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin,
-    FixedWeightBounds, FungibleAdapter, FungiblesAdapter, HashedDescription, IsConcrete,
+    AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin,
+    FixedWeightBounds, FungibleAdapter, FungiblesAdapter, IsConcrete,
     NativeAsset, NoChecking, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
     SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
