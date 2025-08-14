@@ -325,8 +325,8 @@ impl pallet_authorship::Config for Runtime {
     type EventHandler = (CollatorSelection,);
 }
 
-pub struct CollatorsIncentivesPot;
-impl OnUnbalanced<Credit<AccountId, Balances>> for CollatorsIncentivesPot
+pub struct ToStakingPot;
+impl OnUnbalanced<Credit<AccountId, Balances>> for ToStakingPot
 {
     fn on_nonzero_unbalanced(amount: Credit<AccountId, Balances>) {
         let staking_pot = PotId::get().into_account_truncating();
