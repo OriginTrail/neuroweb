@@ -6,8 +6,13 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub mod assets;
+use assets::*;
+use primitives::UnifiedAssetId;
+
 mod weights;
 pub mod xcm_config;
+pub use frame_support::traits::Get;
 
 use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 use smallvec::smallvec;
@@ -17,7 +22,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, DispatchResult,
     traits::{
         AccountIdConversion, IdentityLookup, BlakeTwo256, Block as BlockT,
-        ConvertInto, DispatchInfoOf, Dispatchable, IdentifyAccount, 
+        ConvertInto, DispatchInfoOf, Dispatchable, IdentifyAccount,
         PostDispatchInfoOf, UniqueSaturatedInto, Verify, One
     },
     transaction_validity::{
@@ -38,9 +43,9 @@ use frame_support::{
     traits::{
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
         fungible::{Balanced, Credit, HoldConsideration, Inspect},
-        AsEnsureOriginWithArg, Currency as PalletCurrency, EqualPrivilegeOnly, EitherOfDiverse, 
+        Currency as PalletCurrency, EqualPrivilegeOnly, EitherOfDiverse,
         Everything, FindAuthor, ReservableCurrency, Imbalance, InstanceFilter, OnUnbalanced, ConstBool,
-        ConstU128, ConstU32, ConstU64, ConstU8, WithdrawReasons, OnFinalize, LinearStoragePrice,
+        ConstU32, ConstU64, ConstU8, WithdrawReasons, OnFinalize, LinearStoragePrice,
         ExistenceRequirement, TransformOrigin
     },
     dispatch::DispatchClass,
@@ -59,7 +64,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use pallet_transaction_payment::{ConstFeeMultiplier, Multiplier};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
-use xcm_config::{XcmOriginToTransactDispatchOrigin};
+use xcm_config::XcmOriginToTransactDispatchOrigin;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -142,7 +147,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("origintrail-parachain"),
     impl_name: create_runtime_str!("neuroweb"),
     authoring_version: 1,
-    spec_version: 138,
+    spec_version: 139,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -180,9 +185,6 @@ pub const DAYS: BlockNumber = HOURS * 24;
 pub const OTP: Balance = 1_000_000_000_000;
 pub const MILLIOTP: Balance = 1_000_000_000;
 pub const MICROOTP: Balance = 1_000_000;
-
-/// The existential deposit. Set to 1/10 of the Connected Relay Chain.
-pub const EXISTENTIAL_DEPOSIT: Balance = OTP;
 
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
@@ -323,28 +325,6 @@ impl pallet_authorship::Config for Runtime {
     type EventHandler = (CollatorSelection,);
 }
 
-parameter_types! {
-    pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
-}
-
-impl pallet_balances::Config for Runtime {
-    type MaxLocks = ConstU32<50>;   
-    /// The type for recording an account's balance.
-    type Balance = Balance;
-    /// The ubiquitous event type.
-    type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
-    type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
-    type MaxReserves = ConstU32<50>;
-    type ReserveIdentifier = [u8; 8];
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type RuntimeFreezeReason = RuntimeFreezeReason;
-	type FreezeIdentifier = ();
-	type MaxFreezes = ConstU32<1>;
-}
-
 pub struct ToStakingPot;
 impl OnUnbalanced<Credit<AccountId, Balances>> for ToStakingPot
 {
@@ -359,8 +339,8 @@ impl OnUnbalanced<Credit<AccountId, Balances>> for FutureAuctionsPot
 {
     fn on_nonzero_unbalanced(amount: Credit<AccountId, Balances>) {
         let future_auctions_pot = FutureAuctionsPalletId::get().into_account_truncating();
-        let _ = Balances::resolve(&future_auctions_pot, amount);   
-    }  
+        let _ = Balances::resolve(&future_auctions_pot, amount);
+    }
 }
 
 pub struct DkgIncentivesPot;
@@ -672,7 +652,7 @@ impl pallet_treasury::Config for Runtime {
 	type BalanceConverter = UnityAssetBalanceConversion;
 	type PayoutPeriod = ConstU32<0>;
 	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = BenchmarkHelper;
+	type BenchmarkHelper = ();
 }
 
 pub struct MergeAccountEvm;
@@ -726,7 +706,7 @@ impl pallet_base_fee::Config for Runtime {
 
 type FungibleAccountId<T> = <T as frame_system::Config>::AccountId;
 
-type BalanceFor<T> = 
+type BalanceFor<T> =
     <<T as pallet_evm::Config>::Currency as Inspect<FungibleAccountId<T>>>::Balance;
 
 pub struct OnChargeEVMTransaction<OU>(sp_std::marker::PhantomData<OU>);
@@ -864,35 +844,6 @@ impl AddressToAssetId<AssetId> for Runtime {
         data[4..20].copy_from_slice(&asset_id.to_be_bytes());
         H160::from(data)
     }
-}
-
-parameter_types! {
-	pub const AssetDeposit: Balance = 100 * OTP;
-	pub const ApprovalDeposit: Balance = 0;
-	pub const StringLimit: u32 = 50;
-	pub const MetadataDepositBase: Balance = 10 * OTP;
-	pub const MetadataDepositPerByte: Balance = 1 * OTP;
-}
-
-impl pallet_assets::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Balance = u128;
-	type AssetId = AssetId;
-    type AssetIdParameter = codec::Compact<u128>;
-	type Currency = Balances;
-    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-	type ForceOrigin = EnsureRoot<AccountId>;
-	type AssetDeposit = AssetDeposit;
-	type AssetAccountDeposit = ConstU128<OTP>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ApprovalDeposit = ApprovalDeposit;
-	type StringLimit = StringLimit;
-	type Freezer = ();
-	type Extra = ();
-    type CallbackHandle = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-    type RemoveItemsLimit = ConstU32<656>;
 }
 
 pub struct EvmRevertCodeHandler;
@@ -1103,7 +1054,9 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				c,
 				RuntimeCall::Balances(..) |
 					RuntimeCall::Assets(..) |
-					RuntimeCall::Vesting(pallet_vesting::Call::vested_transfer { .. })
+                    RuntimeCall::ForeignAssets(..) |
+					RuntimeCall::Vesting(pallet_vesting::Call::vested_transfer { .. }) |
+                    RuntimeCall::Wrapper(..)
 			),
 			ProxyType::Governance => matches!(
 				c,
@@ -1140,6 +1093,25 @@ impl pallet_proxy::Config for Runtime {
 }
 
 
+parameter_types! {
+    pub const TracWrapperPalletId: PalletId = PalletId(*b"p/wrpper");
+    pub const LocalTracAssetId: UnifiedAssetId = LOCAL_TRAC_UNIFIED_ASSET_ID;
+    pub const ForeignTracAssetId: UnifiedAssetId = FOREIGN_TRAC_UNIFIED_ASSET_ID;
+
+}
+
+impl pallet_wrapper::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = MultiCurrencyAdapter;
+    type AssetId = UnifiedAssetId;
+    type Balance = Balance;
+    type LocalTracAssetId = LocalTracAssetId; // Local TRAC asset ID
+    type ForeignTracAssetId = ForeignTracAssetId; // Define this constant
+    type PalletId = TracWrapperPalletId; // Define this constant
+    type PauseOrigin = EnsureRootOrThreeFiftsOfCouncil;
+    type WeightInfo = weights::wrapper::NeurowebWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub struct Runtime
@@ -1162,6 +1134,7 @@ construct_runtime!(
         Treasury: pallet_treasury::{Pallet, Call, Storage, Config<T>, Event<T>} = 13,
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 14,
         XcAssetConfig: pallet_xc_asset_config = 15,
+        ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 16,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Storage} = 20,
@@ -1169,6 +1142,7 @@ construct_runtime!(
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config<T>} = 24,
+        Wrapper: pallet_wrapper = 25,
 
         // XCM helpers.
         XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
@@ -1194,7 +1168,6 @@ construct_runtime!(
 );
 
 #[cfg(feature = "runtime-benchmarks")]
-#[macro_use]
 extern crate frame_benchmarking;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -1202,13 +1175,13 @@ mod benches {
     frame_benchmarking::define_benchmarks!(
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
-        [pallet_collective, CouncilCollective]
         [pallet_democracy, Democracy]
         [pallet_identity, Identity]
         [pallet_preimage, Preimage]
         [pallet_proxy, Proxy]
         [pallet_timestamp, Timestamp]
         [pallet_collator_selection, CollatorSelection]
+        [pallet_wrapper, Wrapper]
         [cumulus_pallet_xcmp_queue, XcmpQueue]
         [pallet_utility, Utility]
     );
@@ -1798,7 +1771,7 @@ impl_runtime_apis! {
             use frame_system_benchmarking::Pallet as SystemBench;
             impl frame_system_benchmarking::Config for Runtime {}
 
-            use frame_support::traits::{TrackedStorageKey, WhitelistedStorageKeys};
+            use frame_support::traits::WhitelistedStorageKeys;
 			let whitelist = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();

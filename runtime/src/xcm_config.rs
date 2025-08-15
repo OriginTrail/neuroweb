@@ -1,36 +1,47 @@
 use super::{
-    AccountId, AllPalletsWithSystem, Balances, DealWithFees, Runtime, RuntimeCall, RuntimeEvent, 
-    RuntimeOrigin, ParachainInfo, ParachainSystem, PolkadotXcm, WeightToFee, XcmpQueue,
+    AccountId, AllPalletsWithSystem, Balance, Balances, DealWithFees, ForeignAssets,
+    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+    WeightToFee, XcmpQueue,
 };
+use codec::Encode;
+use core::marker::PhantomData;
 use frame_support::{
     parameter_types,
-    traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
+    traits::{ConstU32, Contains, Everything, Get, Nothing, PalletInfoAccess},
     weights::Weight,
 };
+use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
+use sp_core::blake2_256;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom,
-    FungibleAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents, WithComputedOrigin,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin,
+    FixedWeightBounds, FungibleAdapter, FungiblesAdapter, IsConcrete,
+    NativeAsset, NoChecking, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
 };
-use frame_system::EnsureRoot;
-use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
+use xcm_executor::{
+    traits::{ConvertLocation, WithOriginFilter},
+    XcmExecutor,
+};
 
 parameter_types! {
     pub const RelayLocation: Location = Location::parent();
     pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
+
     pub TokenLocation: Location = Location {
         parents:0,
         interior: [
             PalletInstance(<Balances as PalletInfoAccess>::index() as u8)
         ].into()
     };
+
     pub UniversalLocation: InteriorLocation = [GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into())].into();
+    pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
@@ -43,21 +54,30 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
+    // Ethereum contract sovereign account.
+    // (Used to get convert ethereum contract locations to sovereign account)
+    ExternalConsensusLocationsConverterFor<UniversalLocation, AccountId>,
 );
 
-/// Means for transacting assets on this chain.
-pub type LocalAssetTransactor = FungibleAdapter<
-    // Use this currency:
-    Balances,
-    // Use this currency when it is a fungible asset matching the given location or name:
-    IsConcrete<TokenLocation>,
-    // Do a simple punn to convert an AccountId32 Location into a native chain account ID:
+// Handle native currency (NEURO) via Balances pallet
+pub type NativeAssetTransactor =
+    FungibleAdapter<Balances, IsConcrete<TokenLocation>, LocationToAccountId, AccountId, ()>;
+
+pub type ForeignAssetTransactor = FungiblesAdapter<
+    ForeignAssets,
+    ForeignAssetsConvertedConcreteId,
     LocationToAccountId,
-    // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
-    // We don't track any teleports.
-    (),
+    NoChecking,
+    CheckingAccount,
 >;
+
+/// `AssetId`/`Balance` converter for `ForeignAssets`
+pub type ForeignAssetsConvertedConcreteId =
+    assets_common::ForeignAssetsConvertedConcreteId<(), Balance, xcm::v3::MultiLocation>;
+
+/// Means for transacting assets on this chain.
+pub type AssetTransactors = (NativeAssetTransactor, ForeignAssetTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -122,44 +142,50 @@ pub type Barrier = (
 /// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
 pub struct SafeCallFilter;
 impl Contains<RuntimeCall> for SafeCallFilter {
-	fn contains(call: &RuntimeCall) -> bool {
-		#[cfg(feature = "runtime-benchmarks")]
-		{
-			if matches!(call, RuntimeCall::System(frame_system::Call::remark_with_event { .. })) {
-				return true
-			}
-		}
+    fn contains(call: &RuntimeCall) -> bool {
+        #[cfg(feature = "runtime-benchmarks")]
+        {
+            if matches!(
+                call,
+                RuntimeCall::System(frame_system::Call::remark_with_event { .. })
+            ) {
+                return true;
+            }
+        }
 
-		match call {
-			RuntimeCall::System(
-				frame_system::Call::kill_prefix { .. } | frame_system::Call::set_heap_pages { .. },
-			) |
-			RuntimeCall::Timestamp(..) |
-			RuntimeCall::Balances(..) |
-			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::Treasury(..) |
-            RuntimeCall::Vesting(..) |
-			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
-			RuntimeCall::Identity(
-				pallet_identity::Call::add_registrar { .. } |
-				pallet_identity::Call::set_identity { .. } |
-				pallet_identity::Call::clear_identity { .. } |
-				pallet_identity::Call::request_judgement { .. } |
-				pallet_identity::Call::cancel_request { .. } |
-				pallet_identity::Call::set_fee { .. } |
-				pallet_identity::Call::set_account_id { .. } |
-				pallet_identity::Call::set_fields { .. } |
-				pallet_identity::Call::provide_judgement { .. } |
-				pallet_identity::Call::kill_identity { .. } |
-				pallet_identity::Call::add_sub { .. } |
-				pallet_identity::Call::rename_sub { .. } |
-				pallet_identity::Call::remove_sub { .. } |
-				pallet_identity::Call::quit_sub { .. },
-			) |
-			RuntimeCall::PolkadotXcm(..) => true,
-			_ => false,
-		}
-	}
+        match call {
+            RuntimeCall::System(
+                frame_system::Call::kill_prefix { .. } | frame_system::Call::set_heap_pages { .. },
+            )
+            | RuntimeCall::Timestamp(..)
+            | RuntimeCall::Balances(..)
+            | RuntimeCall::Assets(..)
+            | RuntimeCall::ForeignAssets(..)
+            | RuntimeCall::Session(pallet_session::Call::purge_keys { .. })
+            | RuntimeCall::Treasury(..)
+            | RuntimeCall::Vesting(..)
+            | RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. })
+            | RuntimeCall::Identity(
+                pallet_identity::Call::add_registrar { .. }
+                | pallet_identity::Call::set_identity { .. }
+                | pallet_identity::Call::clear_identity { .. }
+                | pallet_identity::Call::request_judgement { .. }
+                | pallet_identity::Call::cancel_request { .. }
+                | pallet_identity::Call::set_fee { .. }
+                | pallet_identity::Call::set_account_id { .. }
+                | pallet_identity::Call::set_fields { .. }
+                | pallet_identity::Call::provide_judgement { .. }
+                | pallet_identity::Call::kill_identity { .. }
+                | pallet_identity::Call::add_sub { .. }
+                | pallet_identity::Call::rename_sub { .. }
+                | pallet_identity::Call::remove_sub { .. }
+                | pallet_identity::Call::quit_sub { .. },
+            )
+            | RuntimeCall::Wrapper(..)
+            | RuntimeCall::PolkadotXcm(..) => true,
+            _ => false,
+        }
+    }
 }
 
 pub struct XcmConfig;
@@ -167,15 +193,14 @@ impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     // How to withdraw and deposit an asset.
-    type AssetTransactor = LocalAssetTransactor;
+    type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type IsReserve = NativeAsset;
     type IsTeleporter = (); // Teleporting is disabled.
     type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
-    type Trader =
-        UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>;
+    type Trader = UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>;
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
     type AssetClaims = PolkadotXcm;
@@ -210,7 +235,7 @@ pub type XcmRouter = (
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
-	pub ReachableDest: Option<Location> = Some(Parent.into());
+    pub ReachableDest: Option<Location> = Some(Parent.into());
 }
 
 impl pallet_xcm::Config for Runtime {
@@ -239,12 +264,98 @@ impl pallet_xcm::Config for Runtime {
     type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;
     type MaxRemoteLockConsumers = ConstU32<0>;
     type RemoteLockConsumerIdentifier = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type ReachableDest = ReachableDest;
     type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+// The parts below are copied from a later version of polkadot-sdk
+// Copied from
+// https://github.com/paritytech/polkadot-sdk/blob/7ef027551fd1290c42581a85052b643bffc9cbe4/polkadot/xcm/xcm-builder/src/location_conversion.rs
+/// Converts locations from external global consensus systems (e.g., Ethereum, other parachains)
+/// into `AccountId`.
+///
+/// Replaces `GlobalConsensusParachainConvertsFor` and `EthereumLocationsConverterFor` in a
+/// backwards-compatible way, and extends them for also handling child locations (e.g.,
+/// `AccountId(Alice)`).
+pub struct ExternalConsensusLocationsConverterFor<UniversalLocation, AccountId>(
+    PhantomData<(UniversalLocation, AccountId)>,
+);
+
+impl<UniversalLocation: Get<InteriorLocation>, AccountId: From<[u8; 32]> + Clone>
+    ConvertLocation<AccountId>
+    for ExternalConsensusLocationsConverterFor<UniversalLocation, AccountId>
+{
+    fn convert_location(location: &Location) -> Option<AccountId> {
+        let universal_source = UniversalLocation::get();
+        tracing::trace!(
+            target: "xcm::location_conversion",
+            "ExternalConsensusLocationsConverterFor universal_source: {:?}, location: {:?}",
+            universal_source, location,
+        );
+        let (remote_network, remote_location) =
+            ensure_is_remote(universal_source, location.clone()).ok()?;
+
+        // replaces and extends `EthereumLocationsConverterFor` and
+        // `GlobalConsensusParachainConvertsFor`
+        let acc_id: AccountId = if let Ethereum { chain_id } = &remote_network {
+            match remote_location.as_slice() {
+                // equivalent to `EthereumLocationsConverterFor`
+                [] => (b"ethereum-chain", chain_id)
+                    .using_encoded(blake2_256)
+                    .into(),
+                // equivalent to `EthereumLocationsConverterFor`
+                [AccountKey20 { network: _, key }] => (b"ethereum-chain", chain_id, *key)
+                    .using_encoded(blake2_256)
+                    .into(),
+                // extends `EthereumLocationsConverterFor`
+                tail => (b"ethereum-chain", chain_id, tail)
+                    .using_encoded(blake2_256)
+                    .into(),
+            }
+        } else {
+            match remote_location.as_slice() {
+                // equivalent to `GlobalConsensusParachainConvertsFor`
+                [Parachain(para_id)] => (b"glblcnsnss/prchn_", remote_network, para_id)
+                    .using_encoded(blake2_256)
+                    .into(),
+                // converts everything else based on hash of encoded location tail
+                tail => (b"glblcnsnss", remote_network, tail)
+                    .using_encoded(blake2_256)
+                    .into(),
+            }
+        };
+        Some(acc_id)
+    }
+}
+
+// Copied from
+// https://github.com/paritytech/polkadot-sdk/blob/a15d066faac70676101854cfa9b55f00f61e865a/polkadot/xcm/xcm-builder/src/universal_exports.rs#L34
+/// Returns the network ID and consensus location within that network of the remote
+/// location `dest` which is itself specified as a location relative to the local
+/// chain, itself situated at `universal_local` within the consensus universe. If
+/// `dest` is not a location in remote consensus, then an error is returned.
+pub fn ensure_is_remote(
+    universal_local: impl Into<InteriorLocation>,
+    dest: impl Into<Location>,
+) -> Result<(NetworkId, InteriorLocation), Location> {
+    let dest = dest.into();
+    let universal_local = universal_local.into();
+    let local_net = match universal_local.global_consensus() {
+        Ok(x) => x,
+        Err(_) => return Err(dest),
+    };
+    let universal_destination: InteriorLocation = universal_local
+        .into_location()
+        .appended_with(dest.clone())
+        .map_err(|x| x.1)?
+        .try_into()?;
+    let (remote_dest, remote_net) = match universal_destination.split_first() {
+        (d, Some(GlobalConsensus(n))) if n != local_net => (d, n),
+        _ => return Err(dest),
+    };
+    Ok((remote_net, remote_dest))
 }

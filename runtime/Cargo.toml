@@ -1,15 +1,12 @@
 [package]
 name = "neuroweb-runtime"
-version = "1.5.3"
+version = "139.0.0"
 authors = ["TraceLabs"]
 description = "NeuroWeb Runtime - Cumulus FRAME-based Substrate Runtime"
 license = "GPL-3.0-only"
 homepage = "https://neuroweb.ai/"
 repository = "https://github.com/OriginTrail/neuroweb/"
 edition = "2021"
-
-[package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 codec = { workspace = true }
@@ -18,6 +15,8 @@ log = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
 serde = { workspace = true }
+impl-trait-for-tuples = { workspace = true }
+tracing = { workspace = true }
 
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -79,6 +78,7 @@ cumulus-primitives-utility = { workspace = true }
 pallet-collator-selection = { workspace = true }
 parachain-info = { workspace = true }
 parachains-common = { workspace = true }
+assets-common = { workspace = true }
 
 # Frontier
 pallet-base-fee = { workspace = true }
@@ -98,6 +98,10 @@ pallet-democracy = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-preimage = { workspace = true }
 
+# Local
+pallet-wrapper = { workspace = true }
+primitives = { workspace = true }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -107,6 +111,7 @@ std = [
 	"codec/std",
 	"log/std",
 	"scale-info/std",
+	"tracing/std",
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-dmp-queue/std",
 	"cumulus-pallet-parachain-system/std",
@@ -149,10 +154,13 @@ std = [
 	"pallet-treasury/std",
 	"pallet-utility/std",
 	"pallet-vesting/std",
+	"pallet-wrapper/std",
 	"pallet-xc-asset-config/std",
 	"pallet-xcm/std",
+	"primitives/std",
 	"parachain-info/std",
 	"parachains-common/std",
+	"assets-common/std",
 	"polkadot-parachain/std",
 	"polkadot-runtime-common/std",
 	"sp-api/std",
@@ -175,6 +183,7 @@ std = [
 
 runtime-benchmarks = [
 	"hex-literal",
+	"assets-common/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
@@ -202,6 +211,7 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
+	"pallet-wrapper/runtime-benchmarks",
 ]
 
 try-runtime = [
@@ -232,6 +242,7 @@ try-runtime = [
 	"pallet-transaction-payment/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
+	"pallet-wrapper/try-runtime",
 ]
 
 metadata-hash = ["substrate-wasm-builder/metadata-hash"]

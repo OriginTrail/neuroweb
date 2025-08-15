@@ -1,6 +1,6 @@
 use cumulus_primitives_core::ParaId;
 use neuroweb_runtime::{AccountId, AuraId,
-	EVMConfig, Signature, EXISTENTIAL_DEPOSIT};
+	EVMConfig, Signature, assets::EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
