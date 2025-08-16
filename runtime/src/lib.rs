@@ -1174,16 +1174,26 @@ extern crate frame_benchmarking;
 mod benches {
     frame_benchmarking::define_benchmarks!(
         [frame_system, SystemBench::<Runtime>]
+        [cumulus_pallet_parachain_system, ParachainSystem]
+        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [pallet_assets, Assets]
+        [pallet_assets::<Instance2>, Assets]
         [pallet_balances, Balances]
+        [pallet_collator_selection, CollatorSelection]
+        [pallet_collective::<Instance1>, Council]
         [pallet_democracy, Democracy]
         [pallet_identity, Identity]
+        [pallet_message_queue, MessageQueue]
+        [pallet_multisig, Multisig]
         [pallet_preimage, Preimage]
         [pallet_proxy, Proxy]
+        [pallet_scheduler, Scheduler]
         [pallet_timestamp, Timestamp]
-        [pallet_collator_selection, CollatorSelection]
-        [pallet_wrapper, Wrapper]
-        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [pallet_treasury, Treasury]
         [pallet_utility, Utility]
+        [pallet_vesting, Vesting]
+        [pallet_wrapper, Wrapper]
+        [pallet_xc_asset_config, XcAssetConfig]
     );
 }
 
