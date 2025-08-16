@@ -576,7 +576,7 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_collator_selection::NeurowebWeight<Runtime>;
 }
 
 // Define the types required by the Scheduler pallet.

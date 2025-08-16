@@ -24,6 +24,7 @@ pub mod frame_system;
 pub mod pallet_assets_local;
 pub mod pallet_assets_foreign;
 pub mod pallet_balances;
+pub mod pallet_collator_selection;
 pub mod paritydb_weights;
 pub mod rocksdb_weights;
 pub mod evm_accounts_weights;
