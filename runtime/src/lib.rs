@@ -980,7 +980,7 @@ impl pallet_democracy::Config for Runtime {
 	type Preimages = Preimage;
 	type MaxDeposits = ConstU32<100>;
 	type MaxBlacklisted = ConstU32<100>;
-    type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_democracy::NeurowebWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1010,7 +1010,7 @@ impl pallet_identity::Config for Runtime {
     type PendingUsernameExpiration = ConstU32<{ 7 * DAYS }>;
     type MaxSuffixLength = ConstU32<7>;
     type MaxUsernameLength = ConstU32<32>;
-	type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_identity::NeurowebWeight<Runtime>;
 }
 
 parameter_types! {
