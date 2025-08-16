@@ -105,7 +105,7 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type CallbackHandle = ();
-    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_assets_local::NeurowebWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = AssetsBenchmarkHelper;
 }
@@ -129,9 +129,9 @@ impl pallet_assets::Config<pallet_assets::Instance2> for Runtime {
     type Freezer = ();
     type Extra = ();
     type CallbackHandle = ();
-    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_assets_foreign::NeurowebWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = XcmBenchmarkHelper;
+    type BenchmarkHelper = ForeignAssetsBenchmarkHelper;
 }
 
 pub struct MultiCurrencyAdapter;
@@ -471,10 +471,10 @@ impl pallet_assets::BenchmarkHelper<codec::Compact<u128>> for AssetsBenchmarkHel
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub struct XcmBenchmarkHelper;
+pub struct ForeignAssetsBenchmarkHelper;
 
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
+impl pallet_assets::BenchmarkHelper<MultiLocation> for ForeignAssetsBenchmarkHelper {
     fn create_asset_id_parameter(id: u32) -> MultiLocation {
         MultiLocation::new(1, Junction::Parachain(id))
     }
