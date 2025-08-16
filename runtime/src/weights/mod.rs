@@ -27,9 +27,9 @@ pub mod pallet_balances;
 pub mod paritydb_weights;
 pub mod rocksdb_weights;
 pub mod evm_accounts_weights;
+pub mod pallet_wrapper;
 pub mod pallet_xc_asset_config;
 pub mod pallet_xcm;
-pub mod wrapper;
 
 pub use block_weights::constants::BlockExecutionWeight;
 pub use extrinsic_weights::constants::ExtrinsicBaseWeight;

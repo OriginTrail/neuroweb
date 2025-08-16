@@ -43,9 +43,6 @@ use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use core::marker::PhantomData;
 use crate::*;
 
-/// Weights for `pallet_balances`.
-pub struct WeightInfo<T>(PhantomData<T>);
-
 /// Weights for `pallet_balances` using the Neuroweb node and recommended hardware.
 pub struct NeurowebWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_balances::WeightInfo for NeurowebWeight<T> {

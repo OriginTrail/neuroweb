@@ -1109,7 +1109,7 @@ impl pallet_wrapper::Config for Runtime {
     type ForeignTracAssetId = ForeignTracAssetId; // Define this constant
     type PalletId = TracWrapperPalletId; // Define this constant
     type PauseOrigin = EnsureRootOrThreeFiftsOfCouncil;
-    type WeightInfo = weights::wrapper::NeurowebWeight<Runtime>;
+    type WeightInfo = weights::pallet_wrapper::NeurowebWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
