@@ -456,7 +456,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type MaxInboundSuspended = ConstU32<1_000>;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::cumulus_pallet_xcmp_queue::NeurowebWeight<Runtime>;
     type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
 }
 
@@ -1174,10 +1174,9 @@ extern crate frame_benchmarking;
 mod benches {
     frame_benchmarking::define_benchmarks!(
         [frame_system, SystemBench::<Runtime>]
-        [cumulus_pallet_parachain_system, ParachainSystem]
         [cumulus_pallet_xcmp_queue, XcmpQueue]
         [pallet_assets, Assets]
-        [pallet_assets::<Instance2>, Assets]
+        [pallet_assets::<Instance2>, ForeignAssets]
         [pallet_balances, Balances]
         [pallet_collator_selection, CollatorSelection]
         [pallet_collective::<Instance1>, Council]
