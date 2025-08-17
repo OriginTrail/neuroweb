@@ -317,7 +317,7 @@ impl pallet_timestamp::Config for Runtime {
     type MinimumPeriod = ConstU64<0>;
     #[cfg(not(feature = "experimental"))]
     type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
-    type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_timestamp::NeurowebWeight<Runtime>;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -594,7 +594,7 @@ impl pallet_scheduler::Config for Runtime {
     type MaximumWeight = MaximumSchedulerWeight;
     type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_scheduler::NeurowebWeight<Runtime>;
     type Preimages = Preimage;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
 }
@@ -610,7 +610,7 @@ impl pallet_vesting::Config for Runtime {
     type Currency = Balances;
     type BlockNumberToBalance = ConvertInto;
     type MinVestedTransfer = MinVestedTransfer;
-    type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_vesting::NeurowebWeight<Runtime>;
     type UnvestedFundsAllowedWithdrawReasons = UnvestedFundsAllowedWithdrawReasons;
     type BlockNumberProvider = System;
     // `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
@@ -641,7 +641,7 @@ impl pallet_treasury::Config for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type SpendFunds = ();
-    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_treasury::NeurowebWeight<Runtime>;
     type MaxApprovals = MaxApprovals;
     type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 
@@ -864,7 +864,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
+    type WeightInfo = weights::pallet_xc_asset_config::NeurowebWeight<Runtime>;
 }
 
 parameter_types! {
@@ -892,7 +892,7 @@ impl pallet_utility::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type PalletsOrigin = OriginCaller;
-	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_utility::NeurowebWeight<Runtime>;
 }
 
 parameter_types! {
