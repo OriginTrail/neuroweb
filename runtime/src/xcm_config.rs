@@ -1,8 +1,9 @@
 use super::{
-    AccountId, AllPalletsWithSystem, Balance, Balances, DealWithFees, ForeignAssets,
-    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-    WeightToFee, XcmpQueue,
+    AccountId, AllPalletsWithSystem, Balance, Balances, DealWithFees, ForeignAssets, ParachainInfo,
+    ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
+    XcmpQueue, MILLIOTP, UNITS,
 };
+use crate::assets::EXISTENTIAL_DEPOSIT;
 use codec::Encode;
 use core::marker::PhantomData;
 use frame_support::{
@@ -13,15 +14,16 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
+use scale_info::prelude::vec;
 use sp_core::blake2_256;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin,
-    FixedWeightBounds, FungibleAdapter, FungiblesAdapter, IsConcrete,
-    NativeAsset, NoChecking, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
+    AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin, FixedWeightBounds, FungibleAdapter,
+    FungiblesAdapter, IsConcrete, NativeAsset, NoChecking, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    WithComputedOrigin,
 };
 use xcm_executor::{
     traits::{ConvertLocation, WithOriginFilter},
@@ -358,4 +360,111 @@ pub fn ensure_is_remote(
         _ => return Err(dest),
     };
     Ok((remote_net, remote_dest))
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+    pub const TrustedTeleporter: Option<(Location, Asset)> = Some((
+        RelayLocation::get(),
+        Asset { fun: Fungible(EXISTENTIAL_DEPOSIT), id: AssetId(RelayLocation::get()) },
+    ));
+    pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
+    pub TrustedReserve: Option<(Location, Asset)> = Some((
+        RelayLocation::get(),
+        Asset { fun: Fungible(1_000), id: AssetId(RelayLocation::get()) },
+    ));
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_xcm_benchmarks::Config for Runtime {
+    type XcmConfig = XcmConfig;
+    type AccountIdConverter = LocationToAccountId;
+    type DeliveryHelper = ();
+    fn valid_destination() -> Result<Location, frame_benchmarking::BenchmarkError> {
+        Ok(RelayLocation::get())
+    }
+    fn worst_case_holding(_depositable_count: u32) -> xcm::latest::Assets {
+        let asset = Asset {
+            id: AssetId(TokenLocation::get()),
+            fun: Fungible(1_000_000 * MILLIOTP),
+        };
+        vec![asset].into()
+    }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+    type TransactAsset = Balances;
+    type CheckedAccount = ();
+    type TrustedTeleporter = ();
+    type TrustedReserve = ();
+
+    fn get_asset() -> Asset {
+        Asset {
+            id: AssetId(TokenLocation::get()),
+            fun: Fungible(EXISTENTIAL_DEPOSIT),
+        }
+    }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_xcm_benchmarks::generic::Config for Runtime {
+    type TransactAsset = Balances;
+    type RuntimeCall = RuntimeCall;
+
+    fn worst_case_response() -> (u64, Response) {
+        (0u64, Response::Version(Default::default()))
+    }
+
+    fn worst_case_asset_exchange() -> Result<(Assets, Assets), frame_benchmarking::BenchmarkError> {
+        Err(frame_benchmarking::BenchmarkError::Skip)
+    }
+
+    fn universal_alias() -> Result<(Location, Junction), frame_benchmarking::BenchmarkError> {
+        Err(frame_benchmarking::BenchmarkError::Skip)
+    }
+
+    fn transact_origin_and_runtime_call(
+    ) -> Result<(Location, RuntimeCall), frame_benchmarking::BenchmarkError> {
+        Ok((
+            RelayLocation::get(),
+            frame_system::Call::remark_with_event { remark: vec![] }.into(),
+        ))
+    }
+
+    fn subscribe_origin() -> Result<Location, frame_benchmarking::BenchmarkError> {
+        Ok(RelayLocation::get())
+    }
+
+    fn claimable_asset() -> Result<(Location, Location, Assets), frame_benchmarking::BenchmarkError>
+    {
+        let origin = RelayLocation::get();
+        let assets: Assets = (AssetId(RelayLocation::get()), 1_000 * UNITS).into();
+        let ticket = Location {
+            parents: 0,
+            interior: Here,
+        };
+        Ok((origin, ticket, assets))
+    }
+
+    fn fee_asset() -> Result<Asset, frame_benchmarking::BenchmarkError> {
+        Ok(Asset {
+            id: AssetId(TokenLocation::get()),
+            fun: Fungible(EXISTENTIAL_DEPOSIT),
+        })
+    }
+
+    fn unlockable_asset() -> Result<(Location, Location, Asset), frame_benchmarking::BenchmarkError>
+    {
+        Err(frame_benchmarking::BenchmarkError::Skip)
+    }
+
+    fn export_message_origin_and_destination(
+    ) -> Result<(Location, NetworkId, Junctions), frame_benchmarking::BenchmarkError> {
+        Err(frame_benchmarking::BenchmarkError::Skip)
+    }
+
+    fn alias_origin() -> Result<(Location, Location), frame_benchmarking::BenchmarkError> {
+        Err(frame_benchmarking::BenchmarkError::Skip)
+    }
 }

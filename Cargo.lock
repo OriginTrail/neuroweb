@@ -6299,6 +6299,7 @@ dependencies = [
  "pallet-wrapper",
  "pallet-xc-asset-config",
  "pallet-xcm",
+ "pallet-xcm-benchmarks",
  "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain-primitives",

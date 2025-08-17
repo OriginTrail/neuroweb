@@ -181,6 +181,8 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
+pub const UNITS: Balance = 1_000_000_000_000;
+
 // OTP = the base number of indivisible units for balances
 pub const OTP: Balance = 1_000_000_000_000;
 pub const MILLIOTP: Balance = 1_000_000_000;
@@ -1193,9 +1195,10 @@ mod benches {
         [pallet_vesting, Vesting]
         [pallet_wrapper, Wrapper]
         [pallet_xc_asset_config, XcAssetConfig]
+        [pallet_xcm_balances, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        [pallet_xcm_generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
     );
 }
-
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	type SignedInfo = H160;
