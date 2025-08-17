@@ -488,7 +488,7 @@ parameter_types! {
 
 impl pallet_message_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_message_queue::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_message_queue::NeurowebWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
         cumulus_primitives_core::AggregateMessageOrigin,
@@ -520,7 +520,7 @@ impl pallet_multisig::Config for Runtime {
     type DepositBase = DepositBase;
     type DepositFactor = DepositFactor;
     type MaxSignatories = ConstU32<100>;
-    type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_multisig::NeurowebWeight<Runtime>;
 }
 
 parameter_types! {
@@ -879,7 +879,7 @@ impl pallet_preimage::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type ManagerOrigin = EnsureRoot<AccountId>;
-    type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_preimage::NeurowebWeight<Runtime>;
     type Consideration = HoldConsideration<
 		AccountId,
 		Balances,
@@ -1085,7 +1085,7 @@ impl pallet_proxy::Config for Runtime {
 	type ProxyDepositBase = ProxyDepositBase;
 	type ProxyDepositFactor = ProxyDepositFactor;
 	type MaxProxies = ConstU32<32>;
-	type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_proxy::NeurowebWeight<Runtime>;
 	type MaxPending = ConstU32<32>;
 	type CallHasher = BlakeTwo256;
 	type AnnouncementDepositBase = AnnouncementDepositBase;
