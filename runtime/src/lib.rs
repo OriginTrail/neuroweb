@@ -436,8 +436,9 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
     type ConsensusHook = ConsensusHook;
-    type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::cumulus_pallet_parachain_system::NeurowebWeight<Runtime>;
 }
+
 type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
     Runtime,
     RELAY_CHAIN_SLOT_DURATION_MILLIS,
