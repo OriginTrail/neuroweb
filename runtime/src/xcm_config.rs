@@ -371,7 +371,7 @@ parameter_types! {
     pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
     pub TrustedReserve: Option<(Location, Asset)> = Some((
         RelayLocation::get(),
-        Asset { fun: Fungible(1_000), id: AssetId(RelayLocation::get()) },
+        Asset { fun: Fungible(UNITS), id: AssetId(RelayLocation::get()) },
     ));
 }
 
@@ -386,7 +386,7 @@ impl pallet_xcm_benchmarks::Config for Runtime {
     fn worst_case_holding(_depositable_count: u32) -> xcm::latest::Assets {
         let asset = Asset {
             id: AssetId(TokenLocation::get()),
-            fun: Fungible(1_000_000 * MILLIOTP),
+            fun: Fungible(1_000_000 * UNITS),
         };
         vec![asset].into()
     }
@@ -402,7 +402,7 @@ impl pallet_xcm_benchmarks::fungible::Config for Runtime {
     fn get_asset() -> Asset {
         Asset {
             id: AssetId(TokenLocation::get()),
-            fun: Fungible(EXISTENTIAL_DEPOSIT),
+            fun: Fungible(10 * EXISTENTIAL_DEPOSIT),
         }
     }
 }
