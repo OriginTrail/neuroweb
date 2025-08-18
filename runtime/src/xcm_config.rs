@@ -395,9 +395,9 @@ impl pallet_xcm_benchmarks::Config for Runtime {
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_xcm_benchmarks::fungible::Config for Runtime {
     type TransactAsset = Balances;
-    type CheckedAccount = ();
-    type TrustedTeleporter = ();
-    type TrustedReserve = ();
+    type CheckedAccount = CheckedAccount;
+    type TrustedTeleporter = TrustedTeleporter;
+    type TrustedReserve = TrustedReserve;
 
     fn get_asset() -> Asset {
         Asset {
