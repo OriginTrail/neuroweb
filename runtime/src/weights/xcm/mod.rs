@@ -20,7 +20,6 @@ use crate::{xcm_config::MaxAssetsIntoHolding, Runtime};
 use frame_support::weights::Weight;
 use pallet_xcm_benchmarks_fungible::WeightInfo as XcmFungibleWeight;
 use pallet_xcm_benchmarks_generic::WeightInfo as XcmGeneric;
-use sp_std::vec;
 use sp_std::vec::Vec;
 use xcm::latest::InteriorLocation;
 use xcm::v4::{QueryId, Response, WeightLimit, WildFungibility, Xcm, XcmWeightInfo};
@@ -136,7 +135,7 @@ impl<Call> XcmWeightInfo<Call> for NeurowebXcmWeight<Call> {
         assets.weigh_assets(XcmFungibleWeight::<Runtime>::deposit_reserve_asset())
     }
 
-    fn exchange_asset(_give: &AssetFilter, _receive: &Assets, is_sell: &bool) -> Weight {
+    fn exchange_asset(_give: &AssetFilter, _receive: &Assets, _is_sell: &bool) -> Weight {
         Weight::MAX
     }
 

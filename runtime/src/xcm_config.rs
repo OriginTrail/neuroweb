@@ -1,29 +1,26 @@
 use super::{
     AccountId, AllPalletsWithSystem, Balance, Balances, DealWithFees, ForeignAssets, ParachainInfo,
     ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
-    XcmpQueue, MILLIOTP, UNITS,
+    XcmpQueue,
 };
-use crate::assets::EXISTENTIAL_DEPOSIT;
 use codec::Encode;
 use core::marker::PhantomData;
 use frame_support::{
     parameter_types,
     traits::{ConstU32, Contains, Everything, Get, Nothing, PalletInfoAccess},
-    weights::Weight,
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
-use scale_info::prelude::vec;
 use sp_core::blake2_256;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin, FixedWeightBounds, FungibleAdapter,
-    FungiblesAdapter, IsConcrete, NativeAsset, NoChecking, ParentIsPreset, RelayChainAsNative,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
-    WeightInfoBounds, WithComputedOrigin,
+    AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin, FungibleAdapter, FungiblesAdapter, IsConcrete,
+    NativeAsset, NoChecking, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+    WithComputedOrigin,
 };
 use xcm_executor::{
     traits::{ConvertLocation, WithOriginFilter},
@@ -366,6 +363,12 @@ pub fn ensure_is_remote(
     Ok((remote_net, remote_dest))
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+use super::UNITS;
+#[cfg(feature = "runtime-benchmarks")]
+use crate::assets::EXISTENTIAL_DEPOSIT;
+#[cfg(feature = "runtime-benchmarks")]
+use scale_info::prelude::vec;
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
     pub const TrustedTeleporter: Option<(Location, Asset)> = Some((
