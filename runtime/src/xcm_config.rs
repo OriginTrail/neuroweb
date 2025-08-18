@@ -23,7 +23,7 @@ use xcm_builder::{
     FungiblesAdapter, IsConcrete, NativeAsset, NoChecking, ParentIsPreset, RelayChainAsNative,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
     SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
-    WithComputedOrigin,
+    WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
     traits::{ConvertLocation, WithOriginFilter},
@@ -103,10 +103,6 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-    // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    // The default POV size used by Polkadot/Kusama was 64 kB but that has been updated here: https://github.com/paritytech/polkadot/pull/7081
-    // We should properly benchmark instructions and get rid of fixed weights.
-    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 1024);
     pub const MaxInstructions: u32 = 100;
     pub const MaxAssetsIntoHolding: u32 = 64;
 }
@@ -201,7 +197,11 @@ impl xcm_executor::Config for XcmConfig {
     type IsTeleporter = (); // Teleporting is disabled.
     type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;
-    type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        crate::weights::xcm::NeurowebXcmWeight<RuntimeCall>,
+        RuntimeCall,
+        MaxInstructions,
+    >;
     type Trader = UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>;
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
@@ -251,7 +251,11 @@ impl pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Everything;
-    type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        crate::weights::xcm::NeurowebXcmWeight<RuntimeCall>,
+        RuntimeCall,
+        MaxInstructions,
+    >;
     type UniversalLocation = UniversalLocation;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
