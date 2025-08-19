@@ -181,6 +181,8 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
+pub const UNITS: Balance = 1_000_000_000_000;
+
 // OTP = the base number of indivisible units for balances
 pub const OTP: Balance = 1_000_000_000_000;
 pub const MILLIOTP: Balance = 1_000_000_000;
@@ -292,7 +294,7 @@ impl frame_system::Config for Runtime {
     /// The basic call filter to use in dispatchable.
     type BaseCallFilter = Everything;
     /// Weight information for the extrinsics of this pallet.
-    type SystemWeightInfo = ();
+    type SystemWeightInfo = weights::frame_system::NeurowebWeight<Runtime>;
     /// Block & extrinsics weights: base values and limits.
     type BlockWeights = RuntimeBlockWeights;
     /// The maximum length of a block (in bytes).
@@ -317,7 +319,7 @@ impl pallet_timestamp::Config for Runtime {
     type MinimumPeriod = ConstU64<0>;
     #[cfg(not(feature = "experimental"))]
     type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
-    type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_timestamp::NeurowebWeight<Runtime>;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -434,8 +436,9 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
     type ConsensusHook = ConsensusHook;
-    type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::cumulus_pallet_parachain_system::NeurowebWeight<Runtime>;
 }
+
 type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
     Runtime,
     RELAY_CHAIN_SLOT_DURATION_MILLIS,
@@ -456,7 +459,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type MaxInboundSuspended = ConstU32<1_000>;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::cumulus_pallet_xcmp_queue::NeurowebWeight<Runtime>;
     type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
 }
 
@@ -488,7 +491,7 @@ parameter_types! {
 
 impl pallet_message_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_message_queue::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_message_queue::NeurowebWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
         cumulus_primitives_core::AggregateMessageOrigin,
@@ -520,7 +523,7 @@ impl pallet_multisig::Config for Runtime {
     type DepositBase = DepositBase;
     type DepositFactor = DepositFactor;
     type MaxSignatories = ConstU32<100>;
-    type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_multisig::NeurowebWeight<Runtime>;
 }
 
 parameter_types! {
@@ -576,7 +579,7 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_collator_selection::NeurowebWeight<Runtime>;
 }
 
 // Define the types required by the Scheduler pallet.
@@ -594,7 +597,7 @@ impl pallet_scheduler::Config for Runtime {
     type MaximumWeight = MaximumSchedulerWeight;
     type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_scheduler::NeurowebWeight<Runtime>;
     type Preimages = Preimage;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
 }
@@ -610,7 +613,7 @@ impl pallet_vesting::Config for Runtime {
     type Currency = Balances;
     type BlockNumberToBalance = ConvertInto;
     type MinVestedTransfer = MinVestedTransfer;
-    type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_vesting::NeurowebWeight<Runtime>;
     type UnvestedFundsAllowedWithdrawReasons = UnvestedFundsAllowedWithdrawReasons;
     type BlockNumberProvider = System;
     // `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
@@ -641,7 +644,7 @@ impl pallet_treasury::Config for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type SpendFunds = ();
-    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_treasury::NeurowebWeight<Runtime>;
     type MaxApprovals = MaxApprovals;
     type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 
@@ -864,7 +867,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
+    type WeightInfo = weights::pallet_xc_asset_config::NeurowebWeight<Runtime>;
 }
 
 parameter_types! {
@@ -879,7 +882,7 @@ impl pallet_preimage::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type ManagerOrigin = EnsureRoot<AccountId>;
-    type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_preimage::NeurowebWeight<Runtime>;
     type Consideration = HoldConsideration<
 		AccountId,
 		Balances,
@@ -892,7 +895,7 @@ impl pallet_utility::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type PalletsOrigin = OriginCaller;
-	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_utility::NeurowebWeight<Runtime>;
 }
 
 parameter_types! {
@@ -912,7 +915,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
     type SetMembersOrigin = EnsureRoot<Self::AccountId>;
-    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_collective_council::NeurowebWeight<Runtime>;
     type MaxProposalWeight = MaxCollectivesProposalWeight;
 }
 
@@ -980,7 +983,7 @@ impl pallet_democracy::Config for Runtime {
 	type Preimages = Preimage;
 	type MaxDeposits = ConstU32<100>;
 	type MaxBlacklisted = ConstU32<100>;
-    type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_democracy::NeurowebWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1010,7 +1013,7 @@ impl pallet_identity::Config for Runtime {
     type PendingUsernameExpiration = ConstU32<{ 7 * DAYS }>;
     type MaxSuffixLength = ConstU32<7>;
     type MaxUsernameLength = ConstU32<32>;
-	type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_identity::NeurowebWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1085,7 +1088,7 @@ impl pallet_proxy::Config for Runtime {
 	type ProxyDepositBase = ProxyDepositBase;
 	type ProxyDepositFactor = ProxyDepositFactor;
 	type MaxProxies = ConstU32<32>;
-	type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_proxy::NeurowebWeight<Runtime>;
 	type MaxPending = ConstU32<32>;
 	type CallHasher = BlakeTwo256;
 	type AnnouncementDepositBase = AnnouncementDepositBase;
@@ -1109,7 +1112,7 @@ impl pallet_wrapper::Config for Runtime {
     type ForeignTracAssetId = ForeignTracAssetId; // Define this constant
     type PalletId = TracWrapperPalletId; // Define this constant
     type PauseOrigin = EnsureRootOrThreeFiftsOfCouncil;
-    type WeightInfo = weights::wrapper::NeurowebWeight<Runtime>;
+    type WeightInfo = weights::pallet_wrapper::NeurowebWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -1174,19 +1177,30 @@ extern crate frame_benchmarking;
 mod benches {
     frame_benchmarking::define_benchmarks!(
         [frame_system, SystemBench::<Runtime>]
+        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [cumulus_pallet_parachain_system, ParachainSystem]
+        [pallet_assets_local, Assets]
+        [pallet_assets_foreign, ForeignAssets]
         [pallet_balances, Balances]
+        [pallet_collator_selection, CollatorSelection]
+        [pallet_collective_council, Council]
         [pallet_democracy, Democracy]
         [pallet_identity, Identity]
+        [pallet_message_queue, MessageQueue]
+        [pallet_multisig, Multisig]
         [pallet_preimage, Preimage]
         [pallet_proxy, Proxy]
+        [pallet_scheduler, Scheduler]
         [pallet_timestamp, Timestamp]
-        [pallet_collator_selection, CollatorSelection]
-        [pallet_wrapper, Wrapper]
-        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [pallet_treasury, Treasury]
         [pallet_utility, Utility]
+        [pallet_vesting, Vesting]
+        [pallet_wrapper, Wrapper]
+        [pallet_xc_asset_config, XcAssetConfig]
+        [pallet_xcm_fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        [pallet_xcm_generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
     );
 }
-
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	type SignedInfo = H160;
