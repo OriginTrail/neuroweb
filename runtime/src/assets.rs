@@ -76,9 +76,9 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 100 * OTP;
-    pub const AssetAccountDeposit: Balance = 100 * OTP;
-    pub const ApprovalDeposit: Balance = 100 * OTP;
+    pub const AssetDeposit: Balance = OTP;
+    pub const AssetAccountDeposit: Balance = OTP;
+    pub const ApprovalDeposit: Balance = OTP;
     pub const StringLimit: u32 = 50;
     pub const MetadataDepositBase: Balance = 10 * OTP;
     pub const MetadataDepositPerByte: Balance = 1 * OTP;
