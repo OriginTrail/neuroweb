@@ -5,6 +5,7 @@ use super::{
 };
 use codec::Encode;
 use core::marker::PhantomData;
+use frame_support::traits::ContainsPair;
 use frame_support::{
     parameter_types,
     traits::{ConstU32, Contains, Everything, Get, Nothing, PalletInfoAccess},
@@ -13,15 +14,18 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use sp_core::blake2_256;
-use xcm::latest::prelude::*;
+
+use xcm::v4::prelude::*;
+use xcm::v4::InteriorLocation;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin, FungibleAdapter, FungiblesAdapter, IsConcrete,
-    NativeAsset, NoChecking, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
-    WithComputedOrigin,
+    AllowTopLevelPaidExecutionFrom, Case, EnsureXcmOrigin, FungibleAdapter, FungiblesAdapter,
+    IsConcrete, NativeAsset, NoChecking, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    WeightInfoBounds, WithComputedOrigin,
 };
+
 use xcm_executor::{
     traits::{ConvertLocation, WithOriginFilter},
     XcmExecutor,
@@ -183,6 +187,44 @@ impl Contains<RuntimeCall> for SafeCallFilter {
     }
 }
 
+/// Matches foreign assets from a given origin.
+/// Foreign assets are assets bridged from other consensus systems. i.e parents > 1.
+pub struct IsForeignConcreteAssetFrom<Origin>(PhantomData<Origin>);
+impl<Origin> ContainsPair<Asset, Location> for IsForeignConcreteAssetFrom<Origin>
+where
+    Origin: Get<Location>,
+{
+    fn contains(asset: &Asset, origin: &Location) -> bool {
+        let loc = Origin::get();
+        &loc == origin
+            && matches!(
+                asset,
+                Asset {
+                    id: AssetId(Location { parents: 2, .. }),
+                    fun: Fungible(_)
+                },
+            )
+    }
+}
+
+parameter_types! {
+    /// Location of Asset Hub
+    pub AssetHubLocation: Location = (Parent, Parachain(1000)).into();
+    pub RelayChainNativeAssetFromAssetHub: (AssetFilter, Location) = (
+        (Asset { id: AssetId(RelayLocation::get()), fun: Fungible(1)}).into(),
+        AssetHubLocation::get()
+    );
+}
+
+type Reserves = (
+    // Relaychain (DOT) from Asset Hub
+    Case<RelayChainNativeAssetFromAssetHub>,
+    // Assets bridged from different consensus systems held in reserve on Asset Hub.
+    IsForeignConcreteAssetFrom<AssetHubLocation>,
+    // Assets which the reserve is the same as the origin.
+    NativeAsset,
+);
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
@@ -190,7 +232,7 @@ impl xcm_executor::Config for XcmConfig {
     // How to withdraw and deposit an asset.
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = NativeAsset;
+    type IsReserve = Reserves;
     type IsTeleporter = (); // Teleporting is disabled.
     type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;
@@ -369,6 +411,7 @@ use super::UNITS;
 use crate::assets::EXISTENTIAL_DEPOSIT;
 #[cfg(feature = "runtime-benchmarks")]
 use scale_info::prelude::vec;
+
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
     pub const TrustedTeleporter: Option<(Location, Asset)> = Some((
