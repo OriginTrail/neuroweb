@@ -95,10 +95,12 @@ fn register_asset_location_and_units_per_sec_is_ok() {
             Box::new(asset_location.clone().into_versioned()),
             units
         ));
-        System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(Event::UnitsPerSecondChanged {
-            asset_location: asset_location.clone().into_versioned(),
-            units_per_second: units,
-        }));
+        System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(
+            Event::UnitsPerSecondChanged {
+                asset_location: asset_location.clone().into_versioned(),
+                units_per_second: units,
+            },
+        ));
         assert_eq!(
             AssetLocationUnitsPerSecond::<Test>::get(&asset_location.clone().into_versioned())
                 .unwrap(),
@@ -165,11 +167,13 @@ fn change_asset_location_is_ok() {
             Box::new(new_asset_location.clone().into_versioned()),
             asset_id
         ));
-        System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(Event::AssetLocationChanged {
-            previous_asset_location: asset_location.clone().into_versioned(),
-            asset_id: asset_id,
-            new_asset_location: new_asset_location.clone().into_versioned(),
-        }));
+        System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(
+            Event::AssetLocationChanged {
+                previous_asset_location: asset_location.clone().into_versioned(),
+                asset_id: asset_id,
+                new_asset_location: new_asset_location.clone().into_versioned(),
+            },
+        ));
 
         // Assert storage state
         assert_eq!(
@@ -218,9 +222,11 @@ fn remove_payment_asset_is_ok() {
             RuntimeOrigin::root(),
             Box::new(asset_location.clone().into_versioned()),
         ));
-        System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(Event::SupportedAssetRemoved {
-            asset_location: asset_location.clone().into_versioned(),
-        }));
+        System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(
+            Event::SupportedAssetRemoved {
+                asset_location: asset_location.clone().into_versioned(),
+            },
+        ));
         assert!(!AssetLocationUnitsPerSecond::<Test>::contains_key(
             asset_location.clone().into_versioned()
         ));

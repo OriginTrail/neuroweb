@@ -19,16 +19,16 @@ pub enum Subcommand {
     ImportBlocks(sc_cli::ImportBlocksCmd),
 
     /// Revert the chain to a previous state.
-	Revert(sc_cli::RevertCmd),
+    Revert(sc_cli::RevertCmd),
 
     /// Remove the whole chain.
     PurgeChain(cumulus_client_cli::PurgeChainCmd),
 
     /// Export the genesis state of the parachain.
-	ExportGenesisState(cumulus_client_cli::ExportGenesisHeadCommand),
+    ExportGenesisState(cumulus_client_cli::ExportGenesisHeadCommand),
 
-	/// Export the genesis wasm of the parachain.
-	ExportGenesisWasm(cumulus_client_cli::ExportGenesisWasmCommand),
+    /// Export the genesis wasm of the parachain.
+    ExportGenesisWasm(cumulus_client_cli::ExportGenesisWasmCommand),
 
     /// Sub-commands concerned with benchmarking.
     /// The pallet benchmarking moved to the `pallet` sub-command.
@@ -36,8 +36,8 @@ pub enum Subcommand {
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
     /// Try some testing command against a specified runtime state.
-	#[cfg(feature = "try-runtime")]
-	TryRuntime(try_runtime_cli::TryRuntimeCmd),
+    #[cfg(feature = "try-runtime")]
+    TryRuntime(try_runtime_cli::TryRuntimeCmd),
 }
 
 #[derive(Debug, clap::Parser)]
@@ -53,15 +53,15 @@ pub struct Cli {
     #[command(flatten)]
     pub run: cumulus_client_cli::RunCmd,
 
-    	/// Disable automatic hardware benchmarks.
-	///
-	/// By default these benchmarks are automatically ran at startup and measure
-	/// the CPU speed, the memory bandwidth and the disk speed.
-	///
-	/// The results are then printed out in the logs, and also sent as part of
-	/// telemetry, if telemetry is enabled.
-	#[arg(long)]
-	pub no_hardware_benchmarks: bool,
+    /// Disable automatic hardware benchmarks.
+    ///
+    /// By default these benchmarks are automatically ran at startup and measure
+    /// the CPU speed, the memory bandwidth and the disk speed.
+    ///
+    /// The results are then printed out in the logs, and also sent as part of
+    /// telemetry, if telemetry is enabled.
+    #[arg(long)]
+    pub no_hardware_benchmarks: bool,
 
     /// Relay chain arguments
     #[arg(raw = true)]

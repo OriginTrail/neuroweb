@@ -427,7 +427,7 @@ pub fn foreign_assets_pallet_account() -> AccountId {
 // Root which returns the local_assets_pallet_account
 pub struct RootWithLocalAssetsPalletAccount;
 impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, u128>
-for RootWithLocalAssetsPalletAccount
+    for RootWithLocalAssetsPalletAccount
 {
     type Success = AccountId;
     fn try_origin(o: RuntimeOrigin, _asset_id: &u128) -> Result<AccountId, RuntimeOrigin> {
@@ -444,7 +444,7 @@ for RootWithLocalAssetsPalletAccount
 // Root which returns the foreign_assets_pallet_account
 pub struct RootWithForeignAssetsPalletsAccount;
 impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, MultiLocation>
-for RootWithForeignAssetsPalletsAccount
+    for RootWithForeignAssetsPalletsAccount
 {
     type Success = AccountId;
     fn try_origin(o: RuntimeOrigin, _asset_id: &MultiLocation) -> Result<AccountId, RuntimeOrigin> {
@@ -452,7 +452,7 @@ for RootWithForeignAssetsPalletsAccount
             RuntimeOrigin,
             MultiLocation,
         >>::try_origin(o, _asset_id)
-            .map(|_| foreign_assets_pallet_account())
+        .map(|_| foreign_assets_pallet_account())
     }
 
     #[cfg(feature = "runtime-benchmarks")]
@@ -485,25 +485,43 @@ impl pallet_assets::BenchmarkHelper<MultiLocation> for ForeignAssetsBenchmarkHel
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sp_runtime::traits::AccountIdConversion;
     use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
+    use sp_runtime::traits::AccountIdConversion;
 
     #[test]
     fn test_local_assets_pallet_account() {
         let local_assets_pallet_account_raw = local_assets_pallet_account();
-        let local_assets_pallet_account_formatted = local_assets_pallet_account_raw.to_ss58check_with_version(Ss58AddressFormat::custom(101));
-        println!("{:?}", sp_core::sr25519::Public::from_raw(<[u8; 32]>::from(foreign_assets_pallet_account())).to_ss58check_with_version(Ss58AddressFormat::custom(101)));
+        let local_assets_pallet_account_formatted = local_assets_pallet_account_raw
+            .to_ss58check_with_version(Ss58AddressFormat::custom(101));
+        println!(
+            "{:?}",
+            sp_core::sr25519::Public::from_raw(<[u8; 32]>::from(foreign_assets_pallet_account()))
+                .to_ss58check_with_version(Ss58AddressFormat::custom(101))
+        );
 
-        assert_eq!(local_assets_pallet_account_raw, ForeignAssetsPalletId::get().into_account_truncating());
-        assert_eq!(local_assets_pallet_account_formatted, "gJpDhAL2bdaUCfRYcXhCkNuH5HAsChPVwQVBzzuHVvw1otqvq");
+        assert_eq!(
+            local_assets_pallet_account_raw,
+            ForeignAssetsPalletId::get().into_account_truncating()
+        );
+        assert_eq!(
+            local_assets_pallet_account_formatted,
+            "gJpDhAL2bdaUCfRYcXhCkNuH5HAsChPVwQVBzzuHVvw1otqvq"
+        );
     }
 
     #[test]
     fn test_foreign_assets_pallet_account() {
         let foreign_assets_pallet_account_raw = foreign_assets_pallet_account();
-        let foreign_assets_pallet_account_formatted = foreign_assets_pallet_account_raw.to_ss58check_with_version(Ss58AddressFormat::custom(101));
+        let foreign_assets_pallet_account_formatted = foreign_assets_pallet_account_raw
+            .to_ss58check_with_version(Ss58AddressFormat::custom(101));
 
-        assert_eq!(foreign_assets_pallet_account_raw, ForeignAssetsPalletId::get().into_account_truncating());
-        assert_eq!(foreign_assets_pallet_account_formatted, "gJpDhAL2bdaQbzP81kSMAaCh1xS7jGkw6ZzFKb4UcHYVCXfdz");
+        assert_eq!(
+            foreign_assets_pallet_account_raw,
+            ForeignAssetsPalletId::get().into_account_truncating()
+        );
+        assert_eq!(
+            foreign_assets_pallet_account_formatted,
+            "gJpDhAL2bdaQbzP81kSMAaCh1xS7jGkw6ZzFKb4UcHYVCXfdz"
+        );
     }
 }
