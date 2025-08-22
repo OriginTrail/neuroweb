@@ -179,7 +179,7 @@ fn testnet_genesis(
         },
         collator_selection: neuroweb_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
+            candidacy_bond: EXISTENTIAL_DEPOSIT * 160,
             ..Default::default()
         },
         session: neuroweb_runtime::SessionConfig {
