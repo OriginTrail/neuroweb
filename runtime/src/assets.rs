@@ -31,7 +31,7 @@ use primitives::UnifiedAssetId;
 use xcm::v3::{Junction, Junctions, MultiLocation, NetworkId};
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
-pub const EXISTENTIAL_DEPOSIT: Balance = OTP;
+pub const EXISTENTIAL_DEPOSIT: Balance = OTP / 10;
 
 pub const LOCAL_TRAC_ASSET_ID: u128 = 1;
 pub const LOCAL_TRAC_UNIFIED_ASSET_ID: UnifiedAssetId = UnifiedAssetId::Local(LOCAL_TRAC_ASSET_ID);
@@ -77,8 +77,8 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
     pub const AssetDeposit: Balance = OTP;
-    pub const AssetAccountDeposit: Balance = OTP;
-    pub const ApprovalDeposit: Balance = OTP;
+    pub const AssetAccountDeposit: Balance = OTP / 10;
+    pub const ApprovalDeposit: Balance = OTP / 10;
     pub const StringLimit: u32 = 50;
     pub const MetadataDepositBase: Balance = 10 * OTP;
     pub const MetadataDepositPerByte: Balance = 1 * OTP;
