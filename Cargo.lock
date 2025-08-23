@@ -6286,6 +6286,7 @@ dependencies = [
  "pallet-identity",
  "pallet-message-queue",
  "pallet-multisig",
+ "pallet-params",
  "pallet-preimage",
  "pallet-proxy",
  "pallet-scheduler",
@@ -7563,6 +7564,21 @@ dependencies = [
  "scale-info",
  "serde",
  "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-params"
+version = "1.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]

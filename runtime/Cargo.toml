@@ -100,6 +100,7 @@ pallet-identity = { workspace = true }
 pallet-preimage = { workspace = true }
 
 # Local
+pallet-params = { workspace = true }
 pallet-wrapper = { workspace = true }
 primitives = { workspace = true }
 
@@ -143,6 +144,7 @@ std = [
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-ethereum/std",
 	"pallet-identity/std",
+	"pallet-params/std",
 	"pallet-preimage/std",
 	"pallet-proxy/std",
 	"pallet-message-queue/std",
@@ -234,6 +236,7 @@ try-runtime = [
 	"pallet-identity/runtime-benchmarks",
 	"pallet-message-queue/try-runtime",
 	"pallet-multisig/try-runtime",
+	"pallet-params/try-runtime",
 	"pallet-preimage/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-scheduler/try-runtime",

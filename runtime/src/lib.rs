@@ -8,6 +8,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod assets;
 use assets::*;
+pub use assets::{LocalAssetsPalletId, ForeignAssetsPalletId, local_assets_pallet_account, foreign_assets_pallet_account};
 use primitives::UnifiedAssetId;
 
 mod weights;
@@ -1099,8 +1100,17 @@ impl pallet_proxy::Config for Runtime {
 parameter_types! {
     pub const TracWrapperPalletId: PalletId = PalletId(*b"p/wrpper");
     pub const LocalTracAssetId: UnifiedAssetId = LOCAL_TRAC_UNIFIED_ASSET_ID;
-    pub const ForeignTracAssetId: UnifiedAssetId = FOREIGN_TRAC_UNIFIED_ASSET_ID;
+}
 
+pub struct ForeignTracAssetId;
+impl Get<UnifiedAssetId> for ForeignTracAssetId {
+    fn get() -> UnifiedAssetId {
+        if Params::testnet_mode() {
+            FOREIGN_TRAC_UNIFIED_ASSET_ID_SEPOLIA
+        } else {
+            FOREIGN_TRAC_UNIFIED_ASSET_ID
+        }
+    }
 }
 
 impl pallet_wrapper::Config for Runtime {
@@ -1114,6 +1124,8 @@ impl pallet_wrapper::Config for Runtime {
     type PauseOrigin = EnsureRootOrThreeFiftsOfCouncil;
     type WeightInfo = weights::pallet_wrapper::NeurowebWeight<Runtime>;
 }
+
+impl pallet_params::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1146,6 +1158,7 @@ construct_runtime!(
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config<T>} = 24,
         Wrapper: pallet_wrapper = 25,
+        Params: pallet_params = 26,
 
         // XCM helpers.
         XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,

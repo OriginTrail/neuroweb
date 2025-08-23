@@ -188,6 +188,7 @@ xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/par
 # Local
 primitives = { path = "primitives", default-features = false }
 pallet-wrapper = { path = "pallets/wrapper", default-features = false }
+pallet-params = { path = "pallets/params", default-features = false }
 neuroweb-runtime = { path = "./runtime" }
 precompile-utils = { path = "./precompiles/utils", default-features = false }
 

@@ -52,6 +52,24 @@ pub const FOREIGN_TRAC_ASSET_LOCATION: MultiLocation = MultiLocation {
 pub const FOREIGN_TRAC_UNIFIED_ASSET_ID: UnifiedAssetId =
     UnifiedAssetId::Foreign(FOREIGN_TRAC_ASSET_LOCATION);
 
+pub const FOREIGN_TRAC_LOCATION_SEPOLIA: MultiLocation = MultiLocation {
+    parents: 2,
+    interior: Junctions::X2(
+        Junction::GlobalConsensus(NetworkId::Ethereum { chain_id: 11155111 }),
+        Junction::AccountKey20 {
+            network: None,
+            key: [
+                0xef, 0x32, 0xab, 0xea, 0x56, 0xbe, 0xff, 0x54, 0xf6, 0x1d,
+                0xa3, 0x19, 0xa7, 0x31, 0x10, 0x98, 0xd6, 0xfb, 0xce, 0xa9,
+            ],
+        },
+    ),
+};
+
+pub const FOREIGN_TRAC_UNIFIED_ASSET_ID_SEPOLIA: UnifiedAssetId =
+    UnifiedAssetId::Foreign(FOREIGN_TRAC_LOCATION_SEPOLIA);
+
+
 parameter_types! {
     pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
 }
