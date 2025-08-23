@@ -500,28 +500,3 @@ impl pallet_assets::BenchmarkHelper<MultiLocation> for ForeignAssetsBenchmarkHel
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use sp_runtime::traits::AccountIdConversion;
-    use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
-
-    #[test]
-    fn test_local_assets_pallet_account() {
-        let local_assets_pallet_account_raw = local_assets_pallet_account();
-        let local_assets_pallet_account_formatted = local_assets_pallet_account_raw.to_ss58check_with_version(Ss58AddressFormat::custom(101));
-        println!("{:?}", sp_core::sr25519::Public::from_raw(<[u8; 32]>::from(foreign_assets_pallet_account())).to_ss58check_with_version(Ss58AddressFormat::custom(101)));
-
-        assert_eq!(local_assets_pallet_account_raw, ForeignAssetsPalletId::get().into_account_truncating());
-        assert_eq!(local_assets_pallet_account_formatted, "gJpDhAL2bdaUCfRYcXhCkNuH5HAsChPVwQVBzzuHVvw1otqvq");
-    }
-
-    #[test]
-    fn test_foreign_assets_pallet_account() {
-        let foreign_assets_pallet_account_raw = foreign_assets_pallet_account();
-        let foreign_assets_pallet_account_formatted = foreign_assets_pallet_account_raw.to_ss58check_with_version(Ss58AddressFormat::custom(101));
-
-        assert_eq!(foreign_assets_pallet_account_raw, ForeignAssetsPalletId::get().into_account_truncating());
-        assert_eq!(foreign_assets_pallet_account_formatted, "gJpDhAL2bdaQbzP81kSMAaCh1xS7jGkw6ZzFKb4UcHYVCXfdz");
-    }
-}

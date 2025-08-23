@@ -7,6 +7,7 @@ members = [
 	"pallets/*",
 	"primitives",
 	"runtime",
+	"runtime-tests",
 ]
 
 resolver = "2"
