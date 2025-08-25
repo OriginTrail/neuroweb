@@ -11,16 +11,22 @@ fn testnet_mode_default_value() {
 
 #[test]
 fn testnet_mode_set_to_true() {
-    ExtBuilder::default().testnet_mode(true).build().execute_with(|| {
-        assert_eq!(Params::testnet_mode(), true);
-    });
+    ExtBuilder::default()
+        .testnet_mode(true)
+        .build()
+        .execute_with(|| {
+            assert_eq!(Params::testnet_mode(), true);
+        });
 }
 
 #[test]
 fn testnet_mode_set_to_false() {
-    ExtBuilder::default().testnet_mode(false).build().execute_with(|| {
-        assert_eq!(Params::testnet_mode(), false);
-    });
+    ExtBuilder::default()
+        .testnet_mode(false)
+        .build()
+        .execute_with(|| {
+            assert_eq!(Params::testnet_mode(), false);
+        });
 }
 
 #[test]
@@ -43,7 +49,7 @@ fn testnet_mode_can_be_changed() {
 //         assert_eq!(TestnetMode::<Runtime>::get(), true);
 //     });
 // }
-// 
+//
 // #[test]
 // fn storage_default_query() {
 //     ExtBuilder::default().build().execute_with(|| {

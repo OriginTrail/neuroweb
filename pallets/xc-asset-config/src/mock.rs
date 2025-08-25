@@ -1,6 +1,10 @@
 use crate::{self as pallet_xc_asset_config};
 
-use frame_support::{construct_runtime, parameter_types, weights::Weight, traits::{ConstU16, ConstU32}};
+use frame_support::{
+    construct_runtime, parameter_types,
+    traits::{ConstU16, ConstU32},
+    weights::Weight,
+};
 use sp_core::H256;
 
 use sp_io::TestExternalities;
@@ -17,8 +21,7 @@ type Block = frame_system::mocking::MockBlock<Test>;
 const EXISTENTIAL_DEPOSIT: Balance = 1;
 
 construct_runtime!(
-    pub struct Test
-    {
+    pub struct Test {
         System: frame_system,
         Balances: pallet_balances,
         XcAssetConfig: pallet_xc_asset_config,

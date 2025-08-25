@@ -12,8 +12,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 extern crate alloc;
-use alloc::sync::Arc;
 use super::*;
+use alloc::sync::Arc;
 use frame_support::{
     pallet_prelude::*,
     traits::{
@@ -46,9 +46,8 @@ pub fn foreign_trac_asset_location() -> Location {
             Junction::AccountKey20 {
                 network: None,
                 key: [
-                    0xaa, 0x7a, 0x9c, 0xa8, 0x7d, 0x36, 0x94, 0xb5,
-                    0x75, 0x5f, 0x21, 0x3b, 0x5d, 0x04, 0x09, 0x4b,
-                    0x8d, 0x0f, 0x0a, 0x6f,
+                    0xaa, 0x7a, 0x9c, 0xa8, 0x7d, 0x36, 0x94, 0xb5, 0x75, 0x5f, 0x21, 0x3b, 0x5d,
+                    0x04, 0x09, 0x4b, 0x8d, 0x0f, 0x0a, 0x6f,
                 ],
             },
         ])),
@@ -66,9 +65,8 @@ pub fn foreign_trac_location_sepolia() -> Location {
             Junction::AccountKey20 {
                 network: None,
                 key: [
-                    0xef, 0x32, 0xab, 0xea, 0x56, 0xbe, 0xff, 0x54,
-                    0xf6, 0x1d, 0xa3, 0x19, 0xa7, 0x31, 0x10, 0x98,
-                    0xd6, 0xfb, 0xce, 0xa9,
+                    0xef, 0x32, 0xab, 0xea, 0x56, 0xbe, 0xff, 0x54, 0xf6, 0x1d, 0xa3, 0x19, 0xa7,
+                    0x31, 0x10, 0x98, 0xd6, 0xfb, 0xce, 0xa9,
                 ],
             },
         ])),
@@ -471,7 +469,7 @@ impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, u128>
 // Root which returns the foreign_assets_pallet_account
 pub struct RootWithForeignAssetsPalletsAccount;
 impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, Location>
-for RootWithForeignAssetsPalletsAccount
+    for RootWithForeignAssetsPalletsAccount
 {
     type Success = AccountId;
     fn try_origin(o: RuntimeOrigin, _asset_id: &Location) -> Result<AccountId, RuntimeOrigin> {

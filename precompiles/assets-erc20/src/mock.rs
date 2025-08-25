@@ -21,7 +21,9 @@
 use super::*;
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{construct_runtime, parameter_types, traits::AsEnsureOriginWithArg, weights::Weight};
+use frame_support::{
+    construct_runtime, parameter_types, traits::AsEnsureOriginWithArg, weights::Weight,
+};
 
 use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_evm::{AddressMapping, EnsureAddressNever, EnsureAddressRoot};
@@ -29,7 +31,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256};
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup, ConstU32, ConstU64},
+    traits::{BlakeTwo256, ConstU32, ConstU64, IdentityLookup},
     BuildStorage,
 };
 

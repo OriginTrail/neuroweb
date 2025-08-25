@@ -8,7 +8,10 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod assets;
 use assets::*;
-pub use assets::{LocalAssetsPalletId, ForeignAssetsPalletId, local_assets_pallet_account, foreign_assets_pallet_account};
+pub use assets::{
+    foreign_assets_pallet_account, local_assets_pallet_account, ForeignAssetsPalletId,
+    LocalAssetsPalletId,
+};
 use primitives::UnifiedAssetId;
 
 mod weights;
