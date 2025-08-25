@@ -3,20 +3,22 @@ use super::{
     ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
     XcmpQueue,
 };
+use crate::Vec;
 use codec::Encode;
 use core::marker::PhantomData;
-use frame_support::traits::ContainsPair;
 use frame_support::{
     parameter_types,
-    traits::{ConstU32, Contains, Everything, Get, Nothing, PalletInfoAccess},
+    traits::{
+        fungibles::Mutate, ConstU32, Contains, ContainsPair, Everything, Get, Nothing,
+        PalletInfoAccess,
+    },
+    weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
-use frame_support::traits::fungibles::Mutate;
-use frame_support::weights::constants::WEIGHT_REF_TIME_PER_SECOND;
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
+use scale_info::prelude::vec;
 use sp_core::blake2_256;
-
 use xcm::v4::prelude::*;
 use xcm::v4::InteriorLocation;
 use xcm_builder::{
@@ -27,8 +29,13 @@ use xcm_builder::{
     SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
     WeightInfoBounds, WithComputedOrigin,
 };
-
-use xcm_executor::{traits::{ConvertLocation, MatchesFungibles, Error as MatchError, WithOriginFilter}, AssetsInHolding, XcmExecutor};
+use xcm_executor::{
+    traits::{
+        ConvertLocation, DropAssets, Error as MatchError, MatchesFungibles, WeightTrader,
+        WithOriginFilter,
+    },
+    AssetsInHolding, XcmExecutor,
+};
 
 parameter_types! {
     // NEURO (native)
@@ -108,6 +115,123 @@ pub type XcmOriginToTransactDispatchOrigin = (
     // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
     XcmPassthrough<RuntimeOrigin>,
 );
+
+/// A trader which accepts DOT (via RelayLocation) at a fixed rate.
+pub struct FixedRateOfForeignAsset<AssetLocation, Balance, Rate>(
+    PhantomData<(AssetLocation, Balance, Rate)>,
+);
+
+impl<
+        AssetLocation: Get<Location>,
+        Balance: From<u128> + Into<u128> + Copy + Ord + Default + core::ops::Sub,
+        Rate: Get<u128>,
+    > WeightTrader for FixedRateOfForeignAsset<AssetLocation, Balance, Rate>
+{
+    fn new() -> Self {
+        FixedRateOfForeignAsset(PhantomData)
+    }
+
+    fn buy_weight(
+        &mut self,
+        weight: Weight,
+        payment: AssetsInHolding,
+        _ctx: &XcmContext,
+    ) -> Result<AssetsInHolding, XcmError> {
+        let asset_id = AssetId(AssetLocation::get());
+        let rate_per_second = Rate::get();
+
+        let fee: u128 = (weight.ref_time() as u128)
+            .saturating_mul(rate_per_second)
+            .checked_div(WEIGHT_REF_TIME_PER_SECOND as u128)
+            .ok_or(XcmError::Overflow)?;
+        let fee_balance: Balance = fee.into();
+
+        let assets: Assets = payment.clone().into();
+
+        let mut found_amount: Option<Balance> = None;
+        for asset in assets.clone().into_inner().into_iter() {
+            if asset.id == asset_id {
+                if let Fungible(amount) = asset.fun {
+                    found_amount = Some(amount.into());
+                    break;
+                }
+            }
+        }
+
+        let amount = found_amount.ok_or(XcmError::TooExpensive)?;
+        if amount < fee_balance {
+            return Err(XcmError::TooExpensive);
+        }
+
+        // Subtract fee and rebuild
+        let mut new_assets: Vec<Asset> = Vec::new();
+        let leftover: u128 = amount.into() - fee_balance.into();
+
+        if leftover > 0 {
+            new_assets.push(Asset {
+                id: asset_id.clone(),
+                fun: Fungible(leftover),
+            });
+        }
+
+        // Instead of OnUnbalanced, just drop fees via your DealWithForeignFees
+        DealWithForeignFees::drop_assets(
+            &Location::here(),
+            vec![Asset {
+                id: asset_id.clone(),
+                fun: Fungible(fee_balance.into()),
+            }]
+            .into(),
+            _ctx,
+        );
+
+        Ok(Assets::from(new_assets).into())
+    }
+
+    fn refund_weight(&mut self, _weight: Weight, _ctx: &XcmContext) -> Option<Asset> {
+        None
+    }
+}
+
+// Deposit fees into the Treasury
+// TODO: Change to TakeRevenue after SDK upgrade
+pub struct DealWithForeignFees;
+impl DropAssets for DealWithForeignFees {
+    fn drop_assets(_origin: &Location, assets: AssetsInHolding, _ctx: &XcmContext) -> Weight {
+        let assets: Assets = assets.into();
+
+        for asset in assets.into_inner().into_iter() {
+            // Only handle DOT (Relay Location)
+            if asset.id == AssetId(RelayLocation::get()) {
+                if let Fungible(amount) = asset.fun {
+                    if amount > 0 {
+                        // Credit Treasury account in pallet-assets (asset_id = Location)
+                        if ForeignAssets::mint_into(
+                            RelayLocation::get(), // directly use Location as ID
+                            &crate::Treasury::account_id(),
+                            amount,
+                        )
+                        .is_ok()
+                        {
+                            log::info!(
+                                target: "xcm::fees",
+                                "Credited {} DOT into Treasury account",
+                                amount
+                            );
+                        } else {
+                            log::warn!(
+                                target: "xcm::fees",
+                                "Failed to credit DOT fees into Treasury"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        Weight::zero()
+    }
+}
 
 parameter_types! {
     pub const MaxInstructions: u32 = 100;
@@ -256,11 +380,7 @@ impl xcm_executor::Config for XcmConfig {
     >;
     type Trader = (
         UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>,
-        FixedRateOfForeignAsset<
-            RelayLocation,
-            Balance,
-            DotPerSecond,
-        >,
+        FixedRateOfForeignAsset<RelayLocation, Balance, DotPerSecond>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
