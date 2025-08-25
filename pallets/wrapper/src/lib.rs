@@ -59,7 +59,7 @@ use frame_support::{
     pallet_prelude::*,
     traits::{
         fungibles::{Inspect, Mutate},
-        Get, EnsureOrigin,
+        EnsureOrigin, Get,
     },
 };
 use frame_system::pallet_prelude::*;
@@ -78,7 +78,6 @@ pub mod benchmarking;
 
 pub mod weights;
 pub use weights::*;
-
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -189,7 +188,6 @@ pub mod pallet {
             let foreign_trac_asset_id = T::ForeignTracAssetId::get();
             let local_trac_asset_id = T::LocalTracAssetId::get();
 
-
             // Transfer foreign TRAC from user to pallet account
             T::Currency::transfer(
                 foreign_trac_asset_id,
@@ -197,7 +195,8 @@ pub mod pallet {
                 &pallet_account,
                 amount,
                 frame_support::traits::tokens::Preservation::Expendable,
-            ).map_err(|_| Error::<T>::InsufficientFunds)?;
+            )
+            .map_err(|_| Error::<T>::InsufficientFunds)?;
 
             // Mint local TRAC to user
             T::Currency::mint_into(local_trac_asset_id, &who, amount)?;
@@ -229,7 +228,6 @@ pub mod pallet {
             let foreign_trac_asset_id = T::ForeignTracAssetId::get();
             let local_trac_asset_id = T::LocalTracAssetId::get();
 
-
             // Burn local TRAC from user
             T::Currency::burn_from(
                 local_trac_asset_id,
@@ -237,7 +235,8 @@ pub mod pallet {
                 amount,
                 frame_support::traits::tokens::Precision::Exact,
                 frame_support::traits::tokens::Fortitude::Polite,
-            ).map_err(|_| Error::<T>::InsufficientFunds)?;
+            )
+            .map_err(|_| Error::<T>::InsufficientFunds)?;
 
             // Transfer foreign TRAC from pallet account to user
             T::Currency::transfer(
@@ -246,7 +245,8 @@ pub mod pallet {
                 &who,
                 amount,
                 frame_support::traits::tokens::Preservation::Expendable,
-            ).map_err(|_| Error::<T>::InsufficientFunds)?;
+            )
+            .map_err(|_| Error::<T>::InsufficientFunds)?;
 
             // Emit event
             Self::deposit_event(Event::TracUnwrapped { who, amount });

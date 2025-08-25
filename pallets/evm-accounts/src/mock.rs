@@ -31,7 +31,7 @@ pub const ALICE: AccountId = AccountId32::new([0u8; 32]);
 pub const BOB: AccountId = AccountId32::new([1u8; 32]);
 
 mod evm_accounts {
-	pub use super::super::*;
+    pub use super::super::*;
 }
 
 parameter_types! {
@@ -88,12 +88,12 @@ impl pallet_balances::Config for Runtime {
 }
 
 impl Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Currency = Balances;
-	type ChainId = ();
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type ChainId = ();
     type MergeAccount = ();
-	type AddressMapping = EvmAddressMapping<Runtime>;
-	type WeightInfo = ();
+    type AddressMapping = EvmAddressMapping<Runtime>;
+    type WeightInfo = ();
 }
 
 type Block = frame_system::mocking::MockBlock<Runtime>;
@@ -110,9 +110,9 @@ construct_runtime!(
 pub struct ExtBuilder();
 
 impl Default for ExtBuilder {
-	fn default() -> Self {
-		Self()
-	}
+    fn default() -> Self {
+        Self()
+    }
 }
 
 impl ExtBuilder {
@@ -121,30 +121,30 @@ impl ExtBuilder {
 			.build_storage()
 			.unwrap();
 
-		pallet_balances::GenesisConfig::<Runtime> {
-			balances: vec![(bob_account_id(), 100000)],
-		}
-		.assimilate_storage(&mut t)
-		.unwrap();
+        pallet_balances::GenesisConfig::<Runtime> {
+            balances: vec![(bob_account_id(), 100000)],
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
 
-		let mut ext = sp_io::TestExternalities::new(t);
-		ext.execute_with(|| System::set_block_number(1));
-		ext
-	}
+        let mut ext = sp_io::TestExternalities::new(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
+    }
 }
 
 pub fn alice() -> libsecp256k1::SecretKey {
-	libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
+    libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
 }
 
 pub fn bob() -> libsecp256k1::SecretKey {
-	libsecp256k1::SecretKey::parse(&keccak_256(b"Bob")).unwrap()
+    libsecp256k1::SecretKey::parse(&keccak_256(b"Bob")).unwrap()
 }
 
 pub fn bob_account_id() -> AccountId {
-	let address = EvmAccountsModule::eth_address(&bob());
-	let mut data = [0u8; 32];
-	data[0..4].copy_from_slice(b"evm:");
-	data[4..24].copy_from_slice(&address[..]);
-	AccountId32::from(Into::<[u8; 32]>::into(data))
+    let address = EvmAccountsModule::eth_address(&bob());
+    let mut data = [0u8; 32];
+    data[0..4].copy_from_slice(b"evm:");
+    data[4..24].copy_from_slice(&address[..]);
+    AccountId32::from(Into::<[u8; 32]>::into(data))
 }

@@ -33,7 +33,7 @@ use primitives::UnifiedAssetId;
 use xcm::v4::{Junction, Junctions, Location, NetworkId};
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
-pub const EXISTENTIAL_DEPOSIT: Balance = OTP;
+pub const EXISTENTIAL_DEPOSIT: Balance = OTP / 10;
 
 pub const LOCAL_TRAC_ASSET_ID: u128 = 1;
 pub const LOCAL_TRAC_UNIFIED_ASSET_ID: UnifiedAssetId = UnifiedAssetId::Local(LOCAL_TRAC_ASSET_ID);
@@ -104,8 +104,8 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
     pub const AssetDeposit: Balance = OTP;
-    pub const AssetAccountDeposit: Balance = OTP;
-    pub const ApprovalDeposit: Balance = OTP;
+    pub const AssetAccountDeposit: Balance = OTP / 10;
+    pub const ApprovalDeposit: Balance = OTP / 10;
     pub const StringLimit: u32 = 50;
     pub const MetadataDepositBase: Balance = 10 * OTP;
     pub const MetadataDepositPerByte: Balance = 1 * OTP;
@@ -454,7 +454,7 @@ pub fn foreign_assets_pallet_account() -> AccountId {
 // Root which returns the local_assets_pallet_account
 pub struct RootWithLocalAssetsPalletAccount;
 impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, u128>
-for RootWithLocalAssetsPalletAccount
+    for RootWithLocalAssetsPalletAccount
 {
     type Success = AccountId;
     fn try_origin(o: RuntimeOrigin, _asset_id: &u128) -> Result<AccountId, RuntimeOrigin> {
@@ -479,7 +479,7 @@ for RootWithForeignAssetsPalletsAccount
             RuntimeOrigin,
             Location,
         >>::try_origin(o, _asset_id)
-            .map(|_| foreign_assets_pallet_account())
+        .map(|_| foreign_assets_pallet_account())
     }
 
     #[cfg(feature = "runtime-benchmarks")]
@@ -508,4 +508,3 @@ impl pallet_assets::BenchmarkHelper<Location> for ForeignAssetsBenchmarkHelper {
         Location::new(1, Junction::Parachain(id))
     }
 }
-

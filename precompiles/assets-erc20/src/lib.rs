@@ -128,7 +128,9 @@ where
         if let Some(asset_id) = Runtime::address_to_asset_id(address) {
             // We check maybe_total_supply. This function returns Some if the asset exists,
             // which is all we care about at this point
-            if pallet_assets::Pallet::<Runtime, Instance>::maybe_total_supply(asset_id.clone()).is_some() {
+            if pallet_assets::Pallet::<Runtime, Instance>::maybe_total_supply(asset_id.clone())
+                .is_some()
+            {
                 let result = {
                     let selector = match handle.read_selector() {
                         Ok(selector) => selector,
@@ -293,10 +295,20 @@ where
         let amount: U256 = {
             let owner = Runtime::AddressMapping::into_account_id(handle.context().caller);
             let spender: Runtime::AccountId = Runtime::AddressMapping::into_account_id(spender);
-            pallet_assets::Pallet::<Runtime, Instance>::allowance(asset_id.clone(), &owner, &spender).into()
+            pallet_assets::Pallet::<Runtime, Instance>::allowance(
+                asset_id.clone(),
+                &owner,
+                &spender,
+            )
+            .into()
         };
 
-        Self::_approve(handle, asset_id, spender, amount.saturating_add(added_value))
+        Self::_approve(
+            handle,
+            asset_id,
+            spender,
+            amount.saturating_add(added_value),
+        )
     }
 
     fn decrease_allowance(
@@ -316,13 +328,28 @@ where
             let owner = Runtime::AddressMapping::into_account_id(handle.context().caller);
             let spender: Runtime::AccountId = Runtime::AddressMapping::into_account_id(spender);
 
-            pallet_assets::Pallet::<Runtime, Instance>::allowance(asset_id.clone(), &owner, &spender).into()
+            pallet_assets::Pallet::<Runtime, Instance>::allowance(
+                asset_id.clone(),
+                &owner,
+                &spender,
+            )
+            .into()
         };
 
-        Self::_approve(handle, asset_id, spender, amount.saturating_sub(subtracted_value))
+        Self::_approve(
+            handle,
+            asset_id,
+            spender,
+            amount.saturating_sub(subtracted_value),
+        )
     }
 
-    fn _approve(handle: &mut impl PrecompileHandle, asset_id: AssetIdOf<Runtime, Instance>, spender: H160, amount: U256) -> EvmResult<PrecompileOutput> {
+    fn _approve(
+        handle: &mut impl PrecompileHandle,
+        asset_id: AssetIdOf<Runtime, Instance>,
+        spender: H160,
+        amount: U256,
+    ) -> EvmResult<PrecompileOutput> {
         {
             let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
             let spender: Runtime::AccountId = Runtime::AddressMapping::into_account_id(spender);
@@ -334,8 +361,11 @@ where
             handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
 
             // If previous approval exists, we need to clean it
-            if pallet_assets::Pallet::<Runtime, Instance>::allowance(asset_id.clone(), &origin, &spender)
-                != 0u32.into()
+            if pallet_assets::Pallet::<Runtime, Instance>::allowance(
+                asset_id.clone(),
+                &origin,
+                &spender,
+            ) != 0u32.into()
             {
                 RuntimeHelper::<Runtime>::try_dispatch(
                     handle,

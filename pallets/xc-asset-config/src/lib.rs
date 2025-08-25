@@ -54,9 +54,9 @@ pub use weights::WeightInfo;
 pub mod pallet {
 
     use crate::weights::WeightInfo;
+    use codec::HasCompact;
     use frame_support::{pallet_prelude::*, traits::EnsureOrigin};
     use frame_system::pallet_prelude::*;
-    use codec::HasCompact;
     use sp_std::boxed::Box;
     use xcm::{v3::MultiLocation, VersionedLocation};
 
@@ -162,9 +162,7 @@ pub mod pallet {
             new_asset_location: VersionedLocation,
         },
         /// Supported asset type for fee payment removed.
-        SupportedAssetRemoved {
-            asset_location: VersionedLocation,
-        },
+        SupportedAssetRemoved { asset_location: VersionedLocation },
         /// Removed all information related to an asset Id
         AssetRemoved {
             asset_location: VersionedLocation,

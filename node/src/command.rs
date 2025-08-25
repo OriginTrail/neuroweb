@@ -1,19 +1,22 @@
-use std::net::SocketAddr;
+use crate::{
+    chain_spec,
+    cli::{Cli, RelayChainCli, Subcommand},
+    service::{new_partial, AdditionalConfig},
+};
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use log::{info};
+use log::info;
 use neuroweb_runtime::Block;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, Result, SharedParams, SubstrateCli,
 };
-use sc_service::{PartialComponents, config::{BasePath, PrometheusConfig}};
-use sp_runtime::traits::AccountIdConversion;
-use crate::{
-	chain_spec,
-	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, AdditionalConfig},
+use sc_service::{
+    config::{BasePath, PrometheusConfig},
+    PartialComponents,
 };
+use sp_runtime::traits::AccountIdConversion;
+use std::net::SocketAddr;
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     Ok(match id {
@@ -41,8 +44,8 @@ impl SubstrateCli for Cli {
             passed to the parachain node, while the arguments provided after -- will be passed \
             to the relay chain node.\n\n\
             {} <parachain-args> -- <relay-chain-args>",
-			Self::executable_name()
-		)
+            Self::executable_name()
+        )
     }
 
     fn author() -> String {
@@ -76,8 +79,9 @@ impl SubstrateCli for RelayChainCli {
             "NeuroWeb \n\nThe command-line arguments provided first will be \
             passed to the parachain node, while the arguments provided after -- will be passed \
             to the relay chain node.\n\n\
-            {} <parachain-args> -- <relay-chain-args>", Self::executable_name()
-		)   
+            {} <parachain-args> -- <relay-chain-args>",
+            Self::executable_name()
+        )
     }
 
     fn author() -> String {
@@ -159,27 +163,24 @@ pub fn run() -> Result<()> {
             })
         }
         Some(Subcommand::Revert(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, components.backend, None))
-			})
-		},
+            construct_async_run!(|components, cli, cmd, config| {
+                Ok(cmd.run(components.client, components.backend, None))
+            })
+        }
         Some(Subcommand::ExportGenesisState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| {
-                let PartialComponents { client, .. } =
-                    new_partial(
-                        &config,
-                    )?;
+                let PartialComponents { client, .. } = new_partial(&config)?;
                 cmd.run(client)
-            }) 
-		},
-		Some(Subcommand::ExportGenesisWasm(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|_config| {
-				let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
-				cmd.run(&*spec)
-			})
-		},
+            })
+        }
+        Some(Subcommand::ExportGenesisWasm(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|_config| {
+                let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+                cmd.run(&*spec)
+            })
+        }
         Some(Subcommand::Benchmark(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             use sp_runtime::traits::HashingFor;
@@ -208,14 +209,15 @@ pub fn run() -> Result<()> {
                     cmd.run(partials.client)
                 }),
                 #[cfg(not(feature = "runtime-benchmarks"))]
-				BenchmarkCmd::Storage(_) =>
-					return Err(sc_cli::Error::Input(
-						"Compile with --features=runtime-benchmarks \
+                BenchmarkCmd::Storage(_) => {
+                    return Err(sc_cli::Error::Input(
+                        "Compile with --features=runtime-benchmarks \
 						to enable storage benchmarks."
-							.into(),
-					)
-					.into()),
-				#[cfg(feature = "runtime-benchmarks")]
+                            .into(),
+                    )
+                    .into())
+                }
+                #[cfg(feature = "runtime-benchmarks")]
                 BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
                     let partials = new_partial(&config)?;
                     let db = partials.backend.expose_db();
@@ -223,26 +225,26 @@ pub fn run() -> Result<()> {
 
                     cmd.run(config, partials.client.clone(), db, storage)
                 }),
-                BenchmarkCmd::Machine(cmd) =>
-					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
+                BenchmarkCmd::Machine(cmd) => {
+                    runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
+                }
                 // NOTE: this allows the Client to leniently implement
-				// new benchmark commands without requiring a companion MR.
-				#[allow(unreachable_patterns)]
-				_ => Err("Benchmarking sub-command unsupported".into()),
+                // new benchmark commands without requiring a companion MR.
+                #[allow(unreachable_patterns)]
+                _ => Err("Benchmarking sub-command unsupported".into()),
             }
-        },
+        }
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
 
             runner.run_node_until_exit(|config| async move {
-
-                let hwbench = (!cli.no_hardware_benchmarks).then_some(
-                    config.database.path().map(|database_path| {
+                let hwbench = (!cli.no_hardware_benchmarks)
+                    .then_some(config.database.path().map(|database_path| {
                         let _ = std::fs::create_dir_all(&database_path);
                         sc_sysinfo::gather_hwbench(Some(database_path))
-                    })
-                ).flatten();
+                    }))
+                    .flatten();
 
                 let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
                     .map(|e| e.para_id)
@@ -258,7 +260,9 @@ pub fn run() -> Result<()> {
                 let id = ParaId::from(para_id);
 
                 let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&id);
+                    AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(
+                        &id,
+                    );
 
                 let tokio_handle = config.tokio_handle.clone();
                 let polkadot_config =
@@ -278,20 +282,20 @@ pub fn run() -> Result<()> {
 
                 let additional_config = AdditionalConfig {
                     proposer_block_size_limit: cli.proposer_block_size_limit,
-                    proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent
+                    proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
                 };
 
                 crate::service::start_parachain_node(
-					config,
-					polkadot_config,
-					collator_options,
-					id,
-					hwbench,
-                    additional_config
-				)
-				.await
-				.map(|r| r.0)
-				.map_err(Into::into)
+                    config,
+                    polkadot_config,
+                    collator_options,
+                    id,
+                    hwbench,
+                    additional_config,
+                )
+                .await
+                .map(|r| r.0)
+                .map_err(Into::into)
             })
         }
     }

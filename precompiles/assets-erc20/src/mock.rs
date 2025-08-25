@@ -216,7 +216,7 @@ parameter_types! {
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
-	type WeightPerGas = WeightPerGas;
+    type WeightPerGas = WeightPerGas;
     type CallOrigin = EnsureAddressRoot<AccountId>;
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AccountId;
@@ -251,7 +251,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
-	type AssetId = AssetId;
+    type AssetId = AssetId;
     type AssetIdParameter = AssetId;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
