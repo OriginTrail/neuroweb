@@ -16,7 +16,7 @@ use codec::{Decode, Encode};
 use frame_support::pallet_prelude::MaxEncodedLen;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use xcm::v3::MultiLocation;
+use xcm::v4::Location;
 
 // Adapter for supporting different currencies
 #[derive(
@@ -36,5 +36,5 @@ use xcm::v3::MultiLocation;
 pub enum UnifiedAssetId {
     Native,
     Local(u128),
-    Foreign(MultiLocation),
+    Foreign(Location),
 }

@@ -2,7 +2,7 @@
 
 use frame_support::traits::Get;
 use neuroweb_runtime::{
-    assets::{FOREIGN_TRAC_UNIFIED_ASSET_ID, FOREIGN_TRAC_UNIFIED_ASSET_ID_SEPOLIA},
+    assets::{foreign_trac_unified_asset_id, foreign_trac_unified_asset_id_sepolia},
     ForeignTracAssetId, Params,
 };
 use super::{new_test_ext, run_to_block};
@@ -12,7 +12,7 @@ fn foreign_trac_asset_id_defaults_to_mainnet() {
     new_test_ext().execute_with(|| {
         // Initially testnet_mode should be false, so we should get mainnet asset ID
         assert_eq!(Params::testnet_mode(), false);
-        assert_eq!(ForeignTracAssetId::get(), FOREIGN_TRAC_UNIFIED_ASSET_ID);
+        assert_eq!(ForeignTracAssetId::get(), foreign_trac_unified_asset_id());
     });
 }
 
@@ -22,7 +22,7 @@ fn foreign_trac_asset_id_switches_to_sepolia_in_testnet_mode() {
         // Set testnet mode to true
         Params::set_testnet_mode(true);
         assert_eq!(Params::testnet_mode(), true);
-        assert_eq!(ForeignTracAssetId::get(), FOREIGN_TRAC_UNIFIED_ASSET_ID_SEPOLIA);
+        assert_eq!(ForeignTracAssetId::get(), foreign_trac_unified_asset_id_sepolia());
     });
 }
 
@@ -31,12 +31,12 @@ fn foreign_trac_asset_id_switches_back_to_mainnet() {
     new_test_ext().execute_with(|| {
         // Start in testnet mode
         Params::set_testnet_mode(true);
-        assert_eq!(ForeignTracAssetId::get(), FOREIGN_TRAC_UNIFIED_ASSET_ID_SEPOLIA);
+        assert_eq!(ForeignTracAssetId::get(), foreign_trac_unified_asset_id_sepolia());
 
         // Switch back to mainnet mode
         Params::set_testnet_mode(false);
         assert_eq!(Params::testnet_mode(), false);
-        assert_eq!(ForeignTracAssetId::get(), FOREIGN_TRAC_UNIFIED_ASSET_ID);
+        assert_eq!(ForeignTracAssetId::get(), foreign_trac_unified_asset_id());
     });
 }
 
@@ -50,15 +50,15 @@ fn foreign_trac_asset_id_consistency_across_blocks() {
         // Run several blocks and ensure consistency
         run_to_block(5);
         assert_eq!(ForeignTracAssetId::get(), testnet_asset_id);
-        assert_eq!(ForeignTracAssetId::get(), FOREIGN_TRAC_UNIFIED_ASSET_ID_SEPOLIA);
+        assert_eq!(ForeignTracAssetId::get(), foreign_trac_unified_asset_id_sepolia());
     });
 }
 
 #[test]
 fn foreign_trac_asset_ids_are_different() {
     new_test_ext().execute_with(|| {
-        let mainnet_id = FOREIGN_TRAC_UNIFIED_ASSET_ID;
-        let testnet_id = FOREIGN_TRAC_UNIFIED_ASSET_ID_SEPOLIA;
+        let mainnet_id = foreign_trac_unified_asset_id();
+        let testnet_id = foreign_trac_unified_asset_id_sepolia();
 
         // Ensure the two asset IDs are actually different
         assert_ne!(mainnet_id, testnet_id);

@@ -10,6 +10,8 @@ use frame_support::{
     parameter_types,
     traits::{ConstU32, Contains, Everything, Get, Nothing, PalletInfoAccess},
 };
+use frame_support::traits::fungibles::Mutate;
+use frame_support::weights::constants::WEIGHT_REF_TIME_PER_SECOND;
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
@@ -26,16 +28,10 @@ use xcm_builder::{
     WeightInfoBounds, WithComputedOrigin,
 };
 
-use xcm_executor::{
-    traits::{ConvertLocation, WithOriginFilter},
-    XcmExecutor,
-};
+use xcm_executor::{traits::{ConvertLocation, MatchesFungibles, Error as MatchError, WithOriginFilter}, AssetsInHolding, XcmExecutor};
 
 parameter_types! {
-    pub const RelayLocation: Location = Location::parent();
-    pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
-    pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-
+    // NEURO (native)
     pub TokenLocation: Location = Location {
         parents:0,
         interior: [
@@ -43,8 +39,22 @@ parameter_types! {
         ].into()
     };
 
+    pub const RelayLocation: Location = Location::parent();
+    pub const RelayNetwork: NetworkId = Polkadot;
+    pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
+
+    /// Asset Hub
+    pub AssetHubLocation: Location = (Parent, Parachain(1000)).into();
+    pub RelayChainNativeAssetFromAssetHub: (AssetFilter, Location) = (
+        (Asset { id: AssetId(RelayLocation::get()), fun: Fungible(1)}).into(),
+        AssetHubLocation::get()
+    );
+
     pub UniversalLocation: InteriorLocation = [GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into())].into();
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+
+    // XCM fees in DOT
+    pub DotPerSecond: u128 = 1_000_000_000; // 0.1 DOT/sec, in Planks
 }
 
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
@@ -68,16 +78,12 @@ pub type NativeAssetTransactor =
 
 pub type ForeignAssetTransactor = FungiblesAdapter<
     ForeignAssets,
-    ForeignAssetsConvertedConcreteId,
+    IsForeignConcreteAssetFrom<AssetHubLocation>,
     LocationToAccountId,
     AccountId,
     NoChecking,
     CheckingAccount,
 >;
-
-/// `AssetId`/`Balance` converter for `ForeignAssets`
-pub type ForeignAssetsConvertedConcreteId =
-    assets_common::ForeignAssetsConvertedConcreteId<(), Balance, xcm::v3::MultiLocation>;
 
 /// Means for transacting assets on this chain.
 pub type AssetTransactors = (NativeAssetTransactor, ForeignAssetTransactor);
@@ -190,6 +196,22 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 /// Matches foreign assets from a given origin.
 /// Foreign assets are assets bridged from other consensus systems. i.e parents > 1.
 pub struct IsForeignConcreteAssetFrom<Origin>(PhantomData<Origin>);
+
+impl<Origin> MatchesFungibles<Location, u128> for IsForeignConcreteAssetFrom<Origin>
+where
+    Origin: Get<Location>,
+{
+    fn matches_fungibles(asset: &Asset) -> Result<(Location, u128), MatchError> {
+        let loc = Origin::get();
+
+        if asset.id == AssetId(loc.clone()) {
+            if let Fungibility::Fungible(amount) = asset.fun {
+                return Ok((loc, amount));
+            }
+        }
+        Err(MatchError::AssetNotHandled)
+    }
+}
 impl<Origin> ContainsPair<Asset, Location> for IsForeignConcreteAssetFrom<Origin>
 where
     Origin: Get<Location>,
@@ -201,19 +223,10 @@ where
                 asset,
                 Asset {
                     id: AssetId(Location { parents: 2, .. }),
-                    fun: Fungible(_)
-                },
+                    fun: Fungibility::Fungible(_)
+                }
             )
     }
-}
-
-parameter_types! {
-    /// Location of Asset Hub
-    pub AssetHubLocation: Location = (Parent, Parachain(1000)).into();
-    pub RelayChainNativeAssetFromAssetHub: (AssetFilter, Location) = (
-        (Asset { id: AssetId(RelayLocation::get()), fun: Fungible(1)}).into(),
-        AssetHubLocation::get()
-    );
 }
 
 type Reserves = (
@@ -241,7 +254,14 @@ impl xcm_executor::Config for XcmConfig {
         RuntimeCall,
         MaxInstructions,
     >;
-    type Trader = UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>;
+    type Trader = (
+        UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>,
+        FixedRateOfForeignAsset<
+            RelayLocation,
+            Balance,
+            DotPerSecond,
+        >,
+    );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
     type AssetClaims = PolkadotXcm;
@@ -318,6 +338,7 @@ impl cumulus_pallet_xcm::Config for Runtime {
 }
 
 // The parts below are copied from a later version of polkadot-sdk
+//
 // Copied from
 // https://github.com/paritytech/polkadot-sdk/blob/7ef027551fd1290c42581a85052b643bffc9cbe4/polkadot/xcm/xcm-builder/src/location_conversion.rs
 /// Converts locations from external global consensus systems (e.g., Ethereum, other parachains)
@@ -409,8 +430,6 @@ pub fn ensure_is_remote(
 use super::UNITS;
 #[cfg(feature = "runtime-benchmarks")]
 use crate::assets::EXISTENTIAL_DEPOSIT;
-#[cfg(feature = "runtime-benchmarks")]
-use scale_info::prelude::vec;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {

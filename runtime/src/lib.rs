@@ -1106,9 +1106,9 @@ pub struct ForeignTracAssetId;
 impl Get<UnifiedAssetId> for ForeignTracAssetId {
     fn get() -> UnifiedAssetId {
         if Params::testnet_mode() {
-            FOREIGN_TRAC_UNIFIED_ASSET_ID_SEPOLIA
+            foreign_trac_unified_asset_id_sepolia()
         } else {
-            FOREIGN_TRAC_UNIFIED_ASSET_ID
+            foreign_trac_unified_asset_id()
         }
     }
 }
