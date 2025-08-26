@@ -6242,7 +6242,7 @@ dependencies = [
 
 [[package]]
 name = "neuroweb-runtime"
-version = "141.0.0"
+version = "142.0.0"
 dependencies = [
  "assets-common",
  "cumulus-pallet-aura-ext",
@@ -6286,6 +6286,7 @@ dependencies = [
  "pallet-identity",
  "pallet-message-queue",
  "pallet-multisig",
+ "pallet-params",
  "pallet-preimage",
  "pallet-proxy",
  "pallet-scheduler",
@@ -7563,6 +7564,21 @@ dependencies = [
  "scale-info",
  "serde",
  "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-params"
+version = "1.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -10592,6 +10608,22 @@ checksum = "c247d24e63230cdb56463ae328478bd5eac8b8faa8c69461a77e8e323afac90e"
 dependencies = [
  "libc",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "runtime-tests"
+version = "1.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "neuroweb-runtime",
+ "parity-scale-codec",
+ "primitives",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

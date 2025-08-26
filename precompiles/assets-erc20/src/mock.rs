@@ -22,9 +22,7 @@ use super::*;
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{AsEnsureOriginWithArg, Everything},
-    weights::Weight,
+    construct_runtime, parameter_types, traits::AsEnsureOriginWithArg, weights::Weight,
 };
 
 use frame_system::{EnsureRoot, EnsureSigned};
@@ -33,15 +31,13 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256};
 use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    traits::{BlakeTwo256, ConstU32, ConstU64, IdentityLookup},
+    BuildStorage,
 };
 
 pub type AccountId = Account;
 pub type AssetId = u128;
 pub type Balance = u128;
-pub type BlockNumber = u64;
-pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 pub type Block = frame_system::mocking::MockBlock<Runtime>;
 
 /// A simple account type.
@@ -150,17 +146,18 @@ parameter_types! {
 }
 
 impl frame_system::Config for Runtime {
-    type BaseCallFilter = Everything;
+    type BaseCallFilter = frame_support::traits::Everything;
+    type BlockWeights = ();
+    type BlockLength = ();
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
     type RuntimeCall = RuntimeCall;
+    type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -169,11 +166,15 @@ impl frame_system::Config for Runtime {
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
-    type BlockWeights = ();
-    type BlockLength = ();
     type SS58Prefix = SS58Prefix;
     type OnSetCode = ();
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type MaxConsumers = ConstU32<16>;
+    type RuntimeTask = ();
+    type SingleBlockMigrations = ();
+    type MultiBlockMigrator = ();
+    type PreInherents = ();
+    type PostInherents = ();
+    type PostTransactions = ();
 }
 
 parameter_types! {
@@ -188,7 +189,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = 0;
+    pub const ExistentialDeposit: u128 = 1;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -201,6 +202,10 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type RuntimeHoldReason = ();
+    type RuntimeFreezeReason = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -230,6 +235,8 @@ impl pallet_evm::Config for Runtime {
     type FindAuthor = ();
     type OnCreate = ();
     type WeightInfo = ();
+    type GasLimitPovSizeRatio = ConstU64<4>;
+    type SuicideQuickClearLimit = ConstU32<0>;
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments
@@ -266,10 +273,7 @@ impl pallet_assets::Config for Runtime {
 
 // Configure a mock runtime to test the pallet.
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Runtime
     {
         System: frame_system,
         Balances: pallet_balances,
@@ -297,8 +301,8 @@ impl ExtBuilder {
     }
 
     pub(crate) fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let mut t = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         pallet_balances::GenesisConfig::<Runtime> {

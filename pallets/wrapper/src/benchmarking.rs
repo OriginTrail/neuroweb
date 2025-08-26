@@ -20,7 +20,7 @@ use frame_support::traits::fungibles::{Inspect, Mutate};
 use frame_system::RawOrigin;
 use primitives::UnifiedAssetId;
 use sp_runtime::traits::{StaticLookup, Zero};
-use xcm::v3::MultiLocation;
+use xcm::v4::Location;
 
 pub const NEURO: u128 = 1_000_000_000_000;
 pub const TRAC: u128 = 1_000_000_000_000_000;
@@ -30,7 +30,7 @@ benchmarks! {
         T: Config<AssetId = UnifiedAssetId>,
         T: Config<Balance = u128>,
         T: pallet_assets::Config<AssetIdParameter = codec::Compact<u128>>,
-        T: pallet_assets::Config<pallet_assets::Instance2, AssetIdParameter = MultiLocation>,
+        T: pallet_assets::Config<pallet_assets::Instance2, AssetIdParameter = Location>,
         T: pallet_balances::Config<Balance = u128>,
     }
     trac_wrap {
@@ -93,7 +93,7 @@ fn setup_assets<T: Config>(caller: T::AccountId) -> DispatchResult
 where
     T: Config<AssetId = UnifiedAssetId>,
     T: pallet_assets::Config<AssetIdParameter = codec::Compact<u128>>,
-    T: pallet_assets::Config<pallet_assets::Instance2, AssetIdParameter = MultiLocation>,
+    T: pallet_assets::Config<pallet_assets::Instance2, AssetIdParameter = Location>,
     T: pallet_balances::Config<Balance = u128>,
 {
     let pallet_account = Wrapper::<T>::pallet_account_id();

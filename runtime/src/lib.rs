@@ -8,6 +8,10 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod assets;
 use assets::*;
+pub use assets::{
+    foreign_assets_pallet_account, local_assets_pallet_account, ForeignAssetsPalletId,
+    LocalAssetsPalletId,
+};
 use primitives::UnifiedAssetId;
 
 mod weights;
@@ -148,7 +152,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("origintrail-parachain"),
     impl_name: create_runtime_str!("neuroweb"),
     authoring_version: 1,
-    spec_version: 141,
+    spec_version: 142,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -1095,8 +1099,17 @@ impl pallet_proxy::Config for Runtime {
 parameter_types! {
     pub const TracWrapperPalletId: PalletId = PalletId(*b"p/wrpper");
     pub const LocalTracAssetId: UnifiedAssetId = LOCAL_TRAC_UNIFIED_ASSET_ID;
-    pub const ForeignTracAssetId: UnifiedAssetId = FOREIGN_TRAC_UNIFIED_ASSET_ID;
+}
 
+pub struct ForeignTracAssetId;
+impl Get<UnifiedAssetId> for ForeignTracAssetId {
+    fn get() -> UnifiedAssetId {
+        if Params::testnet_mode() {
+            foreign_trac_unified_asset_id_sepolia()
+        } else {
+            foreign_trac_unified_asset_id()
+        }
+    }
 }
 
 impl pallet_wrapper::Config for Runtime {
@@ -1110,6 +1123,8 @@ impl pallet_wrapper::Config for Runtime {
     type PauseOrigin = EnsureRootOrThreeFiftsOfCouncil;
     type WeightInfo = weights::pallet_wrapper::NeurowebWeight<Runtime>;
 }
+
+impl pallet_params::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1142,6 +1157,7 @@ construct_runtime!(
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config<T>} = 24,
         Wrapper: pallet_wrapper = 25,
+        Params: pallet_params = 26,
 
         // XCM helpers.
         XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,

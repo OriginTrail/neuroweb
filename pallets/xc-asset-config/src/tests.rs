@@ -2,9 +2,11 @@ use super::{pallet::Error, pallet::Event, *};
 use frame_support::{assert_noop, assert_ok, WeakBoundedVec};
 use mock::*;
 use sp_runtime::traits::BadOrigin;
-use xcm::latest::prelude::*;
-
-use xcm::{v3::MultiLocation, VersionedMultiLocation};
+use xcm::v3::{
+    Junction::{self, GeneralIndex},
+    Junctions, MultiLocation,
+};
+use xcm::VersionedLocation;
 
 #[test]
 fn only_root_as_origin() {
@@ -363,7 +365,7 @@ fn different_xcm_versions_are_ok() {
         // Register asset using legacy multilocation
         assert_ok!(XcAssetConfig::register_asset_location(
             RuntimeOrigin::root(),
-            Box::new(VersionedMultiLocation::V2(legacy_asset_location.clone())),
+            Box::new(VersionedLocation::V2(legacy_asset_location.clone())),
             asset_id
         ));
 
@@ -390,9 +392,7 @@ fn incompatible_versioned_multilocations_are_not_ok() {
         assert_noop!(
             XcAssetConfig::register_asset_location(
                 RuntimeOrigin::root(),
-                Box::new(VersionedMultiLocation::V2(
-                    incompatible_asset_location.clone()
-                )),
+                Box::new(VersionedLocation::V2(incompatible_asset_location.clone())),
                 asset_id
             ),
             Error::<Test>::MultiLocationNotSupported
@@ -401,9 +401,7 @@ fn incompatible_versioned_multilocations_are_not_ok() {
         assert_noop!(
             XcAssetConfig::set_asset_units_per_second(
                 RuntimeOrigin::root(),
-                Box::new(VersionedMultiLocation::V2(
-                    incompatible_asset_location.clone()
-                )),
+                Box::new(VersionedLocation::V2(incompatible_asset_location.clone())),
                 12345,
             ),
             Error::<Test>::MultiLocationNotSupported
@@ -412,9 +410,7 @@ fn incompatible_versioned_multilocations_are_not_ok() {
         assert_noop!(
             XcAssetConfig::change_existing_asset_location(
                 RuntimeOrigin::root(),
-                Box::new(VersionedMultiLocation::V2(
-                    incompatible_asset_location.clone()
-                )),
+                Box::new(VersionedLocation::V2(incompatible_asset_location.clone())),
                 12345,
             ),
             Error::<Test>::MultiLocationNotSupported
@@ -423,9 +419,7 @@ fn incompatible_versioned_multilocations_are_not_ok() {
         assert_noop!(
             XcAssetConfig::remove_payment_asset(
                 RuntimeOrigin::root(),
-                Box::new(VersionedMultiLocation::V2(
-                    incompatible_asset_location.clone()
-                )),
+                Box::new(VersionedLocation::V2(incompatible_asset_location.clone())),
             ),
             Error::<Test>::MultiLocationNotSupported
         );

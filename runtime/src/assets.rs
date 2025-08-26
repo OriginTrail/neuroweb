@@ -11,7 +11,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+extern crate alloc;
 use super::*;
+use alloc::sync::Arc;
 use frame_support::{
     pallet_prelude::*,
     traits::{
@@ -28,7 +30,7 @@ use frame_support::{
     },
 };
 use primitives::UnifiedAssetId;
-use xcm::v3::{Junction, Junctions, MultiLocation, NetworkId};
+use xcm::v4::{Junction, Junctions, Location, NetworkId};
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = OTP / 10;
@@ -36,21 +38,44 @@ pub const EXISTENTIAL_DEPOSIT: Balance = OTP / 10;
 pub const LOCAL_TRAC_ASSET_ID: u128 = 1;
 pub const LOCAL_TRAC_UNIFIED_ASSET_ID: UnifiedAssetId = UnifiedAssetId::Local(LOCAL_TRAC_ASSET_ID);
 
-pub const FOREIGN_TRAC_ASSET_LOCATION: MultiLocation = MultiLocation {
-    parents: 2,
-    interior: Junctions::X2(
-        Junction::GlobalConsensus(NetworkId::Ethereum { chain_id: 1 }),
-        Junction::AccountKey20 {
-            network: None,
-            key: [
-                0xaa, 0x7a, 0x9c, 0xa8, 0x7d, 0x36, 0x94, 0xb5, 0x75, 0x5f, 0x21, 0x3b, 0x5d, 0x04,
-                0x09, 0x4b, 0x8d, 0x0f, 0x0a, 0x6f,
-            ],
-        },
-    ),
-};
-pub const FOREIGN_TRAC_UNIFIED_ASSET_ID: UnifiedAssetId =
-    UnifiedAssetId::Foreign(FOREIGN_TRAC_ASSET_LOCATION);
+pub fn foreign_trac_asset_location() -> Location {
+    Location {
+        parents: 2,
+        interior: Junctions::X2(Arc::new([
+            Junction::GlobalConsensus(NetworkId::Ethereum { chain_id: 1 }),
+            Junction::AccountKey20 {
+                network: None,
+                key: [
+                    0xaa, 0x7a, 0x9c, 0xa8, 0x7d, 0x36, 0x94, 0xb5, 0x75, 0x5f, 0x21, 0x3b, 0x5d,
+                    0x04, 0x09, 0x4b, 0x8d, 0x0f, 0x0a, 0x6f,
+                ],
+            },
+        ])),
+    }
+}
+pub fn foreign_trac_unified_asset_id() -> UnifiedAssetId {
+    UnifiedAssetId::Foreign(foreign_trac_asset_location())
+}
+
+pub fn foreign_trac_location_sepolia() -> Location {
+    Location {
+        parents: 2,
+        interior: Junctions::X2(Arc::new([
+            Junction::GlobalConsensus(NetworkId::Ethereum { chain_id: 11155111 }),
+            Junction::AccountKey20 {
+                network: None,
+                key: [
+                    0xef, 0x32, 0xab, 0xea, 0x56, 0xbe, 0xff, 0x54, 0xf6, 0x1d, 0xa3, 0x19, 0xa7,
+                    0x31, 0x10, 0x98, 0xd6, 0xfb, 0xce, 0xa9,
+                ],
+            },
+        ])),
+    }
+}
+
+pub fn foreign_trac_unified_asset_id_sepolia() -> UnifiedAssetId {
+    UnifiedAssetId::Foreign(foreign_trac_location_sepolia())
+}
 
 parameter_types! {
     pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
@@ -115,8 +140,8 @@ impl pallet_assets::Config<pallet_assets::Instance2> for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type RemoveItemsLimit = ConstU32<656>;
-    type AssetId = MultiLocation;
-    type AssetIdParameter = MultiLocation;
+    type AssetId = Location;
+    type AssetIdParameter = Location;
     type Currency = Balances;
     type CreateOrigin = RootWithForeignAssetsPalletsAccount;
     type ForceOrigin = EnsureRoot<AccountId>;
@@ -443,20 +468,20 @@ impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, u128>
 // CreateOrigin for foreign assets
 // Root which returns the foreign_assets_pallet_account
 pub struct RootWithForeignAssetsPalletsAccount;
-impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, MultiLocation>
+impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, Location>
     for RootWithForeignAssetsPalletsAccount
 {
     type Success = AccountId;
-    fn try_origin(o: RuntimeOrigin, _asset_id: &MultiLocation) -> Result<AccountId, RuntimeOrigin> {
+    fn try_origin(o: RuntimeOrigin, _asset_id: &Location) -> Result<AccountId, RuntimeOrigin> {
         <EnsureRoot<AccountId> as frame_support::traits::EnsureOriginWithArg<
             RuntimeOrigin,
-            MultiLocation,
+            Location,
         >>::try_origin(o, _asset_id)
         .map(|_| foreign_assets_pallet_account())
     }
 
     #[cfg(feature = "runtime-benchmarks")]
-    fn try_successful_origin(_asset_id: &MultiLocation) -> Result<RuntimeOrigin, ()> {
+    fn try_successful_origin(_asset_id: &Location) -> Result<RuntimeOrigin, ()> {
         Ok(frame_system::RawOrigin::Root.into())
     }
 }
@@ -476,52 +501,8 @@ impl pallet_assets::BenchmarkHelper<codec::Compact<u128>> for AssetsBenchmarkHel
 pub struct ForeignAssetsBenchmarkHelper;
 
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_assets::BenchmarkHelper<MultiLocation> for ForeignAssetsBenchmarkHelper {
-    fn create_asset_id_parameter(id: u32) -> MultiLocation {
-        MultiLocation::new(1, Junction::Parachain(id))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
-    use sp_runtime::traits::AccountIdConversion;
-
-    #[test]
-    fn test_local_assets_pallet_account() {
-        let local_assets_pallet_account_raw = local_assets_pallet_account();
-        let local_assets_pallet_account_formatted = local_assets_pallet_account_raw
-            .to_ss58check_with_version(Ss58AddressFormat::custom(101));
-        println!(
-            "{:?}",
-            sp_core::sr25519::Public::from_raw(<[u8; 32]>::from(foreign_assets_pallet_account()))
-                .to_ss58check_with_version(Ss58AddressFormat::custom(101))
-        );
-
-        assert_eq!(
-            local_assets_pallet_account_raw,
-            ForeignAssetsPalletId::get().into_account_truncating()
-        );
-        assert_eq!(
-            local_assets_pallet_account_formatted,
-            "gJpDhAL2bdaUCfRYcXhCkNuH5HAsChPVwQVBzzuHVvw1otqvq"
-        );
-    }
-
-    #[test]
-    fn test_foreign_assets_pallet_account() {
-        let foreign_assets_pallet_account_raw = foreign_assets_pallet_account();
-        let foreign_assets_pallet_account_formatted = foreign_assets_pallet_account_raw
-            .to_ss58check_with_version(Ss58AddressFormat::custom(101));
-
-        assert_eq!(
-            foreign_assets_pallet_account_raw,
-            ForeignAssetsPalletId::get().into_account_truncating()
-        );
-        assert_eq!(
-            foreign_assets_pallet_account_formatted,
-            "gJpDhAL2bdaQbzP81kSMAaCh1xS7jGkw6ZzFKb4UcHYVCXfdz"
-        );
+impl pallet_assets::BenchmarkHelper<Location> for ForeignAssetsBenchmarkHelper {
+    fn create_asset_id_parameter(id: u32) -> Location {
+        Location::new(1, Junction::Parachain(id))
     }
 }

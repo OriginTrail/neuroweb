@@ -3,18 +3,22 @@ use super::{
     ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
     XcmpQueue,
 };
+use crate::Vec;
 use codec::Encode;
 use core::marker::PhantomData;
-use frame_support::traits::ContainsPair;
 use frame_support::{
     parameter_types,
-    traits::{ConstU32, Contains, Everything, Get, Nothing, PalletInfoAccess},
+    traits::{
+        fungibles::Mutate, ConstU32, Contains, ContainsPair, Everything, Get, Nothing,
+        PalletInfoAccess,
+    },
+    weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
+use scale_info::prelude::vec;
 use sp_core::blake2_256;
-
 use xcm::v4::prelude::*;
 use xcm::v4::InteriorLocation;
 use xcm_builder::{
@@ -25,17 +29,16 @@ use xcm_builder::{
     SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
     WeightInfoBounds, WithComputedOrigin,
 };
-
 use xcm_executor::{
-    traits::{ConvertLocation, WithOriginFilter},
-    XcmExecutor,
+    traits::{
+        ConvertLocation, DropAssets, Error as MatchError, MatchesFungibles, WeightTrader,
+        WithOriginFilter,
+    },
+    AssetsInHolding, XcmExecutor,
 };
 
 parameter_types! {
-    pub const RelayLocation: Location = Location::parent();
-    pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
-    pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-
+    // NEURO (native)
     pub TokenLocation: Location = Location {
         parents:0,
         interior: [
@@ -43,8 +46,22 @@ parameter_types! {
         ].into()
     };
 
+    pub const RelayLocation: Location = Location::parent();
+    pub const RelayNetwork: NetworkId = Polkadot;
+    pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
+
+    /// Asset Hub
+    pub AssetHubLocation: Location = (Parent, Parachain(1000)).into();
+    pub RelayChainNativeAssetFromAssetHub: (AssetFilter, Location) = (
+        (Asset { id: AssetId(RelayLocation::get()), fun: Fungible(1)}).into(),
+        AssetHubLocation::get()
+    );
+
     pub UniversalLocation: InteriorLocation = [GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into())].into();
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+
+    // XCM fees in DOT
+    pub DotPerSecond: u128 = 1_000_000_000; // 0.1 DOT/sec, in Planks
 }
 
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
@@ -68,16 +85,12 @@ pub type NativeAssetTransactor =
 
 pub type ForeignAssetTransactor = FungiblesAdapter<
     ForeignAssets,
-    ForeignAssetsConvertedConcreteId,
+    IsForeignConcreteAssetFrom<AssetHubLocation>,
     LocationToAccountId,
     AccountId,
     NoChecking,
     CheckingAccount,
 >;
-
-/// `AssetId`/`Balance` converter for `ForeignAssets`
-pub type ForeignAssetsConvertedConcreteId =
-    assets_common::ForeignAssetsConvertedConcreteId<(), Balance, xcm::v3::MultiLocation>;
 
 /// Means for transacting assets on this chain.
 pub type AssetTransactors = (NativeAssetTransactor, ForeignAssetTransactor);
@@ -102,6 +115,123 @@ pub type XcmOriginToTransactDispatchOrigin = (
     // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
     XcmPassthrough<RuntimeOrigin>,
 );
+
+/// A trader which accepts DOT (via RelayLocation) at a fixed rate.
+pub struct FixedRateOfForeignAsset<AssetLocation, Balance, Rate>(
+    PhantomData<(AssetLocation, Balance, Rate)>,
+);
+
+impl<
+        AssetLocation: Get<Location>,
+        Balance: From<u128> + Into<u128> + Copy + Ord + Default + core::ops::Sub,
+        Rate: Get<u128>,
+    > WeightTrader for FixedRateOfForeignAsset<AssetLocation, Balance, Rate>
+{
+    fn new() -> Self {
+        FixedRateOfForeignAsset(PhantomData)
+    }
+
+    fn buy_weight(
+        &mut self,
+        weight: Weight,
+        payment: AssetsInHolding,
+        _ctx: &XcmContext,
+    ) -> Result<AssetsInHolding, XcmError> {
+        let asset_id = AssetId(AssetLocation::get());
+        let rate_per_second = Rate::get();
+
+        let fee: u128 = (weight.ref_time() as u128)
+            .saturating_mul(rate_per_second)
+            .checked_div(WEIGHT_REF_TIME_PER_SECOND as u128)
+            .ok_or(XcmError::Overflow)?;
+        let fee_balance: Balance = fee.into();
+
+        let assets: Assets = payment.clone().into();
+
+        let mut found_amount: Option<Balance> = None;
+        for asset in assets.clone().into_inner().into_iter() {
+            if asset.id == asset_id {
+                if let Fungible(amount) = asset.fun {
+                    found_amount = Some(amount.into());
+                    break;
+                }
+            }
+        }
+
+        let amount = found_amount.ok_or(XcmError::TooExpensive)?;
+        if amount < fee_balance {
+            return Err(XcmError::TooExpensive);
+        }
+
+        // Subtract fee and rebuild
+        let mut new_assets: Vec<Asset> = Vec::new();
+        let leftover: u128 = amount.into() - fee_balance.into();
+
+        if leftover > 0 {
+            new_assets.push(Asset {
+                id: asset_id.clone(),
+                fun: Fungible(leftover),
+            });
+        }
+
+        // Instead of OnUnbalanced, just drop fees via your DealWithForeignFees
+        DealWithForeignFees::drop_assets(
+            &Location::here(),
+            vec![Asset {
+                id: asset_id.clone(),
+                fun: Fungible(fee_balance.into()),
+            }]
+            .into(),
+            _ctx,
+        );
+
+        Ok(Assets::from(new_assets).into())
+    }
+
+    fn refund_weight(&mut self, _weight: Weight, _ctx: &XcmContext) -> Option<Asset> {
+        None
+    }
+}
+
+// Deposit fees into the Treasury
+// TODO: Change to TakeRevenue after SDK upgrade
+pub struct DealWithForeignFees;
+impl DropAssets for DealWithForeignFees {
+    fn drop_assets(_origin: &Location, assets: AssetsInHolding, _ctx: &XcmContext) -> Weight {
+        let assets: Assets = assets.into();
+
+        for asset in assets.into_inner().into_iter() {
+            // Only handle DOT (Relay Location)
+            if asset.id == AssetId(RelayLocation::get()) {
+                if let Fungible(amount) = asset.fun {
+                    if amount > 0 {
+                        // Credit Treasury account in pallet-assets (asset_id = Location)
+                        if ForeignAssets::mint_into(
+                            RelayLocation::get(), // directly use Location as ID
+                            &crate::Treasury::account_id(),
+                            amount,
+                        )
+                        .is_ok()
+                        {
+                            log::info!(
+                                target: "xcm::fees",
+                                "Credited {} DOT into Treasury account",
+                                amount
+                            );
+                        } else {
+                            log::warn!(
+                                target: "xcm::fees",
+                                "Failed to credit DOT fees into Treasury"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        Weight::zero()
+    }
+}
 
 parameter_types! {
     pub const MaxInstructions: u32 = 100;
@@ -190,6 +320,22 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 /// Matches foreign assets from a given origin.
 /// Foreign assets are assets bridged from other consensus systems. i.e parents > 1.
 pub struct IsForeignConcreteAssetFrom<Origin>(PhantomData<Origin>);
+
+impl<Origin> MatchesFungibles<Location, u128> for IsForeignConcreteAssetFrom<Origin>
+where
+    Origin: Get<Location>,
+{
+    fn matches_fungibles(asset: &Asset) -> Result<(Location, u128), MatchError> {
+        let loc = Origin::get();
+
+        if asset.id == AssetId(loc.clone()) {
+            if let Fungibility::Fungible(amount) = asset.fun {
+                return Ok((loc, amount));
+            }
+        }
+        Err(MatchError::AssetNotHandled)
+    }
+}
 impl<Origin> ContainsPair<Asset, Location> for IsForeignConcreteAssetFrom<Origin>
 where
     Origin: Get<Location>,
@@ -201,19 +347,10 @@ where
                 asset,
                 Asset {
                     id: AssetId(Location { parents: 2, .. }),
-                    fun: Fungible(_)
-                },
+                    fun: Fungibility::Fungible(_)
+                }
             )
     }
-}
-
-parameter_types! {
-    /// Location of Asset Hub
-    pub AssetHubLocation: Location = (Parent, Parachain(1000)).into();
-    pub RelayChainNativeAssetFromAssetHub: (AssetFilter, Location) = (
-        (Asset { id: AssetId(RelayLocation::get()), fun: Fungible(1)}).into(),
-        AssetHubLocation::get()
-    );
 }
 
 type Reserves = (
@@ -241,7 +378,10 @@ impl xcm_executor::Config for XcmConfig {
         RuntimeCall,
         MaxInstructions,
     >;
-    type Trader = UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>;
+    type Trader = (
+        UsingComponents<WeightToFee, TokenLocation, AccountId, Balances, DealWithFees>,
+        FixedRateOfForeignAsset<RelayLocation, Balance, DotPerSecond>,
+    );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
     type AssetClaims = PolkadotXcm;
@@ -318,6 +458,7 @@ impl cumulus_pallet_xcm::Config for Runtime {
 }
 
 // The parts below are copied from a later version of polkadot-sdk
+//
 // Copied from
 // https://github.com/paritytech/polkadot-sdk/blob/7ef027551fd1290c42581a85052b643bffc9cbe4/polkadot/xcm/xcm-builder/src/location_conversion.rs
 /// Converts locations from external global consensus systems (e.g., Ethereum, other parachains)
@@ -409,8 +550,6 @@ pub fn ensure_is_remote(
 use super::UNITS;
 #[cfg(feature = "runtime-benchmarks")]
 use crate::assets::EXISTENTIAL_DEPOSIT;
-#[cfg(feature = "runtime-benchmarks")]
-use scale_info::prelude::vec;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
