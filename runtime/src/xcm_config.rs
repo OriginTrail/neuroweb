@@ -52,8 +52,11 @@ parameter_types! {
 
     /// Asset Hub
     pub AssetHubLocation: Location = (Parent, Parachain(1000)).into();
-    pub RelayChainNativeAssetFromAssetHub: (AssetFilter, Location) = (
-        (Asset { id: AssetId(RelayLocation::get()), fun: Fungible(1)}).into(),
+    pub RelayChainNativeAssetFromAssetHub: (AssetFilter, Location) =
+        (Wild(AllOf {
+            fun: WildFungible,
+            id: xcm::prelude::AssetId(RelayLocation::get()),
+           }),
         AssetHubLocation::get()
     );
 
