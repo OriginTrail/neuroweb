@@ -334,15 +334,46 @@ where
     Origin: Get<Location>,
 {
     fn matches_fungibles(asset: &Asset) -> Result<(Location, u128), MatchError> {
-        let loc = Origin::get();
+        let expected_origin = Origin::get(); // Should be Asset Hub
 
-        log::info!(target: "xcm::fees","Checking matches_fungibles asset ID {:?} == Location {:?}", asset.clone().id, loc.clone());
+        if let Fungibility::Fungible(amount) = asset.fun {
+            if let AssetId(asset_location) = &asset.id {
+                // Special validation for DOT - ensure it comes from Asset Hub
+                if *asset_location == RelayLocation::get() {
+                    if expected_origin == AssetHubLocation::get() {
+                        log::info!(
+                            target: "xcm::fees",
+                            "matches_fungibles - DOT asset from Asset Hub, amount: {}",
+                            amount
+                        );
+                        return Ok((asset_location.clone(), amount));
+                    } else {
+                        log::warn!(
+                            target: "xcm::fees",
+                            "DOT asset rejected - not from Asset Hub. Expected: {:?}, Got: {:?}",
+                            AssetHubLocation::get(), expected_origin
+                        );
+                        return Err(MatchError::AssetNotHandled);
+                    }
+                }
 
-        //if asset.id == AssetId(loc.clone()) {
-            if let Fungibility::Fungible(amount) = asset.fun {
-                return Ok((loc, amount));
+                // Handle other foreign assets from Asset Hub
+                if expected_origin == AssetHubLocation::get() {
+                    log::info!(
+                        target: "xcm::fees",
+                        "matches_fungibles - Foreign asset from Asset Hub: {:?}, amount: {}",
+                        asset_location, amount
+                    );
+                    return Ok((asset_location.clone(), amount));
+                }
             }
-        //}
+        }
+
+        log::warn!(
+            target: "xcm::fees",
+            "matches_fungibles - Asset not handled. Asset: {:?}, Expected origin: {:?}",
+            asset, expected_origin
+        );
         Err(MatchError::AssetNotHandled)
     }
 }
