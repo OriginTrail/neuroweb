@@ -6242,7 +6242,7 @@ dependencies = [
 
 [[package]]
 name = "neuroweb-runtime"
-version = "142.0.0"
+version = "143.0.0"
 dependencies = [
  "assets-common",
  "cumulus-pallet-aura-ext",

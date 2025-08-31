@@ -209,23 +209,28 @@ impl DropAssets for DealWithForeignFees {
                 if let Fungible(amount) = asset.fun {
                     if amount > 0 {
                         // Credit Treasury account in pallet-assets (asset_id = Location)
-                        if ForeignAssets::mint_into(
+                        match ForeignAssets::mint_into(
                             RelayLocation::get(), // directly use Location as ID
                             &crate::Treasury::account_id(),
                             amount,
-                        )
-                        .is_ok()
-                        {
-                            log::info!(
-                                target: "xcm::fees",
-                                "Credited {} DOT into Treasury account",
-                                amount
-                            );
-                        } else {
-                            log::warn!(
-                                target: "xcm::fees",
-                                "Failed to credit DOT fees into Treasury"
-                            );
+                        ) {
+                            Ok(_) => {
+                                log::info!(
+                                    target: "xcm::fees",
+                                    "Credited {} DOT into Treasury account ({:?})",
+                                    amount,
+                                     &crate::Treasury::account_id(),
+                                );
+                            }
+                            Err(e) => {
+                                log::warn!(
+                                    target: "xcm::fees",
+                                    "Failed to credit DOT fees ({}) into Treasury ({:?}): {:?}",
+                                    amount,
+                                    &crate::Treasury::account_id(),
+                                    e
+                                );
+                            }
                         }
                     }
                 }
@@ -331,11 +336,13 @@ where
     fn matches_fungibles(asset: &Asset) -> Result<(Location, u128), MatchError> {
         let loc = Origin::get();
 
-        if asset.id == AssetId(loc.clone()) {
+        log::info!(target: "xcm::fees","Checking matches_fungibles asset ID {:?} == Location {:?}", asset.clone().id, loc.clone());
+
+        //if asset.id == AssetId(loc.clone()) {
             if let Fungibility::Fungible(amount) = asset.fun {
                 return Ok((loc, amount));
             }
-        }
+        //}
         Err(MatchError::AssetNotHandled)
     }
 }
