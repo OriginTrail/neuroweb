@@ -334,46 +334,28 @@ where
     Origin: Get<Location>,
 {
     fn matches_fungibles(asset: &Asset) -> Result<(Location, u128), MatchError> {
-        let expected_origin = Origin::get(); // Should be Asset Hub
+        let expected_origin = Origin::get();
 
-        if let Fungibility::Fungible(amount) = asset.fun {
-            if let AssetId(asset_location) = &asset.id {
-                // Special validation for DOT - ensure it comes from Asset Hub
-                if *asset_location == RelayLocation::get() {
-                    if expected_origin == AssetHubLocation::get() {
-                        log::info!(
-                            target: "xcm::fees",
-                            "matches_fungibles - DOT asset from Asset Hub, amount: {}",
-                            amount
-                        );
+        let AssetId(asset_location) = &asset.id;
+
+        // Ensure DOT comes from Asset Hub
+        if *asset_location == RelayLocation::get() && expected_origin == AssetHubLocation::get() {
+            if let Fungible(amount) = asset.fun {
+                return Ok((asset_location.clone(), amount));
+            }
+        }
+
+        // Handle assets from Ethereum
+        if expected_origin == AssetHubLocation::get() && asset_location.parents == 2 {
+            if let Some(first_junction) = asset_location.interior.first() {
+                if matches!(first_junction, GlobalConsensus(Ethereum { .. })) {
+                    if let Fungible(amount) = asset.fun {
                         return Ok((asset_location.clone(), amount));
-                    } else {
-                        log::warn!(
-                            target: "xcm::fees",
-                            "DOT asset rejected - not from Asset Hub. Expected: {:?}, Got: {:?}",
-                            AssetHubLocation::get(), expected_origin
-                        );
-                        return Err(MatchError::AssetNotHandled);
                     }
-                }
-
-                // Handle other foreign assets from Asset Hub
-                if expected_origin == AssetHubLocation::get() {
-                    log::info!(
-                        target: "xcm::fees",
-                        "matches_fungibles - Foreign asset from Asset Hub: {:?}, amount: {}",
-                        asset_location, amount
-                    );
-                    return Ok((asset_location.clone(), amount));
                 }
             }
         }
 
-        log::warn!(
-            target: "xcm::fees",
-            "matches_fungibles - Asset not handled. Asset: {:?}, Expected origin: {:?}",
-            asset, expected_origin
-        );
         Err(MatchError::AssetNotHandled)
     }
 }
