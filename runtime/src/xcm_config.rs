@@ -97,17 +97,14 @@ pub type LocationToAccountId = (
 pub type NativeAssetTransactor =
     FungibleAdapter<Balances, IsConcrete<TokenLocation>, LocationToAccountId, AccountId, ()>;
 
-pub type BridgedLocalAssetTransactor = FungibleAdapter<
-    // Use this currency:
-    Balances,
-    // Use this currency when it is a fungible asset matching the given location or name:
-    IsConcrete<EthereumCurrencyLocation>,
-    // Convert an XCM Location into a local account id:
+pub type BridgedLocalAssetTransactor = FungiblesAdapter<
+    crate::Assets,
+    // Use pallet assets asset when receiving TRAC from Ethereum
+    LocalAssetWhenReceiving<EthereumCurrencyLocation>,
     LocationToAccountId,
-    // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
-    // We don't track any teleports.
-    (),
+    NoChecking,
+    CheckingAccount,
 >;
 
 pub type ForeignAssetTransactor = FungiblesAdapter<
@@ -349,8 +346,26 @@ impl Contains<RuntimeCall> for SafeCallFilter {
     }
 }
 
-/// Matches foreign assets from a given origin.
-/// Foreign assets are assets bridged from other consensus systems. i.e parents > 1.
+pub struct LocalAssetWhenReceiving<AssetLocation>(PhantomData<AssetLocation>);
+
+impl<AssetLocation> MatchesFungibles<u128, u128> for LocalAssetWhenReceiving<AssetLocation>
+where
+    AssetLocation: Get<Location>,
+{
+    fn matches_fungibles(a: &Asset) -> Result<(u128, u128), MatchError> {
+        let AssetId(asset_location) = &a.id;
+        let expected_location = AssetLocation::get();
+
+        if *asset_location == expected_location {
+            if let Fungible(amount) = a.fun {
+                return Ok((crate::assets::LOCAL_TRAC_ASSET_ID, amount));
+            }
+        }
+
+        Err(MatchError::AssetNotHandled)
+    }
+}
+
 pub struct IsDOTFrom<Origin>(PhantomData<Origin>);
 
 impl<Origin> MatchesFungibles<Location, u128> for IsDOTFrom<Origin>
