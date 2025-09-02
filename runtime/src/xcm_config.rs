@@ -67,17 +67,6 @@ parameter_types! {
     pub DotPerSecond: u128 = 1_000_000_000; // 0.1 DOT/sec, in Planks
 }
 
-pub struct EthereumCurrencyLocation;
-impl Get<Location> for EthereumCurrencyLocation {
-    fn get() -> Location {
-        if crate::Params::testnet_mode() {
-            crate::assets::foreign_trac_location_sepolia()
-        } else {
-            crate::assets::foreign_trac_asset_location()
-        }
-    }
-}
-
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
@@ -97,19 +86,9 @@ pub type LocationToAccountId = (
 pub type NativeAssetTransactor =
     FungibleAdapter<Balances, IsConcrete<TokenLocation>, LocationToAccountId, AccountId, ()>;
 
-pub type BridgedLocalAssetTransactor = FungiblesAdapter<
-    crate::Assets,
-    // Use pallet assets asset when receiving TRAC from Ethereum
-    LocalAssetWhenReceiving<EthereumCurrencyLocation>,
-    LocationToAccountId,
-    AccountId,
-    NoChecking,
-    CheckingAccount,
->;
-
 pub type ForeignAssetTransactor = FungiblesAdapter<
     ForeignAssets,
-    IsDOTFrom<AssetHubLocation>,
+    IsForeignConcreteAssetFrom<AssetHubLocation>,
     LocationToAccountId,
     AccountId,
     NoChecking,
@@ -117,7 +96,7 @@ pub type ForeignAssetTransactor = FungiblesAdapter<
 >;
 
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (NativeAssetTransactor, BridgedLocalAssetTransactor, ForeignAssetTransactor);
+pub type AssetTransactors = (NativeAssetTransactor, ForeignAssetTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -346,48 +325,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
     }
 }
 
-pub struct LocalAssetWhenReceiving<AssetLocation>(PhantomData<AssetLocation>);
-
-impl<AssetLocation> MatchesFungibles<u128, u128> for LocalAssetWhenReceiving<AssetLocation>
-where
-    AssetLocation: Get<Location>,
-{
-    fn matches_fungibles(a: &Asset) -> Result<(u128, u128), MatchError> {
-        let AssetId(asset_location) = &a.id;
-        let expected_location = AssetLocation::get();
-
-        if *asset_location == expected_location {
-            if let Fungible(amount) = a.fun {
-                return Ok((crate::assets::LOCAL_TRAC_ASSET_ID, amount));
-            }
-        }
-
-        Err(MatchError::AssetNotHandled)
-    }
-}
-
-pub struct IsDOTFrom<Origin>(PhantomData<Origin>);
-
-impl<Origin> MatchesFungibles<Location, u128> for IsDOTFrom<Origin>
-where
-    Origin: Get<Location>,
-{
-    fn matches_fungibles(asset: &Asset) -> Result<(Location, u128), MatchError> {
-        let expected_origin = Origin::get();
-
-        let AssetId(asset_location) = &asset.id;
-
-        // Ensure DOT comes from Asset Hub
-        if *asset_location == RelayLocation::get() && expected_origin == AssetHubLocation::get() {
-            if let Fungible(amount) = asset.fun {
-                return Ok((asset_location.clone(), amount));
-            }
-        }
-
-        Err(MatchError::AssetNotHandled)
-    }
-}
-
 /// Matches foreign assets from a given origin.
 /// Foreign assets are assets bridged from other consensus systems. i.e parents > 1.
 pub struct IsForeignConcreteAssetFrom<Origin>(PhantomData<Origin>);
@@ -422,7 +359,6 @@ where
         Err(MatchError::AssetNotHandled)
     }
 }
-
 impl<Origin> ContainsPair<Asset, Location> for IsForeignConcreteAssetFrom<Origin>
 where
     Origin: Get<Location>,
