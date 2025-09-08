@@ -600,10 +600,14 @@ mod benchmarking {
                 benchmarking::RandomParaId::get(),
             );
 
+            let who = frame_benchmarking::whitelisted_caller();
+            let balance = 10 * benchmarking::ExistentialDeposit::get();
+            let _ = <Balances as Currency<_>>::make_free_balance_be(&who, balance);
+
             Some((
                 Asset {
                     id: AssetId(TokenLocation::get()),
-                    fun: Fungible(benchmarking::ExistentialDeposit::get()),
+                    fun: Fungible(benchmarking::ExistentialDeposit::get() / 10),
                 },
                 // destination: parent → sibling parachain
                 (Parent, Parachain(benchmarking::RandomParaId::get().into())).into(),
