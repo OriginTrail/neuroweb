@@ -1209,6 +1209,7 @@ mod benches {
         [pallet_vesting, Vesting]
         [pallet_wrapper, Wrapper]
         [pallet_xc_asset_config, XcAssetConfig]
+        [pallet_xcm, pallet_xcm::benchmarking::Pallet<Runtime>]
         [pallet_xcm_fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
         [pallet_xcm_generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
     );
