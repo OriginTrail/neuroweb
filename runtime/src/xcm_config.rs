@@ -573,6 +573,7 @@ pub fn ensure_is_remote(
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking {
     use super::*;
+    use crate::xcm_config::benchmarking;
     use crate::{assets::EXISTENTIAL_DEPOSIT, Box, UNITS};
     use cumulus_primitives_core::ParaId;
     use frame_support::traits::Currency;
@@ -596,7 +597,7 @@ mod benchmarking {
         fn reserve_transferable_asset_and_dest() -> Option<(Asset, Location)> {
             // open a channel to a random sibling for benchmarking
             ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(
-                benchmarking::RandomParaId::get()
+                benchmarking::RandomParaId::get(),
             );
 
             Some((
@@ -616,18 +617,18 @@ mod benchmarking {
 
             let destination: Location = (Parent, Parachain(para_id.into())).into();
 
-            let fee_asset: Asset = (TokenLocation::get(), 1_000_000_000u128).into();
-            let transfer_asset: Asset = (TokenLocation::get(), 1_000_000_000u128).into();
+            let fee_asset: Asset = (TokenLocation::get(), ExistentialDeposit::get()).into();
+            let transfer_asset: Asset = (TokenLocation::get(), ExistentialDeposit::get()).into();
 
             let who = frame_benchmarking::whitelisted_caller();
-            let balance = 10_000_000_000u128;
+            let balance = 10 * benchmarking::ExistentialDeposit::get();
             let _ = Balances::make_free_balance_be(&who, balance);
             let assets: Assets = vec![fee_asset.clone(), transfer_asset].into();
             let fee_index: u32 = 0;
 
+            let ed = benchmarking::ExistentialDeposit::get();
             let verify: Box<dyn FnOnce()> = Box::new(move || {
-                // ensure caller lost at least the fee amount
-                assert!(Balances::free_balance(&who) <= balance - 1_000_000_000u128);
+                assert!(Balances::free_balance(&who) <= balance - ed);
             });
 
             Some((assets, fee_index, destination, verify))
@@ -691,7 +692,8 @@ mod benchmarking {
             (0u64, Response::Version(Default::default()))
         }
 
-        fn worst_case_asset_exchange() -> Result<(Assets, Assets), frame_benchmarking::BenchmarkError> {
+        fn worst_case_asset_exchange(
+        ) -> Result<(Assets, Assets), frame_benchmarking::BenchmarkError> {
             Err(frame_benchmarking::BenchmarkError::Skip)
         }
 
@@ -699,7 +701,8 @@ mod benchmarking {
             Err(frame_benchmarking::BenchmarkError::Skip)
         }
 
-        fn transact_origin_and_runtime_call() -> Result<(Location, RuntimeCall), frame_benchmarking::BenchmarkError> {
+        fn transact_origin_and_runtime_call(
+        ) -> Result<(Location, RuntimeCall), frame_benchmarking::BenchmarkError> {
             Ok((
                 RelayLocation::get(),
                 frame_system::Call::remark_with_event { remark: vec![] }.into(),
@@ -710,8 +713,8 @@ mod benchmarking {
             Ok(RelayLocation::get())
         }
 
-        fn claimable_asset() -> Result<(Location, Location, Assets), frame_benchmarking::BenchmarkError>
-        {
+        fn claimable_asset(
+        ) -> Result<(Location, Location, Assets), frame_benchmarking::BenchmarkError> {
             let origin = RelayLocation::get();
             let assets: Assets = (AssetId(RelayLocation::get()), 1_000 * UNITS).into();
             let ticket = Location {
@@ -728,12 +731,13 @@ mod benchmarking {
             })
         }
 
-        fn unlockable_asset() -> Result<(Location, Location, Asset), frame_benchmarking::BenchmarkError>
-        {
+        fn unlockable_asset(
+        ) -> Result<(Location, Location, Asset), frame_benchmarking::BenchmarkError> {
             Err(frame_benchmarking::BenchmarkError::Skip)
         }
 
-        fn export_message_origin_and_destination() -> Result<(Location, NetworkId, Junctions), frame_benchmarking::BenchmarkError> {
+        fn export_message_origin_and_destination(
+        ) -> Result<(Location, NetworkId, Junctions), frame_benchmarking::BenchmarkError> {
             Err(frame_benchmarking::BenchmarkError::Skip)
         }
 
