@@ -27,8 +27,8 @@ use xcm_builder::{
     AllowTopLevelPaidExecutionFrom, Case, EnsureXcmOrigin, FungibleAdapter, FungiblesAdapter,
     IsConcrete, NativeAsset, NoChecking, ParentIsPreset, RelayChainAsNative,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
-    WeightInfoBounds, WithComputedOrigin,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId,
+    UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
 use xcm_executor::{
     traits::{
@@ -254,7 +254,7 @@ impl Contains<Location> for ParentOrParentsExecutivePlurality {
     }
 }
 
-pub type Barrier = (
+pub type Barrier = TrailingSetTopicAsId<(
     // Weight that is paid for may be consumed.
     TakeWeightCredit,
     // Expected responses are OK.
@@ -269,7 +269,7 @@ pub type Barrier = (
         UniversalLocation,
         ConstU32<8>,
     >,
-);
+)>;
 
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we
 /// properly account for proof size weights.
@@ -431,12 +431,12 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = (
+pub type XcmRouter = WithUniqueTopic<(
     // Two routers - use UMP to communicate with the relay chain:
     cumulus_primitives_utility::ParentAsUmp<ParachainSystem, (), ()>,
     // ..and XCMP to communicate with the sibling chains.
     XcmpQueue,
-);
+)>;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
