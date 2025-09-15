@@ -18,55 +18,58 @@ use syn::{parse_macro_input, Expr, ExprLit, Ident, ItemEnum, Lit, LitByteStr, Li
 
 #[proc_macro_attribute]
 pub fn generate_function_selector(_: TokenStream, input: TokenStream) -> TokenStream {
-	let item = parse_macro_input!(input as ItemEnum);
+    let item = parse_macro_input!(input as ItemEnum);
 
-	let ItemEnum {
-		attrs,
-		vis,
-		enum_token,
-		ident,
-		variants,
-		..
-	} = item;
+    let ItemEnum {
+        attrs,
+        vis,
+        enum_token,
+        ident,
+        variants,
+        ..
+    } = item;
 
-	let mut ident_expressions: Vec<Ident> = vec![];
-	let mut variant_expressions: Vec<Expr> = vec![];
-	for variant in variants {
-		if let Some((_, Expr::Lit(ExprLit { lit, .. }))) = variant.discriminant {
-			if let Lit::Str(token) = lit {
-				let selector = pallet_evm_utility::get_function_selector(&token.value());
-				// println!("method: {:?}, selector: {:?}", token.value(), selector);
-				ident_expressions.push(variant.ident);
-				variant_expressions.push(Expr::Lit(ExprLit {
-					lit: Lit::Verbatim(Literal::u32_suffixed(selector)),
-					attrs: Default::default(),
-				}));
-			} else {
-				panic!("Not method string: `{:?}`", lit);
-			}
-		} else {
-			panic!("Not enum: `{:?}`", variant);
-		}
-	}
+    let mut ident_expressions: Vec<Ident> = vec![];
+    let mut variant_expressions: Vec<Expr> = vec![];
+    for variant in variants {
+        if let Some((_, Expr::Lit(ExprLit { lit, .. }))) = variant.discriminant {
+            if let Lit::Str(token) = lit {
+                let selector = pallet_evm_utility::get_function_selector(&token.value());
+                // println!("method: {:?}, selector: {:?}", token.value(), selector);
+                ident_expressions.push(variant.ident);
+                variant_expressions.push(Expr::Lit(ExprLit {
+                    lit: Lit::Verbatim(Literal::u32_suffixed(selector)),
+                    attrs: Default::default(),
+                }));
+            } else {
+                panic!("Not method string: `{:?}`", lit);
+            }
+        } else {
+            panic!("Not enum: `{:?}`", variant);
+        }
+    }
 
-	(quote! {
-		#(#attrs)*
-		#vis #enum_token #ident {
-			#(
-				#ident_expressions = #variant_expressions,
-			)*
-		}
-	})
-	.into()
+    (quote! {
+        #(#attrs)*
+        #vis #enum_token #ident {
+            #(
+                #ident_expressions = #variant_expressions,
+            )*
+        }
+    })
+    .into()
 }
 
 #[proc_macro]
 pub fn keccak256(input: TokenStream) -> TokenStream {
-	let lit_str = parse_macro_input!(input as LitStr);
+    let lit_str = parse_macro_input!(input as LitStr);
 
-	let result = pallet_evm_utility::sha3_256(&lit_str.value());
+    let result = pallet_evm_utility::sha3_256(&lit_str.value());
 
-	let eval = Lit::ByteStr(LitByteStr::new(result.as_ref(), proc_macro2::Span::call_site()));
+    let eval = Lit::ByteStr(LitByteStr::new(
+        result.as_ref(),
+        proc_macro2::Span::call_site(),
+    ));
 
-	quote!(#eval).into()
+    quote!(#eval).into()
 }

@@ -91,7 +91,6 @@ fn selectors() {
         crate::SELECTOR_LOG_APPROVAL,
         &Keccak256::digest(b"Approval(address,address,uint256)")[..]
     );
-
 }
 
 #[test]
@@ -391,7 +390,7 @@ fn increase_allowance() {
                 ))
                 .execute_returns(EvmDataWriter::new().write(true).build());
 
-                precompiles()
+            precompiles()
                 .prepare_test(
                     Account::Alice,
                     Account::AssetId(0u128),
@@ -439,14 +438,18 @@ fn increase_allowance_saturating() {
                         .write(U256::from(u128::MAX) - 1)
                         .build(),
                 )
-                .expect_log(LogsBuilder::new(Account::AssetId(0u128).into()).log3(
-                    SELECTOR_LOG_APPROVAL,
-                    Account::Alice,
-                    Account::Bob,
-                    EvmDataWriter::new().write(U256::from(u128::MAX) - 1).build(),
-                ))
+                .expect_log(
+                    LogsBuilder::new(Account::AssetId(0u128).into()).log3(
+                        SELECTOR_LOG_APPROVAL,
+                        Account::Alice,
+                        Account::Bob,
+                        EvmDataWriter::new()
+                            .write(U256::from(u128::MAX) - 1)
+                            .build(),
+                    ),
+                )
                 .execute_returns(EvmDataWriter::new().write(true).build());
-            
+
             precompiles()
                 .prepare_test(
                     Account::Alice,
@@ -456,12 +459,16 @@ fn increase_allowance_saturating() {
                         .write(U256::from(5))
                         .build(),
                 )
-                .expect_log(LogsBuilder::new(Account::AssetId(0u128).into()).log3(
-                    SELECTOR_LOG_APPROVAL,
-                    Account::Alice,
-                    Account::Bob,
-                    EvmDataWriter::new().write(U256::from(u128::MAX) + 4).build(),
-                ))
+                .expect_log(
+                    LogsBuilder::new(Account::AssetId(0u128).into()).log3(
+                        SELECTOR_LOG_APPROVAL,
+                        Account::Alice,
+                        Account::Bob,
+                        EvmDataWriter::new()
+                            .write(U256::from(u128::MAX) + 4)
+                            .build(),
+                    ),
+                )
                 .execute_returns(EvmDataWriter::new().write(true).build());
 
             precompiles()
@@ -477,22 +484,22 @@ fn increase_allowance_saturating() {
                 .expect_no_logs()
                 .execute_returns(EvmDataWriter::new().write(U256::from(u128::MAX)).build());
 
-                // precompiles()
-                // .prepare_test(
-                //     Account::Alice,
-                //     Account::AssetId(0u128),
-                //     EvmDataWriter::new_with_selector(Action::IncreaseAllowance)
-                //         .write(Address(Account::Bob.into()))
-                //         .write(U256::from(2))
-                //         .build(),
-                // )
-                // .expect_log(LogsBuilder::new(Account::AssetId(0u128).into()).log3(
-                //     SELECTOR_LOG_APPROVAL,
-                //     Account::Alice,
-                //     Account::Bob,
-                //     EvmDataWriter::new().write(U256::MAX).build(),
-                // ))
-                // .execute_returns(EvmDataWriter::new().write(true).build());
+            // precompiles()
+            // .prepare_test(
+            //     Account::Alice,
+            //     Account::AssetId(0u128),
+            //     EvmDataWriter::new_with_selector(Action::IncreaseAllowance)
+            //         .write(Address(Account::Bob.into()))
+            //         .write(U256::from(2))
+            //         .build(),
+            // )
+            // .expect_log(LogsBuilder::new(Account::AssetId(0u128).into()).log3(
+            //     SELECTOR_LOG_APPROVAL,
+            //     Account::Alice,
+            //     Account::Bob,
+            //     EvmDataWriter::new().write(U256::MAX).build(),
+            // ))
+            // .execute_returns(EvmDataWriter::new().write(true).build());
         });
 }
 
@@ -533,7 +540,7 @@ fn decrease_allowance() {
                 ))
                 .execute_returns(EvmDataWriter::new().write(true).build());
 
-                precompiles()
+            precompiles()
                 .prepare_test(
                     Account::Alice,
                     Account::AssetId(0u128),
@@ -551,7 +558,6 @@ fn decrease_allowance() {
                 .execute_returns(EvmDataWriter::new().write(true).build());
         });
 }
-
 
 #[test]
 fn decrease_allowance_saturating() {
@@ -590,7 +596,7 @@ fn decrease_allowance_saturating() {
                 ))
                 .execute_returns(EvmDataWriter::new().write(true).build());
 
-                precompiles()
+            precompiles()
                 .prepare_test(
                     Account::Alice,
                     Account::AssetId(0u128),
@@ -608,7 +614,6 @@ fn decrease_allowance_saturating() {
                 .execute_returns(EvmDataWriter::new().write(true).build());
         });
 }
-
 
 #[test]
 fn transfer() {
