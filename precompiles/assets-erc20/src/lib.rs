@@ -122,7 +122,7 @@ where
     Runtime: AddressToAssetId<AssetIdOf<Runtime, Instance>>,
     <<Runtime as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin: OriginTrait,
     <<Runtime as pallet_evm::Config>::AccountProvider as pallet_evm::AccountProvider>::AccountId:
-    Into<<Runtime as frame_system::Config>::AccountId> + Clone,
+        Into<<Runtime as frame_system::Config>::AccountId>,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<EvmResult<PrecompileOutput>> {
         let address = handle.code_address();
@@ -209,7 +209,7 @@ where
     Runtime: AddressToAssetId<AssetIdOf<Runtime, Instance>>,
     <<Runtime as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin: OriginTrait,
     <<Runtime as pallet_evm::Config>::AccountProvider as pallet_evm::AccountProvider>::AccountId:
-    Into<<Runtime as frame_system::Config>::AccountId> + Clone,
+        Into<<Runtime as frame_system::Config>::AccountId>,
 {
     fn total_supply(
         asset_id: AssetIdOf<Runtime, Instance>,
@@ -237,7 +237,8 @@ where
 
         // Fetch info.
         let amount: U256 = {
-            let owner: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(owner).into();
+            let owner: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(owner).into();
             pallet_assets::Pallet::<Runtime, Instance>::balance(asset_id, &owner).into()
         };
 
@@ -258,8 +259,10 @@ where
 
         // Fetch info.
         let amount: U256 = {
-            let owner: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(owner).into();
-            let spender: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(spender).into();
+            let owner: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(owner).into();
+            let spender: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(spender).into();
 
             pallet_assets::Pallet::<Runtime, Instance>::allowance(asset_id, &owner, &spender).into()
         };
@@ -296,8 +299,13 @@ where
 
         // Fetch current allowance
         let amount: U256 = {
-            let owner: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller).into();
-            let spender: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(spender).into();
+            let owner: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(
+                    handle.context().caller,
+                )
+                .into();
+            let spender: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(spender).into();
             pallet_assets::Pallet::<Runtime, Instance>::allowance(
                 asset_id.clone(),
                 &owner,
@@ -328,8 +336,13 @@ where
 
         // Fetch current allowance
         let amount: U256 = {
-            let owner: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller).into();
-            let spender: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(spender).into();
+            let owner: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(
+                    handle.context().caller,
+                )
+                .into();
+            let spender: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(spender).into();
 
             pallet_assets::Pallet::<Runtime, Instance>::allowance(
                 asset_id.clone(),
@@ -354,8 +367,13 @@ where
         amount: U256,
     ) -> EvmResult<PrecompileOutput> {
         {
-            let origin: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller).into();
-            let spender: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(spender).into();
+            let origin: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(
+                    handle.context().caller,
+                )
+                .into();
+            let spender: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(spender).into();
             // Amount saturate if too high.
             let amount: BalanceOf<Runtime, Instance> =
                 amount.try_into().unwrap_or_else(|_| Bounded::max_value());
@@ -417,8 +435,13 @@ where
 
         // Build call with origin.
         {
-            let origin: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller).into();
-            let to: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(to).into();
+            let origin: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(
+                    handle.context().caller,
+                )
+                .into();
+            let to: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(to).into();
 
             // Dispatch call (if enough gas).
             RuntimeHelper::<Runtime>::try_dispatch(
@@ -458,9 +481,15 @@ where
         let amount = input.read::<BalanceOf<Runtime, Instance>>()?;
 
         {
-            let caller: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller).into();
-            let from: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(from).into();
-            let to: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(to).into();
+            let caller: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(
+                    handle.context().caller,
+                )
+                .into();
+            let from: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(from).into();
+            let to: Runtime::AccountId =
+                <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(to).into();
 
             // If caller is "from", it can spend as much as it wants from its own balance.
             if caller != from {
@@ -574,8 +603,13 @@ where
         let beneficiary: H160 = input.read::<Address>()?.into();
         let amount = input.read::<BalanceOf<Runtime, Instance>>()?;
 
-        let origin: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller).into();
-        let beneficiary: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(beneficiary).into();
+        let origin: Runtime::AccountId =
+            <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(
+                handle.context().caller,
+            )
+            .into();
+        let beneficiary: Runtime::AccountId =
+            <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(beneficiary).into();
 
         // Dispatch call (if enough gas).
         RuntimeHelper::<Runtime>::try_dispatch(
@@ -601,8 +635,13 @@ where
         let who: H160 = input.read::<Address>()?.into();
         let amount = input.read::<BalanceOf<Runtime, Instance>>()?;
 
-        let origin: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller).into();
-        let who: Runtime::AccountId = <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(who).into();
+        let origin: Runtime::AccountId =
+            <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(
+                handle.context().caller,
+            )
+            .into();
+        let who: Runtime::AccountId =
+            <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(who).into();
 
         // Dispatch call (if enough gas).
         RuntimeHelper::<Runtime>::try_dispatch(
