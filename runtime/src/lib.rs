@@ -88,7 +88,8 @@ use pallet_ethereum::{
 };
 use pallet_evm::{
     Account as EVMAccount, EVMFungibleAdapter, EnsureAddressNever, EnsureAddressRoot,
-    FeeCalculator, OnChargeEVMTransaction as OnChargeEVMTransactionT, Runner,
+    FeeCalculator, FrameSystemAccountProvider, OnChargeEVMTransaction as OnChargeEVMTransactionT,
+    Runner,
 };
 use pallet_evm_accounts::{EvmAddressMapping, MergeAccount};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
@@ -783,31 +784,32 @@ parameter_types! {
     ///     (max_extrinsic.ref_time() / max_extrinsic.proof_size()) / WEIGHT_PER_GAS
     /// )
     pub const GasLimitPovSizeRatio: u64 = 4;
+    /// The amount of gas per storage (in bytes): BLOCK_GAS_LIMIT / BLOCK_STORAGE_LIMIT
+    /// The current definition of BLOCK_STORAGE_LIMIT is 40 KB, resulting in a value of 366.
+    pub GasLimitStorageGrowthRatio: u64 = 366;
 }
 
 impl pallet_evm::Config for Runtime {
-    type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
-
-    type BlockGasLimit = BlockGasLimit;
-    type ChainId = ChainId;
-    type BlockHashMapping = EthereumBlockHashMapping<Self>;
-    type Runner = pallet_evm::runner::stack::Runner<Self>;
-
-    type CallOrigin = EnsureAddressRoot<AccountId>;
-    type WithdrawOrigin = EnsureAddressNever<AccountId>;
-    type AddressMapping = EvmAddressMapping<Runtime>;
-
+    type AccountProvider = FrameSystemAccountProvider<Runtime>;
     type FeeCalculator = BaseFee;
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type WeightPerGas = WeightPerGas;
+    type BlockHashMapping = EthereumBlockHashMapping<Self>;
+    type CallOrigin = EnsureAddressRoot<AccountId>;
+    type WithdrawOrigin = EnsureAddressNever<AccountId>;
+    type AddressMapping = EvmAddressMapping<Runtime>;
+    type Currency = Balances;
+    type RuntimeEvent = RuntimeEvent;
+    type PrecompilesType = FrontierPrecompiles<Self>;
+    type PrecompilesValue = PrecompilesValue;
+    type ChainId = ChainId;
+    type BlockGasLimit = BlockGasLimit;
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
     type OnChargeTransaction = OnChargeEVMTransaction<DealWithFees>;
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
-    type PrecompilesType = FrontierPrecompiles<Self>;
-    type PrecompilesValue = PrecompilesValue;
     type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
     type Timestamp = Timestamp;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
