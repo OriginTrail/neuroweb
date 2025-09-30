@@ -233,6 +233,7 @@ pub mod pallet {
                 local_trac_asset_id,
                 &who,
                 amount,
+                frame_support::traits::tokens::Preservation::Expendable,
                 frame_support::traits::tokens::Precision::Exact,
                 frame_support::traits::tokens::Fortitude::Polite,
             )
