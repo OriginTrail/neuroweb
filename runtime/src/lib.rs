@@ -719,11 +719,12 @@ pub struct OnChargeEVMTransaction<OU>(sp_std::marker::PhantomData<OU>);
 impl<T, OU> OnChargeEVMTransactionT<T> for OnChargeEVMTransaction<OU>
 where
     T: pallet_evm::Config,
-    T::Currency: Balanced<T::AccountId>,
-    OU: OnUnbalanced<Credit<T::AccountId, T::Currency>>,
-    U256: UniqueSaturatedInto<BalanceFor<T>>,
+    T::Currency: Balanced<pallet_evm::AccountIdOf<T>>,
+    OU: OnUnbalanced<Credit<pallet_evm::AccountIdOf<T>, T::Currency>>,
+    U256: UniqueSaturatedInto<<T::Currency as Inspect<pallet_evm::AccountIdOf<T>>>::Balance>,
+    T::AddressMapping: pallet_evm::AddressMapping<T::AccountId>,
 {
-    type LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>;
+    type LiquidityInfo = Option<Credit<pallet_evm::AccountIdOf<T>, T::Currency>>;
 
     fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, pallet_evm::Error<T>> {
         EVMFungibleAdapter::<<T as pallet_evm::Config>::Currency, ()>::withdraw_fee(who, fee)
