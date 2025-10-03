@@ -16,7 +16,6 @@ use sc_service::{
     PartialComponents,
 };
 use sp_runtime::traits::AccountIdConversion;
-use std::net::SocketAddr;
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     Ok(match id {

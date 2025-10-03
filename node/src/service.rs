@@ -29,7 +29,6 @@ use sc_client_api::BlockchainEvents;
 use sc_consensus::ImportQueue;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::{NetworkBackend, NetworkBlock};
-use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_keystore::KeystorePtr;
@@ -223,7 +222,6 @@ where
     .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
     let validator = parachain_config.role.is_authority();
-    let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let is_authority = parachain_config.role.is_authority();
     let transaction_pool = params.transaction_pool.clone();
     let import_queue_service = params.import_queue.service();
