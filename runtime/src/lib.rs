@@ -368,7 +368,7 @@ impl OnUnbalanced<Credit<AccountId, Balances>> for TreasuryPot {
 pub struct DealWithFees;
 impl OnUnbalanced<Credit<AccountId, Balances>> for DealWithFees {
     // this is called for substrate-based transactions
-    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = Credit<AccountId, Balances>>) {
+    fn on_unbalanceds(mut fees_then_tips: impl Iterator<Item = Credit<AccountId, Balances>>) {
         if let Some(mut fees) = fees_then_tips.next() {
             if let Some(tips) = fees_then_tips.next() {
                 tips.merge_into(&mut fees);
@@ -459,6 +459,8 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
     type WeightInfo = weights::cumulus_pallet_xcmp_queue::NeurowebWeight<Runtime>;
     type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
+    type MaxActiveOutboundChannels = ConstU32<128>;
+    type MaxPageSize = ConstU32<1024>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -631,13 +633,8 @@ parameter_types! {
 impl pallet_treasury::Config for Runtime {
     type PalletId = TreasuryPalletId;
     type Currency = Balances;
-    type ApproveOrigin = EnsureRoot<AccountId>;
     type RejectOrigin = EnsureRoot<AccountId>;
     type RuntimeEvent = RuntimeEvent;
-    type OnSlash = Treasury;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type ProposalBondMaximum = ProposalBondMaximum;
     type SpendPeriod = SpendPeriod;
     type Burn = ();
     type BurnDestination = ();
@@ -821,7 +818,7 @@ parameter_types! {
 
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type StateRoot = pallet_ethereum::IntermediateStateRoot<Self::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
     type ExtraDataLength = ConstU32<30>;
 }
@@ -1136,7 +1133,7 @@ construct_runtime!(
         // System support stuff.
         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
         ParachainSystem: cumulus_pallet_parachain_system::{
-            Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
+            Pallet, Call, Config<T>, Storage, Inherent, Event<T>,
         } = 1,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
         ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
@@ -1670,6 +1667,10 @@ impl_runtime_apis! {
                 pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
             )
         }
+
+        fn initialize_pending_block(header: &<Block as BlockT>::Header) {
+			Executive::initialize_block(header);
+		}
     }
 
     impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {

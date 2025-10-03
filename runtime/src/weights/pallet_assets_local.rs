@@ -488,4 +488,11 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for NeurowebWeight<T> {
             .saturating_add(T::DbWeight::get().reads(2_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
+    
+    fn transfer_all() -> Weight {
+        // Placeholder weight for transfer_all function
+        Weight::from_parts(20_000_000, 3687)
+            .saturating_add(T::DbWeight::get().reads(2_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
+    }
 }

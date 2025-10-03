@@ -145,4 +145,18 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for NeurowebWeight<T> 
         // Minimum execution time: 9_444_000 picoseconds.
         Weight::from_parts(9_737_000, 0)
     }
+    
+    fn burn_allow_death() -> Weight {
+        // Placeholder weight for burn_allow_death function
+        Weight::from_parts(20_000_000, 2603)
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
+    }
+    
+    fn burn_keep_alive() -> Weight {
+        // Placeholder weight for burn_keep_alive function
+        Weight::from_parts(20_000_000, 2603)
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
+    }
 }

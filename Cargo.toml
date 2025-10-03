@@ -29,7 +29,7 @@ derive_more = { version = "0.99" }
 futures = "0.3"
 hex-literal = { version = "0.3.4" }
 impl-trait-for-tuples = "0.2.2"
-jsonrpsee = { version = "0.22.5", features = ["server"] }
+jsonrpsee = { version = "0.24.9", features = ["server"] }
 libsecp256k1 = { version = "0.7", default-features = false, features = [
     "hmac",
     "static-context",

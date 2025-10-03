@@ -736,15 +736,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 
 [[package]]
-name = "beef"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a8241f3ebb85c056b509d4327ad0358fbbba6ffb340bf388f26350aeda225b1"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "binary-merkle-tree"
 version = "15.0.1"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f676c91d64f15f38ea7fd78f125c5889ab09c"
@@ -1437,6 +1428,16 @@ name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91e195e091a93c46f7102ec7818a2aa394e1e1771c3ab4825963fa03e45afb8f"
+dependencies = [
+ "core-foundation-sys",
+ "libc",
+]
+
+[[package]]
+name = "core-foundation"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2a6cd9ae233e7f62ba4e9353e81a88df7fc8a5987b8d445b4d90c879bd156f6"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -2185,7 +2186,7 @@ dependencies = [
  "async-trait",
  "cumulus-primitives-core",
  "futures",
- "jsonrpsee-core 0.24.9",
+ "jsonrpsee-core",
  "parity-scale-codec",
  "polkadot-overseer",
  "sc-client-api",
@@ -2242,7 +2243,7 @@ dependencies = [
  "either",
  "futures",
  "futures-timer",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "parity-scale-codec",
  "pin-project",
  "polkadot-overseer",
@@ -3201,7 +3202,7 @@ dependencies = [
  "fp-storage",
  "futures",
  "hex",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "libsecp256k1",
  "log",
  "pallet-evm",
@@ -3244,7 +3245,7 @@ source = "git+https://github.com/polkadot-evm/frontier?branch=stable2409#a012990
 dependencies = [
  "ethereum",
  "ethereum-types",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "rlp",
  "rustc-hex",
  "serde",
@@ -4566,7 +4567,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6b0422c86d7ce0e97169cc42e04ae643caf278874a7a3c87b8150a220dc7e1e"
 dependencies = [
  "async-io 2.3.3",
- "core-foundation",
+ "core-foundation 0.9.4",
  "fnv",
  "futures",
  "if-addrs",
@@ -4821,16 +4822,18 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "jni"
-version = "0.19.0"
+version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6df18c2e3db7e453d3c6ac5b3e9d5182664d28788126d39b91f2d1e22b017ec"
+checksum = "1a87aa2bb7d2af34197c04845522473242e1aa17c12f4935d5856491a7fb8c97"
 dependencies = [
  "cesu8",
+ "cfg-if",
  "combine",
  "jni-sys",
  "log",
  "thiserror",
  "walkdir",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
@@ -4859,26 +4862,14 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee"
-version = "0.22.5"
+version = "0.24.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfdb12a2381ea5b2e68c3469ec604a007b367778cdb14d09612c8069ebd616ad"
+checksum = "37b26c20e2178756451cfeb0661fb74c47dd5988cb7e3939de7e9241fd604d42"
 dependencies = [
- "jsonrpsee-core 0.22.5",
- "jsonrpsee-server 0.22.5",
- "jsonrpsee-types 0.22.5",
- "tokio",
-]
-
-[[package]]
-name = "jsonrpsee"
-version = "0.24.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "834af00800e962dee8f7bfc0f60601de215e73e78e5497d733a2919da837d3c8"
-dependencies = [
- "jsonrpsee-core 0.24.9",
+ "jsonrpsee-core",
  "jsonrpsee-proc-macros",
- "jsonrpsee-server 0.24.9",
- "jsonrpsee-types 0.24.9",
+ "jsonrpsee-server",
+ "jsonrpsee-types",
  "jsonrpsee-ws-client",
  "tokio",
  "tracing",
@@ -4886,16 +4877,16 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-client-transport"
-version = "0.24.8"
+version = "0.24.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "def0fd41e2f53118bd1620478d12305b2c75feef57ea1f93ef70568c98081b7e"
+checksum = "bacb85abf4117092455e1573625e21b8f8ef4dec8aff13361140b2dc266cdff2"
 dependencies = [
  "base64 0.22.1",
  "futures-util",
  "http 1.3.1",
- "jsonrpsee-core 0.24.9",
+ "jsonrpsee-core",
  "pin-project",
- "rustls 0.23.12",
+ "rustls 0.23.32",
  "rustls-pki-types",
  "rustls-platform-verifier",
  "soketto 0.8.1",
@@ -4905,28 +4896,6 @@ dependencies = [
  "tokio-util",
  "tracing",
  "url",
-]
-
-[[package]]
-name = "jsonrpsee-core"
-version = "0.22.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4b257e1ec385e07b0255dde0b933f948b5c8b8c28d42afda9587c3a967b896d"
-dependencies = [
- "anyhow",
- "async-trait",
- "beef",
- "futures-util",
- "hyper 0.14.30",
- "jsonrpsee-types 0.22.5",
- "parking_lot 0.12.3",
- "rand",
- "rustc-hash 1.1.0",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -4942,7 +4911,7 @@ dependencies = [
  "http 1.3.1",
  "http-body 1.0.1",
  "http-body-util",
- "jsonrpsee-types 0.24.9",
+ "jsonrpsee-types",
  "parking_lot 0.12.3",
  "pin-project",
  "rand",
@@ -4970,30 +4939,6 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-server"
-version = "0.22.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12d8b6a9674422a8572e0b0abb12feeb3f2aeda86528c80d0350c2bd0923ab41"
-dependencies = [
- "futures-util",
- "http 0.2.12",
- "hyper 0.14.30",
- "jsonrpsee-core 0.22.5",
- "jsonrpsee-types 0.22.5",
- "pin-project",
- "route-recognizer",
- "serde",
- "serde_json",
- "soketto 0.7.1",
- "thiserror",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tower",
- "tracing",
-]
-
-[[package]]
-name = "jsonrpsee-server"
 version = "0.24.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55e363146da18e50ad2b51a0a7925fc423137a0b1371af8235b1c231a0647328"
@@ -5004,8 +4949,8 @@ dependencies = [
  "http-body-util",
  "hyper 1.7.0",
  "hyper-util",
- "jsonrpsee-core 0.24.9",
- "jsonrpsee-types 0.24.9",
+ "jsonrpsee-core",
+ "jsonrpsee-types",
  "pin-project",
  "route-recognizer",
  "serde",
@@ -5017,19 +4962,6 @@ dependencies = [
  "tokio-util",
  "tower",
  "tracing",
-]
-
-[[package]]
-name = "jsonrpsee-types"
-version = "0.22.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "150d6168405890a7a3231a3c74843f58b8959471f6df76078db2619ddee1d07d"
-dependencies = [
- "anyhow",
- "beef",
- "serde",
- "serde_json",
- "thiserror",
 ]
 
 [[package]]
@@ -5046,14 +4978,14 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-ws-client"
-version = "0.24.8"
+version = "0.24.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f4f3642a292f5b76d8a16af5c88c16a0860f2ccc778104e5c848b28183d9538"
+checksum = "01b3323d890aa384f12148e8d2a1fd18eb66e9e7e825f9de4fa53bcc19b93eef"
 dependencies = [
  "http 1.3.1",
  "jsonrpsee-client-transport",
- "jsonrpsee-core 0.24.9",
- "jsonrpsee-types 0.24.9",
+ "jsonrpsee-core",
+ "jsonrpsee-types",
  "url",
 ]
 
@@ -5582,7 +5514,7 @@ dependencies = [
  "soketto 0.8.1",
  "thiserror",
  "url",
- "webpki-roots 0.25.4",
+ "webpki-roots",
 ]
 
 [[package]]
@@ -6112,7 +6044,7 @@ name = "mmr-rpc"
 version = "38.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f676c91d64f15f38ea7fd78f125c5889ab09c"
 dependencies = [
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "parity-scale-codec",
  "serde",
  "sp-api",
@@ -6449,7 +6381,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures",
- "jsonrpsee 0.22.5",
+ "jsonrpsee",
  "log",
  "neuroweb-runtime",
  "pallet-transaction-payment-rpc",
@@ -6805,7 +6737,7 @@ version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77e878c846a8abae00dd069496dbe8751b16ac1c3d6bd2a7283a938e8228f90d"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate 3.1.0",
  "proc-macro2",
  "quote",
  "syn 2.0.106",
@@ -8128,7 +8060,7 @@ name = "pallet-transaction-payment-rpc"
 version = "41.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f676c91d64f15f38ea7fd78f125c5889ab09c"
 dependencies = [
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "sp-api",
@@ -9403,7 +9335,7 @@ name = "polkadot-rpc"
 version = "19.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f676c91d64f15f38ea7fd78f125c5889ab09c"
 dependencies = [
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "mmr-rpc",
  "pallet-transaction-payment-rpc",
  "polkadot-primitives",
@@ -10138,8 +10070,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22505a5c94da8e3b7c2996394d1c933236c4d743e81a410bcca4e6989fc066a4"
 dependencies = [
  "bytes",
- "heck 0.4.1",
- "itertools 0.10.5",
+ "heck 0.5.0",
+ "itertools 0.12.1",
  "log",
  "multimap",
  "once_cell",
@@ -10968,15 +10900,15 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.23.12"
+version = "0.23.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c58f8c84392efc0a126acce10fa59ff7b3d2ac06ab451a33f2741989b806b044"
+checksum = "cd3c25631629d034ce7cd9940adc9d45762d46de2b0f57193c4443b92c6d4d40"
 dependencies = [
  "log",
  "once_cell",
  "ring 0.17.8",
  "rustls-pki-types",
- "rustls-webpki 0.102.6",
+ "rustls-webpki 0.103.7",
  "subtle 2.6.1",
  "zeroize",
 ]
@@ -10988,22 +10920,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a9aace74cb666635c918e9c12bc0d348266037aa8eb599b5cba565709a8dff00"
 dependencies = [
  "openssl-probe",
- "rustls-pemfile 1.0.4",
+ "rustls-pemfile",
  "schannel",
- "security-framework",
+ "security-framework 2.11.1",
 ]
 
 [[package]]
 name = "rustls-native-certs"
-version = "0.7.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a88d6d420651b496bdd98684116959239430022a115c1240e6c3993be0b15fba"
+checksum = "7fcff2dd52b58a8d98a70243663a0d234c4e2b79235637849d15913394a247d3"
 dependencies = [
  "openssl-probe",
- "rustls-pemfile 2.1.2",
  "rustls-pki-types",
  "schannel",
- "security-framework",
+ "security-framework 3.5.1",
 ]
 
 [[package]]
@@ -11016,40 +10947,33 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustls-pemfile"
-version = "2.1.2"
+name = "rustls-pki-types"
+version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29993a25686778eb88d4189742cd713c9bce943bc54251a33509dc63cbacf73d"
+checksum = "229a4a4c221013e7e1f1a043678c5cc39fe5171437c88fb47151a21e6f5b5c79"
 dependencies = [
- "base64 0.22.1",
- "rustls-pki-types",
+ "zeroize",
 ]
 
 [[package]]
-name = "rustls-pki-types"
-version = "1.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "976295e77ce332211c0d24d92c0e83e50f5c5f046d11082cea19f3df13a3562d"
-
-[[package]]
 name = "rustls-platform-verifier"
-version = "0.3.4"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afbb878bdfdf63a336a5e63561b1835e7a8c91524f51621db870169eac84b490"
+checksum = "19787cda76408ec5404443dc8b31795c87cd8fec49762dc75fa727740d34acc1"
 dependencies = [
- "core-foundation",
+ "core-foundation 0.10.1",
  "core-foundation-sys",
  "jni",
  "log",
  "once_cell",
- "rustls 0.23.12",
- "rustls-native-certs 0.7.1",
+ "rustls 0.23.32",
+ "rustls-native-certs 0.8.1",
  "rustls-platform-verifier-android",
- "rustls-webpki 0.102.6",
- "security-framework",
+ "rustls-webpki 0.103.7",
+ "security-framework 3.5.1",
  "security-framework-sys",
- "webpki-roots 0.26.3",
- "winapi",
+ "webpki-root-certs 0.26.11",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -11070,9 +10994,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.102.6"
+version = "0.103.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e6b52d4fda176fd835fdc55a835d4a89b8499cad995885a21149d5ad62f852e"
+checksum = "e10b3f4191e8a80e6b43eebabfac91e5dcecebb27a71f04e820c47ec41d314bf"
 dependencies = [
  "ring 0.17.8",
  "rustls-pki-types",
@@ -11436,7 +11360,7 @@ version = "0.45.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f676c91d64f15f38ea7fd78f125c5889ab09c"
 dependencies = [
  "futures",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "sc-consensus-babe",
  "sc-consensus-epochs",
  "sc-rpc-api",
@@ -11494,7 +11418,7 @@ version = "24.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f676c91d64f15f38ea7fd78f125c5889ab09c"
 dependencies = [
  "futures",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.3",
@@ -11572,7 +11496,7 @@ source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f6
 dependencies = [
  "finality-grandpa",
  "futures",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "sc-client-api",
@@ -11964,7 +11888,7 @@ version = "40.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f676c91d64f15f38ea7fd78f125c5889ab09c"
 dependencies = [
  "futures",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.3",
@@ -11995,7 +11919,7 @@ name = "sc-rpc-api"
 version = "0.44.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f676c91d64f15f38ea7fd78f125c5889ab09c"
 dependencies = [
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-mixnet",
@@ -12023,7 +11947,7 @@ dependencies = [
  "http-body-util",
  "hyper 1.7.0",
  "ip_network",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "log",
  "sc-rpc-api",
  "serde",
@@ -12043,7 +11967,7 @@ dependencies = [
  "futures",
  "futures-util",
  "hex",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.3",
@@ -12076,7 +12000,7 @@ dependencies = [
  "exit-future",
  "futures",
  "futures-timer",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.3",
@@ -12159,7 +12083,7 @@ name = "sc-sync-state-rpc"
 version = "0.45.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f676c91d64f15f38ea7fd78f125c5889ab09c"
 dependencies = [
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-client-api",
@@ -12517,18 +12441,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "897b2245f0b511c87893af39b033e5ca9cce68824c4d7e7630b5a1d339658d02"
 dependencies = [
  "bitflags 2.6.0",
- "core-foundation",
+ "core-foundation 0.9.4",
  "core-foundation-sys",
  "libc",
- "num-bigint",
+ "security-framework-sys",
+]
+
+[[package]]
+name = "security-framework"
+version = "3.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3297343eaf830f66ede390ea39da1d462b6b0c1b000f420d0a83f898bbbe6ef"
+dependencies = [
+ "bitflags 2.6.0",
+ "core-foundation 0.10.1",
+ "core-foundation-sys",
+ "libc",
  "security-framework-sys",
 ]
 
 [[package]]
 name = "security-framework-sys"
-version = "2.11.1"
+version = "2.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75da29fe9b9b08fe9d6b22b5b4bcbc75d8db3aa31e639aa56bb62e9d46bfceaf"
+checksum = "cc1f0cbffaac4852523ce30d8bd3c5cdc873501d96ff467ca09b6767bb8cd5c0"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -13037,7 +12973,6 @@ dependencies = [
  "base64 0.13.1",
  "bytes",
  "futures",
- "http 0.2.12",
  "httparse",
  "log",
  "rand",
@@ -14042,7 +13977,7 @@ dependencies = [
  "docify",
  "frame-system-rpc-runtime-api",
  "futures",
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "sc-rpc-api",
@@ -14073,7 +14008,7 @@ name = "substrate-state-trie-migration-rpc"
 version = "38.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2409#298f676c91d64f15f38ea7fd78f125c5889ab09c"
 dependencies = [
- "jsonrpsee 0.24.8",
+ "jsonrpsee",
  "parity-scale-codec",
  "sc-client-api",
  "sc-rpc-api",
@@ -14184,7 +14119,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba3a3adc5c275d719af8cb4272ea1c4a6d668a777f37e115f6d11ddbc1c8e0e7"
 dependencies = [
  "bitflags 1.3.2",
- "core-foundation",
+ "core-foundation 0.9.4",
  "system-configuration-sys",
 ]
 
@@ -14448,7 +14383,7 @@ version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c7bc40d0e5a97695bb96e27995cd3a08538541b0a846f65bba7a359f36700d4"
 dependencies = [
- "rustls 0.23.12",
+ "rustls 0.23.32",
  "rustls-pki-types",
  "tokio",
 ]
@@ -15440,19 +15375,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "webpki-root-certs"
+version = "0.26.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75c7f0ef91146ebfb530314f5f1d24528d7f0767efbfd31dce919275413e393e"
+dependencies = [
+ "webpki-root-certs 1.0.2",
+]
+
+[[package]]
+name = "webpki-root-certs"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e4ffd8df1c57e87c325000a3d6ef93db75279dc3a231125aac571650f22b12a"
+dependencies = [
+ "rustls-pki-types",
+]
+
+[[package]]
 name = "webpki-roots"
 version = "0.25.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f20c57d8d7db6d3b86154206ae5d8fba62dd39573114de97c2cb0578251f8e1"
-
-[[package]]
-name = "webpki-roots"
-version = "0.26.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd7c23921eeb1713a4e851530e9b9756e4fb0e89978582942612524cf09f01cd"
-dependencies = [
- "rustls-pki-types",
-]
 
 [[package]]
 name = "westend-runtime"
