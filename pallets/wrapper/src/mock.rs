@@ -165,6 +165,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             // Give BOB some foreign TRAC
             (ForeignTracAssetId::get(), BOB, 500000),
         ],
+        next_asset_id: None,
     }
     .assimilate_storage(&mut t)
     .unwrap();

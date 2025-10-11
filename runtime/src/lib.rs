@@ -321,9 +321,6 @@ impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
     type OnTimestampSet = Aura;
-    #[cfg(feature = "experimental")]
-    type MinimumPeriod = ConstU64<0>;
-    #[cfg(not(feature = "experimental"))]
     type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
     type WeightInfo = weights::pallet_timestamp::NeurowebWeight<Runtime>;
 }
@@ -700,11 +697,6 @@ impl pallet_base_fee::Config for Runtime {
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
     type DefaultElasticity = DefaultElasticity;
 }
-
-type FungibleAccountId<T> = <T as frame_system::Config>::AccountId;
-
-type BalanceFor<T> =
-    <<T as pallet_evm::Config>::Currency as Inspect<FungibleAccountId<T>>>::Balance;
 
 pub struct OnChargeEVMTransaction<OU>(sp_std::marker::PhantomData<OU>);
 impl<T, OU> OnChargeEVMTransactionT<T> for OnChargeEVMTransaction<OU>
