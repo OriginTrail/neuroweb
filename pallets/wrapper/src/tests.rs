@@ -14,6 +14,7 @@
 use super::*;
 use crate::mock::*;
 use frame_support::{assert_noop, assert_ok};
+use sp_core::crypto::Ss58Codec;
 
 #[test]
 fn trac_wrap_works() {
@@ -302,7 +303,7 @@ fn cross_user_wrap_operations_work() {
 fn pallet_account_id_helper_is_correct() {
     new_test_ext().execute_with(|| {
         let pallet_account = Wrapper::pallet_account_id();
-        assert_eq!(pallet_account, 7021806093762588525);
+        assert_eq!(pallet_account, 8248113402453716845);
     });
 }
 
