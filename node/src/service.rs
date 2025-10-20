@@ -226,8 +226,10 @@ where
     let transaction_pool = params.transaction_pool.clone();
     let import_queue_service = params.import_queue.service();
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
-    let net_config =
-        sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&parachain_config.network, prometheus_registry.clone(),);
+    let net_config = sc_network::config::FullNetworkConfiguration::<_, _, N>::new(
+        &parachain_config.network,
+        prometheus_registry.clone(),
+    );
 
     let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
         build_network(BuildNetworkParams {
@@ -521,32 +523,31 @@ fn start_aura_consensus(
         client.clone(),
     );
 
-    let fut =
-        aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _,>(
-            AuraParams {
-                create_inherent_data_providers: move |_, ()| async move { Ok(()) },
-                block_import: block_import.clone(),
-                para_client: client.clone(),
-                para_backend: backend.clone(),
-                relay_client: relay_chain_interface.clone(),
-                code_hash_provider: move |block_hash| {
-                    client
-                        .code_at(block_hash)
-                        .ok()
-                        .map(|c| ValidationCode::from(c).hash())
-                },
-                keystore,
-                collator_key,
-                para_id,
-                overseer_handle,
-                relay_chain_slot_duration: Duration::from_secs(6),
-                proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
-                collator_service,
-                // We got around 500ms for proposing
-                authoring_duration: Duration::from_millis(1500),
-                reinitialize: false,
+    let fut = aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _>(
+        AuraParams {
+            create_inherent_data_providers: move |_, ()| async move { Ok(()) },
+            block_import: block_import.clone(),
+            para_client: client.clone(),
+            para_backend: backend.clone(),
+            relay_client: relay_chain_interface.clone(),
+            code_hash_provider: move |block_hash| {
+                client
+                    .code_at(block_hash)
+                    .ok()
+                    .map(|c| ValidationCode::from(c).hash())
             },
-        );
+            keystore,
+            collator_key,
+            para_id,
+            overseer_handle,
+            relay_chain_slot_duration: Duration::from_secs(6),
+            proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
+            collator_service,
+            // We got around 500ms for proposing
+            authoring_duration: Duration::from_millis(1500),
+            reinitialize: false,
+        },
+    );
 
     task_manager
         .spawn_essential_handle()

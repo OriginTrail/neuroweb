@@ -3,7 +3,8 @@ use frame_support::{assert_noop, assert_ok};
 use mock::*;
 use sp_runtime::traits::BadOrigin;
 use xcm::v4::{
-    Junction::{self, GeneralIndex}, Location,
+    Junction::{self, GeneralIndex},
+    Location,
 };
 
 #[test]
@@ -58,10 +59,7 @@ fn only_root_as_origin() {
 fn register_asset_location_and_units_per_sec_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // Prepare location and Id
-        let asset_location = Location::new(
-            1,
-            [Junction::PalletInstance(17), GeneralIndex(7)],
-        );
+        let asset_location = Location::new(1, [Junction::PalletInstance(17), GeneralIndex(7)]);
         let asset_id = 13;
 
         // Register asset and ensure it's ok
@@ -113,10 +111,7 @@ fn register_asset_location_and_units_per_sec_is_ok() {
 fn asset_is_already_registered() {
     ExternalityBuilder::build().execute_with(|| {
         // Prepare location and Id
-        let asset_location = Location::new(
-            1,
-            [Junction::PalletInstance(17), GeneralIndex(7)],
-        );
+        let asset_location = Location::new(1, [Junction::PalletInstance(17), GeneralIndex(7)]);
         let asset_id = 13;
 
         // Register asset and ensure it's ok

@@ -321,9 +321,13 @@ impl FungiblesMutate<AccountId> for MultiCurrencyAdapter {
         force: Fortitude,
     ) -> Result<Self::Balance, DispatchError> {
         match asset {
-            UnifiedAssetId::Native => {
-                <Balances as FungibleMutate<AccountId>>::burn_from(who, amount, preservation, precision, force)
-            }
+            UnifiedAssetId::Native => <Balances as FungibleMutate<AccountId>>::burn_from(
+                who,
+                amount,
+                preservation,
+                precision,
+                force,
+            ),
             UnifiedAssetId::Local(id) => <Assets as FungiblesMutate<AccountId>>::burn_from(
                 id.into(),
                 who,
@@ -334,7 +338,12 @@ impl FungiblesMutate<AccountId> for MultiCurrencyAdapter {
             ),
             UnifiedAssetId::Foreign(loc) => {
                 <ForeignAssets as FungiblesMutate<AccountId>>::burn_from(
-                    loc, who, amount, preservation, precision, force,
+                    loc,
+                    who,
+                    amount,
+                    preservation,
+                    precision,
+                    force,
                 )
             }
         }
