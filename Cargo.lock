@@ -6496,6 +6496,7 @@ dependencies = [
  "staging-xcm-executor",
  "substrate-wasm-builder",
  "tracing",
+ "xcm-runtime-apis",
 ]
 
 [[package]]

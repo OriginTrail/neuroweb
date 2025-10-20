@@ -1322,6 +1322,12 @@ pub type Executive = frame_executive::Executive<
     AllPalletsWithSystem,
 >;
 
+use xcm::{prelude::*, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm};
+use xcm_runtime_apis::{
+    dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
+    fees::Error as XcmPaymentApiError,
+};
+
 impl_runtime_apis! {
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
         fn slot_duration() -> sp_consensus_aura::SlotDuration {
@@ -1764,6 +1770,83 @@ impl_runtime_apis! {
 
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
             vec![]
+        }
+    }
+
+
+
+    impl xcm_runtime_apis::fees::XcmPaymentApi<Block> for Runtime {
+        fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
+            if !matches!(xcm_version, 3 | 4 | 5) {
+                return Err(XcmPaymentApiError::UnhandledXcmVersion);
+            }
+
+            let acceptable_assets = vec![
+                // NEURO (native)
+                VersionedAssetId::V4(xcm::v4::AssetId(xcm_config::TokenLocation::get())),
+                // DOT
+                VersionedAssetId::V4(xcm::v4::AssetId(xcm_config::RelayLocation::get())),
+            ];
+            Ok(acceptable_assets)
+        }
+
+        fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
+            // Convert to v4
+            let v4_asset_id = asset.into_version(4).map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+
+            // Extract the xcm::v4::AssetId from VersionedAssetId
+            let xcm_asset_id: &xcm::v4::AssetId = v4_asset_id.try_as().map_err(|_| XcmPaymentApiError::AssetNotFound)?;
+
+            // Get the Location from AssetId
+            let location = match xcm_asset_id {
+                xcm::v4::AssetId(loc) => loc,
+            };
+
+            // NEURO (native) - use WeightToFee
+            if *location == xcm_config::TokenLocation::get() {
+                Ok(WeightToFee::weight_to_fee(&weight))
+            }
+            // DOT - use DotPerSecond rate
+            else if *location == xcm_config::RelayLocation::get() {
+                let rate_per_second = xcm_config::DotPerSecond::get();
+                let fee: u128 = (weight.ref_time() as u128)
+                    .saturating_mul(rate_per_second)
+                    .checked_div(WEIGHT_REF_TIME_PER_SECOND as u128)
+                    .ok_or(XcmPaymentApiError::WeightNotComputable)?;
+                Ok(fee)
+            }
+            else {
+                Err(XcmPaymentApiError::AssetNotFound)
+            }
+        }
+
+        fn query_xcm_weight(message: VersionedXcm<()>) -> Result<Weight, XcmPaymentApiError> {
+            PolkadotXcm::query_xcm_weight(message)
+        }
+
+        fn query_delivery_fees(destination: VersionedLocation, message: VersionedXcm<()>) -> Result<VersionedAssets, XcmPaymentApiError> {
+            PolkadotXcm::query_delivery_fees(destination, message)
+        }
+    }
+
+    impl xcm_runtime_apis::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
+        fn dry_run_call(
+            origin: OriginCaller,
+            call: RuntimeCall,
+            result_xcms_version: XcmVersion
+        ) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+            PolkadotXcm::dry_run_call::<
+                Runtime,
+                xcm_config::XcmRouter,
+                OriginCaller,
+                RuntimeCall>(origin, call, result_xcms_version)
+        }
+
+        fn dry_run_xcm(
+            origin_location: VersionedLocation,
+            xcm: VersionedXcm<RuntimeCall>
+        ) -> Result<XcmDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+            PolkadotXcm::dry_run_xcm::<Runtime, xcm_config::XcmRouter, RuntimeCall, xcm_config::XcmConfig>(origin_location, xcm)
         }
     }
 
