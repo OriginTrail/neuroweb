@@ -10,7 +10,7 @@ use xcm_runtime_apis::{
     fees::{runtime_decl_for_xcm_payment_api::XcmPaymentApiV1, Error as XcmPaymentApiError},
 };
 
-mod payment_api {
+mod fees {
     use super::*;
 
     /// Helper function to verify acceptable payment assets contain NEURO and DOT
@@ -181,7 +181,7 @@ mod payment_api {
                         network: None,
                         id: [0u8; 32],
                     }
-                    .into(),
+                        .into(),
                 },
             ]));
 
@@ -213,104 +213,104 @@ mod payment_api {
             }
         });
     }
+}
 
-    mod dry_run_api {
-        use super::*;
-        #[test]
-        fn dry_run_call_with_root_origin() {
-            new_test_ext().execute_with(|| {
-                let call = RuntimeCall::System(frame_system::Call::remark {
-                    remark: vec![1, 2, 3],
-                });
-                let origin = OriginCaller::system(frame_system::RawOrigin::Root);
-                let result = Runtime::dry_run_call(origin, call, 4);
+mod dry_run {
+    use super::*;
+    #[test]
+    fn dry_run_call_with_root_origin() {
+        new_test_ext().execute_with(|| {
+            let call = RuntimeCall::System(frame_system::Call::remark {
+                remark: vec![1, 2, 3],
+            });
+            let origin = OriginCaller::system(frame_system::RawOrigin::Root);
+            let result = Runtime::dry_run_call(origin, call, 4);
+
+            assert!(result.is_ok() || result.is_err());
+        });
+    }
+
+    #[test]
+    fn dry_run_call_different_xcm_versions() {
+        new_test_ext().execute_with(|| {
+            let call = RuntimeCall::System(frame_system::Call::remark {
+                remark: vec![1, 2, 3],
+            });
+
+            let origin = OriginCaller::system(frame_system::RawOrigin::Root);
+
+            // Test with different XCM versions
+            for version in [3, 4, 5] {
+                let result = Runtime::dry_run_call(origin.clone(), call.clone(), version);
 
                 assert!(result.is_ok() || result.is_err());
+            }
+        });
+    }
+
+    #[test]
+    fn dry_run_xcm_with_assets() {
+        new_test_ext().execute_with(|| {
+            let origin_location = VersionedLocation::V4(Location::parent());
+            let xcm = VersionedXcm::V4(Xcm(vec![
+                WithdrawAsset((Here, 1000u128).into()),
+                ClearOrigin,
+            ]));
+            let result = Runtime::dry_run_xcm(origin_location, xcm);
+
+            assert!(result.is_ok() || result.is_err());
+        });
+    }
+
+    #[test]
+    fn dry_run_xcm_from_sibling() {
+        new_test_ext().execute_with(|| {
+            let origin_location = VersionedLocation::V4(Location::new(1, [Parachain(2000)]));
+            let xcm = VersionedXcm::V4(Xcm(vec![ClearOrigin]));
+            let result = Runtime::dry_run_xcm(origin_location, xcm);
+
+            assert!(result.is_ok() || result.is_err());
+        });
+    }
+
+    #[test]
+    fn dry_run_xcm_transact() {
+        new_test_ext().execute_with(|| {
+            let origin_location = VersionedLocation::V4(Location::parent());
+            let inner_call = RuntimeCall::System(frame_system::Call::remark {
+                remark: vec![1, 2, 3],
             });
-        }
+            let xcm = VersionedXcm::V4(Xcm(vec![Transact {
+                origin_kind: OriginKind::Superuser,
+                require_weight_at_most: Weight::from_parts(1_000_000, 64 * 1024),
+                call: inner_call.encode().into(),
+            }]));
 
-        #[test]
-        fn dry_run_call_different_xcm_versions() {
-            new_test_ext().execute_with(|| {
-                let call = RuntimeCall::System(frame_system::Call::remark {
-                    remark: vec![1, 2, 3],
-                });
+            let result = Runtime::dry_run_xcm(origin_location, xcm);
 
-                let origin = OriginCaller::system(frame_system::RawOrigin::Root);
+            assert!(result.is_ok() || result.is_err());
+        });
+    }
 
-                // Test with different XCM versions
-                for version in [3, 4, 5] {
-                    let result = Runtime::dry_run_call(origin.clone(), call.clone(), version);
+    #[test]
+    fn dry_run_xcm_different_versions() {
+        new_test_ext().execute_with(|| {
+            let origin_v4 = VersionedLocation::V4(Location::parent());
+            let origin_v3 = VersionedLocation::V3(xcm::v3::Location::parent());
 
-                    assert!(result.is_ok() || result.is_err());
-                }
-            });
-        }
+            let xcm_v4 = VersionedXcm::V4(Xcm(vec![ClearOrigin]));
+            let xcm_v3 =
+                VersionedXcm::V3(xcm::v3::Xcm(vec![xcm::v3::Instruction::ClearOrigin]));
 
-        #[test]
-        fn dry_run_xcm_with_assets() {
-            new_test_ext().execute_with(|| {
-                let origin_location = VersionedLocation::V4(Location::parent());
-                let xcm = VersionedXcm::V4(Xcm(vec![
-                    WithdrawAsset((Here, 1000u128).into()),
-                    ClearOrigin,
-                ]));
-                let result = Runtime::dry_run_xcm(origin_location, xcm);
+            // Test V4
+            let result_v4 = Runtime::dry_run_xcm(origin_v4, xcm_v4);
 
-                assert!(result.is_ok() || result.is_err());
-            });
-        }
+            // Test V3
+            let result_v3 = Runtime::dry_run_xcm(origin_v3, xcm_v3);
 
-        #[test]
-        fn dry_run_xcm_from_sibling() {
-            new_test_ext().execute_with(|| {
-                let origin_location = VersionedLocation::V4(Location::new(1, [Parachain(2000)]));
-                let xcm = VersionedXcm::V4(Xcm(vec![ClearOrigin]));
-                let result = Runtime::dry_run_xcm(origin_location, xcm);
-
-                assert!(result.is_ok() || result.is_err());
-            });
-        }
-
-        #[test]
-        fn dry_run_xcm_transact() {
-            new_test_ext().execute_with(|| {
-                let origin_location = VersionedLocation::V4(Location::parent());
-                let inner_call = RuntimeCall::System(frame_system::Call::remark {
-                    remark: vec![1, 2, 3],
-                });
-                let xcm = VersionedXcm::V4(Xcm(vec![Transact {
-                    origin_kind: OriginKind::Superuser,
-                    require_weight_at_most: Weight::from_parts(1_000_000, 64 * 1024),
-                    call: inner_call.encode().into(),
-                }]));
-
-                let result = Runtime::dry_run_xcm(origin_location, xcm);
-
-                assert!(result.is_ok() || result.is_err());
-            });
-        }
-
-        #[test]
-        fn dry_run_xcm_different_versions() {
-            new_test_ext().execute_with(|| {
-                let origin_v4 = VersionedLocation::V4(Location::parent());
-                let origin_v3 = VersionedLocation::V3(xcm::v3::Location::parent());
-
-                let xcm_v4 = VersionedXcm::V4(Xcm(vec![ClearOrigin]));
-                let xcm_v3 =
-                    VersionedXcm::V3(xcm::v3::Xcm(vec![xcm::v3::Instruction::ClearOrigin]));
-
-                // Test V4
-                let result_v4 = Runtime::dry_run_xcm(origin_v4, xcm_v4);
-
-                // Test V3
-                let result_v3 = Runtime::dry_run_xcm(origin_v3, xcm_v3);
-
-                // Both should be callable
-                assert!(result_v4.is_ok() || result_v4.is_err());
-                assert!(result_v3.is_ok() || result_v3.is_err());
-            });
-        }
+            // Both should be callable
+            assert!(result_v4.is_ok() || result_v4.is_err());
+            assert!(result_v3.is_ok() || result_v3.is_err());
+        });
     }
 }
