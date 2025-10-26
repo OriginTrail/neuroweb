@@ -10766,13 +10766,18 @@ dependencies = [
  "frame-support",
  "frame-system",
  "neuroweb-runtime",
+ "pallet-balances",
  "parity-scale-codec",
  "primitives",
  "scale-info",
+ "sp-api",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "staging-xcm",
+ "staging-xcm-executor",
+ "xcm-runtime-apis",
 ]
 
 [[package]]

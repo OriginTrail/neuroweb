@@ -1,6 +1,7 @@
 #![cfg(test)]
 
 mod assets;
+mod xcm_runtime_apis;
 
 use neuroweb_runtime::{Runtime, System};
 use sp_runtime::BuildStorage;
