@@ -278,4 +278,13 @@ impl<T: frame_system::Config> pallet_xcm::WeightInfo for NeurowebWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	/// Storage: `PolkadotXcm::AssetTraps` (r:1 w:1)
+	/// Proof: `PolkadotXcm::AssetTraps` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn claim_assets() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `3465`
+		// Minimum execution time: 47_608_000 picoseconds.
+		Weight::from_parts(48_140_000, 3465)
+	}
 }

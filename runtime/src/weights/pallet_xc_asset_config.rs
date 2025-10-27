@@ -47,6 +47,49 @@ use crate::*;
 /// Weights for `pallet_xc_asset_config` using the Neuroweb node and recommended hardware.
 pub struct NeurowebWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_xc_asset_config::WeightInfo for NeurowebWeight<T> {
+	/// Storage: `XcAssetConfig::AssetIdToLocation` (r:1 w:1)
+	/// Proof: `XcAssetConfig::AssetIdToLocation` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `EVM::AccountCodes` (r:0 w:1)
+	/// Proof: `EVM::AccountCodes` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `XcAssetConfig::AssetLocationToId` (r:0 w:1)
+	/// Proof: `XcAssetConfig::AssetLocationToId` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn register_asset_location() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `6`
+		//  Estimated: `3471`
+		// Minimum execution time: 19_437_000 picoseconds.
+		Weight::from_parts(19_642_000, 3471)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+	}
+	/// Storage: `XcAssetConfig::AssetLocationToId` (r:1 w:0)
+	/// Proof: `XcAssetConfig::AssetLocationToId` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `XcAssetConfig::AssetLocationUnitsPerSecond` (r:0 w:1)
+	/// Proof: `XcAssetConfig::AssetLocationUnitsPerSecond` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn set_asset_units_per_second() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `93`
+		//  Estimated: `3558`
+		// Minimum execution time: 16_164_000 picoseconds.
+		Weight::from_parts(16_456_000, 3558)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `XcAssetConfig::AssetIdToLocation` (r:1 w:1)
+	/// Proof: `XcAssetConfig::AssetIdToLocation` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `XcAssetConfig::AssetLocationUnitsPerSecond` (r:1 w:2)
+	/// Proof: `XcAssetConfig::AssetLocationUnitsPerSecond` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `XcAssetConfig::AssetLocationToId` (r:0 w:2)
+	/// Proof: `XcAssetConfig::AssetLocationToId` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn change_existing_asset_location() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `141`
+		//  Estimated: `3606`
+		// Minimum execution time: 25_290_000 picoseconds.
+		Weight::from_parts(25_944_000, 3606)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
+	}
 	/// Storage: `XcAssetConfig::AssetLocationUnitsPerSecond` (r:0 w:1)
 	/// Proof: `XcAssetConfig::AssetLocationUnitsPerSecond` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn remove_payment_asset() -> Weight {
