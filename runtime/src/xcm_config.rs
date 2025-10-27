@@ -679,7 +679,7 @@ mod benchmarking {
     }
 
     impl pallet_xcm_benchmarks::fungible::Config for Runtime {
-        type TransactAsset = Balances;
+        type TransactAsset = NativeAssetTransactor;
         type CheckedAccount = CheckedAccount;
         type TrustedTeleporter = TrustedTeleporter;
         type TrustedReserve = TrustedReserve;
@@ -701,7 +701,7 @@ mod benchmarking {
     }
 
     impl pallet_xcm_benchmarks::generic::Config for Runtime {
-        type TransactAsset = Balances;
+        type TransactAsset = NativeAssetTransactor;
         type RuntimeCall = RuntimeCall;
 
         fn worst_case_response() -> (u64, Response) {
