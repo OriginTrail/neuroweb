@@ -652,7 +652,10 @@ mod benchmarking {
             RelayLocation::get(),
             Asset { fun: Fungible(EXISTENTIAL_DEPOSIT), id: AssetId(RelayLocation::get()) },
         ));
-        pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
+        pub CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = Some((
+            CheckingAccount::get(),
+            xcm_builder::MintLocation::Local,
+        ));
         pub TrustedReserve: Option<(Location, Asset)> = Some((
             RelayLocation::get(),
             Asset { fun: Fungible(UNITS), id: AssetId(RelayLocation::get()) },
