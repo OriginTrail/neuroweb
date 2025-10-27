@@ -652,10 +652,7 @@ mod benchmarking {
             RelayLocation::get(),
             Asset { fun: Fungible(EXISTENTIAL_DEPOSIT), id: AssetId(RelayLocation::get()) },
         ));
-        pub CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = Some((
-            CheckingAccount::get(),
-            xcm_builder::MintLocation::Local,
-        ));
+        pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
         pub TrustedReserve: Option<(Location, Asset)> = Some((
             RelayLocation::get(),
             Asset { fun: Fungible(UNITS), id: AssetId(RelayLocation::get()) },
@@ -679,29 +676,21 @@ mod benchmarking {
     }
 
     impl pallet_xcm_benchmarks::fungible::Config for Runtime {
-        type TransactAsset = NativeAssetTransactor;
+        type TransactAsset = Balances;
         type CheckedAccount = CheckedAccount;
         type TrustedTeleporter = TrustedTeleporter;
         type TrustedReserve = TrustedReserve;
 
         fn get_asset() -> Asset {
-            use frame_support::traits::Currency;
-
-            // Fund the CheckedAccount for benchmarks
-            if let Some((checked_account, _)) = CheckedAccount::get() {
-                let balance = 1000 * benchmarking::ExistentialDeposit::get();
-                let _ = <Balances as Currency<_>>::make_free_balance_be(&checked_account, balance);
-            }
-
             Asset {
                 id: AssetId(TokenLocation::get()),
-                fun: Fungible(benchmarking::ExistentialDeposit::get()),
+                fun: Fungible(10 * EXISTENTIAL_DEPOSIT),
             }
         }
     }
 
     impl pallet_xcm_benchmarks::generic::Config for Runtime {
-        type TransactAsset = NativeAssetTransactor;
+        type TransactAsset = Balances;
         type RuntimeCall = RuntimeCall;
 
         fn worst_case_response() -> (u64, Response) {
