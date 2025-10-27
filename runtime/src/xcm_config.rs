@@ -685,9 +685,17 @@ mod benchmarking {
         type TrustedReserve = TrustedReserve;
 
         fn get_asset() -> Asset {
+            use frame_support::traits::Currency;
+
+            // Fund the CheckedAccount for benchmarks
+            if let Some((checked_account, _)) = CheckedAccount::get() {
+                let balance = 1000 * benchmarking::ExistentialDeposit::get();
+                let _ = <Balances as Currency<_>>::make_free_balance_be(&checked_account, balance);
+            }
+
             Asset {
                 id: AssetId(TokenLocation::get()),
-                fun: Fungible(10 * EXISTENTIAL_DEPOSIT),
+                fun: Fungible(benchmarking::ExistentialDeposit::get()),
             }
         }
     }
