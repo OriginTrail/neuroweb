@@ -181,7 +181,7 @@ mod fees {
                         network: None,
                         id: [0u8; 32],
                     }
-                        .into(),
+                    .into(),
                 },
             ]));
 
@@ -299,8 +299,7 @@ mod dry_run {
             let origin_v3 = VersionedLocation::V3(xcm::v3::Location::parent());
 
             let xcm_v4 = VersionedXcm::V4(Xcm(vec![ClearOrigin]));
-            let xcm_v3 =
-                VersionedXcm::V3(xcm::v3::Xcm(vec![xcm::v3::Instruction::ClearOrigin]));
+            let xcm_v3 = VersionedXcm::V3(xcm::v3::Xcm(vec![xcm::v3::Instruction::ClearOrigin]));
 
             // Test V4
             let result_v4 = Runtime::dry_run_xcm(origin_v4, xcm_v4);

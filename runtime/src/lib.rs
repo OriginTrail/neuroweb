@@ -1174,9 +1174,9 @@ extern crate frame_benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
     frame_benchmarking::define_benchmarks!(
-        [frame_system, SystemBench::<Runtime>]
-        [cumulus_pallet_xcmp_queue, XcmpQueue]
         [cumulus_pallet_parachain_system, ParachainSystem]
+        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [frame_system, SystemBench::<Runtime>]
         [pallet_assets_local, Assets]
         [pallet_assets_foreign, ForeignAssets]
         [pallet_balances, Balances]
