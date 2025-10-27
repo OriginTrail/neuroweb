@@ -111,7 +111,7 @@ impl pallet_assets::Config for Test {
 }
 
 parameter_types! {
-    pub const WrapperPalletId: PalletId = PalletId(*b"pwrapper");
+    pub const WrapperPalletId: PalletId = PalletId(*b"p/wrpper");
     pub const LocalTracAssetId: AssetId = 1;
     pub const ForeignTracAssetId: AssetId = 2;
 }

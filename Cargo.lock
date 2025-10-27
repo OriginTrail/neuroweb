@@ -6412,7 +6412,7 @@ dependencies = [
 
 [[package]]
 name = "neuroweb-runtime"
-version = "146.0.0"
+version = "147.0.0"
 dependencies = [
  "assets-common",
  "cumulus-pallet-aura-ext",
@@ -10761,7 +10761,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-tests"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "frame-support",
  "frame-system",

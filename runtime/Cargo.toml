@@ -1,6 +1,6 @@
 [package]
 name = "neuroweb-runtime"
-version = "146.0.0"
+version = "147.0.0"
 authors = ["TraceLabs"]
 description = "NeuroWeb Runtime - Cumulus FRAME-based Substrate Runtime"
 license = "GPL-3.0-only"

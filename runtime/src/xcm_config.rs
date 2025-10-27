@@ -386,6 +386,30 @@ type Reserves = (
     NativeAsset,
 );
 
+
+parameter_types! {
+    pub NativeAssetFilter: AssetFilter = Wild(AllOf { fun: WildFungible, id: TokenLocation::get().into() });
+    pub AssetHubTrustedTeleporter: (AssetFilter, Location) = (NativeAssetFilter::get(), AssetHubLocation::get());
+
+}
+
+pub type TrustedTeleporters = (xcm_builder::Case<AssetHubTrustedTeleporter>,);
+
+pub struct OnlyTeleportNative;
+impl Contains<(Location, Vec<Asset>)> for OnlyTeleportNative {
+    fn contains(t: &(Location, Vec<Asset>)) -> bool {
+        let native = TokenLocation::get();
+        t.1.iter().all(|asset| {
+            log::trace!(target: "xcm::OnlyTeleportNative", "Asset to be teleported: {:?}", asset);
+            if let Asset { id: asset_id, fun: Fungible(_) } = asset {
+                asset_id.0 == native
+            } else {
+                false
+            }
+        })
+    }
+}
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
@@ -394,7 +418,7 @@ impl xcm_executor::Config for XcmConfig {
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type IsReserve = Reserves;
-    type IsTeleporter = (); // Teleporting is disabled.
+    type IsTeleporter = TrustedTeleporters;
     type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;
     type Weigher = WeightInfoBounds<
@@ -453,7 +477,7 @@ impl pallet_xcm::Config for Runtime {
     // ^ Disable dispatchable execute on the XCM pallet.
     // Needs to be `Everything` for local testing.
     type XcmExecutor = XcmExecutor<XcmConfig>;
-    type XcmTeleportFilter = Nothing;
+    type XcmTeleportFilter = OnlyTeleportNative;
     type XcmReserveTransferFilter = Everything;
     type Weigher = WeightInfoBounds<
         crate::weights::xcm::NeurowebXcmWeight<RuntimeCall>,
