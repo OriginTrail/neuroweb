@@ -685,7 +685,7 @@ impl pallet_evm_accounts::Config for Runtime {
 }
 
 parameter_types! {
-    pub DefaultBaseFeePerGas: U256 = U256::from(16);
+    pub DefaultBaseFeePerGas: U256 = U256::from(32 * 10_000);
     pub DefaultElasticity: Permill = Permill::from_parts(125_000);
 }
 
