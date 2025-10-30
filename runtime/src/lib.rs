@@ -152,7 +152,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("origintrail-parachain"),
     impl_name: create_runtime_str!("neuroweb"),
     authoring_version: 1,
-    spec_version: 147,
+    spec_version: 148,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -685,7 +685,7 @@ impl pallet_evm_accounts::Config for Runtime {
 }
 
 parameter_types! {
-    pub DefaultBaseFeePerGas: U256 = U256::from(16);
+    pub DefaultBaseFeePerGas: U256 = U256::from(32 * 10_000);
     pub DefaultElasticity: Permill = Permill::from_parts(125_000);
 }
 
