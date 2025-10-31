@@ -22,7 +22,7 @@ use sc_client_api::{
 };
 use sc_network::service::traits::NetworkService;
 use sc_network_sync::SyncingService;
-pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
+pub use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
@@ -44,8 +44,6 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub graph: Arc<Pool<A>>,
     /// Chain syncing service
     pub sync: Arc<SyncingService<Block>>,
-    /// Whether to deny unsafe calls
-    pub deny_unsafe: DenyUnsafe,
     /// The Node authority flag
     pub is_authority: bool,
     /// Network service
@@ -107,7 +105,6 @@ where
         client,
         pool,
         graph,
-        deny_unsafe,
         network,
         backend,
         is_authority,
@@ -119,7 +116,7 @@ where
         block_data_cache,
     } = deps;
 
-    module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+    module.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
     module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 
     let signers = Vec::new();

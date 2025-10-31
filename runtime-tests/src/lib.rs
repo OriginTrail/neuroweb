@@ -1,6 +1,7 @@
 #![cfg(test)]
 
 mod assets;
+mod xcm_runtime_apis;
 mod wrapper;
 
 use neuroweb_runtime::{Runtime, System};

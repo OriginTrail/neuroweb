@@ -8,8 +8,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::{collections::BTreeMap, str::FromStr};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec =
-    sc_service::GenericChainSpec<neuroweb_runtime::RuntimeGenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -193,6 +192,7 @@ fn testnet_genesis(
                     )
                 })
                 .collect(),
+            non_authority_keys: vec![],
         },
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
