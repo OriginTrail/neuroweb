@@ -1,6 +1,6 @@
 [package]
 name = "pallet-wrapper"
-version = "0.1.0"
+version = "1.1.0"
 description = "TRAC token wrapper pallet for converting between foreign and local TRAC assets"
 authors.workspace = true
 edition.workspace = true

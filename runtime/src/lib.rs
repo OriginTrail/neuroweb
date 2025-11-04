@@ -54,8 +54,9 @@ use frame_support::{
     },
     transactional,
     weights::{
-        constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight, WeightToFeeCoefficient,
-        WeightToFeeCoefficients, WeightToFeePolynomial,
+        constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight,
+        WeightToFee as WeightsWeightToFee, WeightToFeeCoefficient, WeightToFeeCoefficients,
+        WeightToFeePolynomial,
     },
     ConsensusEngineId, PalletId,
 };
@@ -78,9 +79,6 @@ use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use polkadot_runtime_common::BlockHashCount;
 
-// XCM Imports
-use xcm::latest::prelude::BodyId;
-
 // Frontier
 use fp_rpc::TransactionStatus;
 use pallet_ethereum::{
@@ -88,7 +86,8 @@ use pallet_ethereum::{
 };
 use pallet_evm::{
     Account as EVMAccount, EVMFungibleAdapter, EnsureAddressNever, EnsureAddressRoot,
-    FeeCalculator, OnChargeEVMTransaction as OnChargeEVMTransactionT, Runner,
+    FeeCalculator, FrameSystemAccountProvider, OnChargeEVMTransaction as OnChargeEVMTransactionT,
+    Runner,
 };
 use pallet_evm_accounts::{EvmAddressMapping, MergeAccount};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
@@ -152,7 +151,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("origintrail-parachain"),
     impl_name: create_runtime_str!("neuroweb"),
     authoring_version: 1,
-    spec_version: 147,
+    spec_version: 149,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -320,9 +319,6 @@ impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
     type OnTimestampSet = Aura;
-    #[cfg(feature = "experimental")]
-    type MinimumPeriod = ConstU64<0>;
-    #[cfg(not(feature = "experimental"))]
     type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
     type WeightInfo = weights::pallet_timestamp::NeurowebWeight<Runtime>;
 }
@@ -367,7 +363,7 @@ impl OnUnbalanced<Credit<AccountId, Balances>> for TreasuryPot {
 pub struct DealWithFees;
 impl OnUnbalanced<Credit<AccountId, Balances>> for DealWithFees {
     // this is called for substrate-based transactions
-    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = Credit<AccountId, Balances>>) {
+    fn on_unbalanceds(mut fees_then_tips: impl Iterator<Item = Credit<AccountId, Balances>>) {
         if let Some(mut fees) = fees_then_tips.next() {
             if let Some(tips) = fees_then_tips.next() {
                 tips.merge_into(&mut fees);
@@ -458,12 +454,8 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
     type WeightInfo = weights::cumulus_pallet_xcmp_queue::NeurowebWeight<Runtime>;
     type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
-}
-
-impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type DmpSink = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-    type WeightInfo = cumulus_pallet_dmp_queue::weights::SubstrateWeight<Runtime>;
+    type MaxActiveOutboundChannels = ConstU32<128>;
+    type MaxPageSize = ConstU32<1024>;
 }
 
 parameter_types! {
@@ -630,13 +622,8 @@ parameter_types! {
 impl pallet_treasury::Config for Runtime {
     type PalletId = TreasuryPalletId;
     type Currency = Balances;
-    type ApproveOrigin = EnsureRoot<AccountId>;
     type RejectOrigin = EnsureRoot<AccountId>;
     type RuntimeEvent = RuntimeEvent;
-    type OnSlash = Treasury;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type ProposalBondMaximum = ProposalBondMaximum;
     type SpendPeriod = SpendPeriod;
     type Burn = ();
     type BurnDestination = ();
@@ -685,7 +672,7 @@ impl pallet_evm_accounts::Config for Runtime {
 }
 
 parameter_types! {
-    pub DefaultBaseFeePerGas: U256 = U256::from(16);
+    pub DefaultBaseFeePerGas: U256 = U256::from(32 * 10_000);
     pub DefaultElasticity: Permill = Permill::from_parts(125_000);
 }
 
@@ -709,20 +696,16 @@ impl pallet_base_fee::Config for Runtime {
     type DefaultElasticity = DefaultElasticity;
 }
 
-type FungibleAccountId<T> = <T as frame_system::Config>::AccountId;
-
-type BalanceFor<T> =
-    <<T as pallet_evm::Config>::Currency as Inspect<FungibleAccountId<T>>>::Balance;
-
 pub struct OnChargeEVMTransaction<OU>(sp_std::marker::PhantomData<OU>);
 impl<T, OU> OnChargeEVMTransactionT<T> for OnChargeEVMTransaction<OU>
 where
     T: pallet_evm::Config,
-    T::Currency: Balanced<T::AccountId>,
-    OU: OnUnbalanced<Credit<T::AccountId, T::Currency>>,
-    U256: UniqueSaturatedInto<BalanceFor<T>>,
+    T::Currency: Balanced<pallet_evm::AccountIdOf<T>>,
+    OU: OnUnbalanced<Credit<pallet_evm::AccountIdOf<T>, T::Currency>>,
+    U256: UniqueSaturatedInto<<T::Currency as Inspect<pallet_evm::AccountIdOf<T>>>::Balance>,
+    T::AddressMapping: pallet_evm::AddressMapping<T::AccountId>,
 {
-    type LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>;
+    type LiquidityInfo = Option<Credit<pallet_evm::AccountIdOf<T>, T::Currency>>;
 
     fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, pallet_evm::Error<T>> {
         EVMFungibleAdapter::<<T as pallet_evm::Config>::Currency, ()>::withdraw_fee(who, fee)
@@ -783,31 +766,32 @@ parameter_types! {
     ///     (max_extrinsic.ref_time() / max_extrinsic.proof_size()) / WEIGHT_PER_GAS
     /// )
     pub const GasLimitPovSizeRatio: u64 = 4;
+    /// The amount of gas per storage (in bytes): BLOCK_GAS_LIMIT / BLOCK_STORAGE_LIMIT
+    /// The current definition of BLOCK_STORAGE_LIMIT is 40 KB, resulting in a value of 366.
+    pub GasLimitStorageGrowthRatio: u64 = 366;
 }
 
 impl pallet_evm::Config for Runtime {
-    type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
-
-    type BlockGasLimit = BlockGasLimit;
-    type ChainId = ChainId;
-    type BlockHashMapping = EthereumBlockHashMapping<Self>;
-    type Runner = pallet_evm::runner::stack::Runner<Self>;
-
-    type CallOrigin = EnsureAddressRoot<AccountId>;
-    type WithdrawOrigin = EnsureAddressNever<AccountId>;
-    type AddressMapping = EvmAddressMapping<Runtime>;
-
+    type AccountProvider = FrameSystemAccountProvider<Runtime>;
     type FeeCalculator = BaseFee;
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type WeightPerGas = WeightPerGas;
+    type BlockHashMapping = EthereumBlockHashMapping<Self>;
+    type CallOrigin = EnsureAddressRoot<AccountId>;
+    type WithdrawOrigin = EnsureAddressNever<AccountId>;
+    type AddressMapping = EvmAddressMapping<Runtime>;
+    type Currency = Balances;
+    type RuntimeEvent = RuntimeEvent;
+    type PrecompilesType = FrontierPrecompiles<Self>;
+    type PrecompilesValue = PrecompilesValue;
+    type ChainId = ChainId;
+    type BlockGasLimit = BlockGasLimit;
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
     type OnChargeTransaction = OnChargeEVMTransaction<DealWithFees>;
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
-    type PrecompilesType = FrontierPrecompiles<Self>;
-    type PrecompilesValue = PrecompilesValue;
     type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
     type Timestamp = Timestamp;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
@@ -818,7 +802,7 @@ parameter_types! {
 
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type StateRoot = pallet_ethereum::IntermediateStateRoot<Self::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
     type ExtraDataLength = ConstU32<30>;
 }
@@ -1133,7 +1117,7 @@ construct_runtime!(
         // System support stuff.
         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
         ParachainSystem: cumulus_pallet_parachain_system::{
-            Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
+            Pallet, Call, Config<T>, Storage, Inherent, Event<T>,
         } = 1,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
         ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
@@ -1163,7 +1147,6 @@ construct_runtime!(
         XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
         PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Storage, Config<T>} = 31,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
-        DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
         MessageQueue: pallet_message_queue = 34,
 
         // Frontier
@@ -1188,9 +1171,9 @@ extern crate frame_benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
     frame_benchmarking::define_benchmarks!(
-        [frame_system, SystemBench::<Runtime>]
-        [cumulus_pallet_xcmp_queue, XcmpQueue]
         [cumulus_pallet_parachain_system, ParachainSystem]
+        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [frame_system, SystemBench::<Runtime>]
         [pallet_assets_local, Assets]
         [pallet_assets_foreign, ForeignAssets]
         [pallet_balances, Balances]
@@ -1336,6 +1319,12 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
 >;
+
+use xcm::{prelude::*, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm};
+use xcm_runtime_apis::{
+    dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
+    fees::Error as XcmPaymentApiError,
+};
 
 impl_runtime_apis! {
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
@@ -1667,6 +1656,10 @@ impl_runtime_apis! {
                 pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
             )
         }
+
+        fn initialize_pending_block(header: &<Block as BlockT>::Header) {
+            Executive::initialize_block(header);
+        }
     }
 
     impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
@@ -1774,7 +1767,84 @@ impl_runtime_apis! {
         }
 
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-            vec![]
+            Default::default()
+        }
+    }
+
+
+
+    impl xcm_runtime_apis::fees::XcmPaymentApi<Block> for Runtime {
+        fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
+            if !matches!(xcm_version, 3 | 4 | 5) {
+                return Err(XcmPaymentApiError::UnhandledXcmVersion);
+            }
+
+            let acceptable_assets = vec![
+                // NEURO (native)
+                VersionedAssetId::V4(xcm::v4::AssetId(xcm_config::TokenLocation::get())),
+                // DOT
+                VersionedAssetId::V4(xcm::v4::AssetId(xcm_config::RelayLocation::get())),
+            ];
+            Ok(acceptable_assets)
+        }
+
+        fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
+            // Convert to v4
+            let v4_asset_id = asset.into_version(4).map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+
+            // Extract the xcm::v4::AssetId from VersionedAssetId
+            let xcm_asset_id: &xcm::v4::AssetId = v4_asset_id.try_as().map_err(|_| XcmPaymentApiError::AssetNotFound)?;
+
+            // Get the Location from AssetId
+            let location = match xcm_asset_id {
+                xcm::v4::AssetId(loc) => loc,
+            };
+
+            // NEURO (native) - use WeightToFee
+            if *location == xcm_config::TokenLocation::get() {
+                Ok(WeightToFee::weight_to_fee(&weight))
+            }
+            // DOT - use DotPerSecond rate
+            else if *location == xcm_config::RelayLocation::get() {
+                let rate_per_second = xcm_config::DotPerSecond::get();
+                let fee: u128 = (weight.ref_time() as u128)
+                    .saturating_mul(rate_per_second)
+                    .checked_div(WEIGHT_REF_TIME_PER_SECOND as u128)
+                    .ok_or(XcmPaymentApiError::WeightNotComputable)?;
+                Ok(fee)
+            }
+            else {
+                Err(XcmPaymentApiError::AssetNotFound)
+            }
+        }
+
+        fn query_xcm_weight(message: VersionedXcm<()>) -> Result<Weight, XcmPaymentApiError> {
+            PolkadotXcm::query_xcm_weight(message)
+        }
+
+        fn query_delivery_fees(destination: VersionedLocation, message: VersionedXcm<()>) -> Result<VersionedAssets, XcmPaymentApiError> {
+            PolkadotXcm::query_delivery_fees(destination, message)
+        }
+    }
+
+    impl xcm_runtime_apis::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
+        fn dry_run_call(
+            origin: OriginCaller,
+            call: RuntimeCall,
+            result_xcms_version: XcmVersion
+        ) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+            PolkadotXcm::dry_run_call::<
+                Runtime,
+                xcm_config::XcmRouter,
+                OriginCaller,
+                RuntimeCall>(origin, call, result_xcms_version)
+        }
+
+        fn dry_run_xcm(
+            origin_location: VersionedLocation,
+            xcm: VersionedXcm<RuntimeCall>
+        ) -> Result<XcmDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+            PolkadotXcm::dry_run_xcm::<Runtime, xcm_config::XcmRouter, RuntimeCall, xcm_config::XcmConfig>(origin_location, xcm)
         }
     }
 

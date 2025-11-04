@@ -29,7 +29,6 @@ use sc_client_api::BlockchainEvents;
 use sc_consensus::ImportQueue;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::{NetworkBackend, NetworkBlock};
-use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_keystore::KeystorePtr;
@@ -118,17 +117,18 @@ pub fn new_partial(
         .transpose()?;
 
     let heap_pages = config
+        .executor
         .default_heap_pages
         .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static {
             extra_pages: h as _,
         });
 
     let executor = WasmExecutor::builder()
-        .with_execution_method(config.wasm_method)
+        .with_execution_method(config.executor.wasm_method)
         .with_onchain_heap_alloc_strategy(heap_pages)
         .with_offchain_heap_alloc_strategy(heap_pages)
-        .with_max_runtime_instances(config.max_runtime_instances)
-        .with_runtime_cache_size(config.runtime_cache_size)
+        .with_max_runtime_instances(config.executor.max_runtime_instances)
+        .with_runtime_cache_size(config.executor.runtime_cache_size)
         .build();
 
     let (client, backend, keystore_container, task_manager) =
@@ -222,12 +222,14 @@ where
     .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
     let validator = parachain_config.role.is_authority();
-    let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let is_authority = parachain_config.role.is_authority();
     let transaction_pool = params.transaction_pool.clone();
     let import_queue_service = params.import_queue.service();
-    let net_config =
-        sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&parachain_config.network);
+    let prometheus_registry = parachain_config.prometheus_registry().cloned();
+    let net_config = sc_network::config::FullNetworkConfiguration::<_, _, N>::new(
+        &parachain_config.network,
+        prometheus_registry.clone(),
+    );
 
     let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
         build_network(BuildNetworkParams {
@@ -318,13 +320,12 @@ where
         let frontier_backend = frontier_backend.clone();
         let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
-        Box::new(move |deny_unsafe, subscription_task_executor| {
+        Box::new(move |subscription_task_executor| {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
                 graph: transaction_pool.pool().clone(),
                 sync: sync.clone(),
-                deny_unsafe,
                 is_authority,
                 network: network.clone(),
                 backend: frontier_backend.clone(),
@@ -369,7 +370,7 @@ where
         // Here you can check whether the hardware meets your chains' requirements. Putting a link
         // in there and swapping out the requirements for your own are probably a good idea. The
         // requirements for a para-chain are dictated by its relay-chain.
-        match SUBSTRATE_REFERENCE_HARDWARE.check_hardware(&hwbench) {
+        match SUBSTRATE_REFERENCE_HARDWARE.check_hardware(&hwbench, validator) {
             Err(err) if validator => {
                 log::warn!(
 				"⚠️  The hardware does not meet the minimal requirements {} for role 'Authority' find out more at:\n\
@@ -487,7 +488,7 @@ fn start_aura_consensus(
     task_manager: &TaskManager,
     relay_chain_interface: Arc<dyn RelayChainInterface>,
     transaction_pool: Arc<sc_transaction_pool::FullPool<Block, ParachainClient>>,
-    sync_oracle: Arc<SyncingService<Block>>,
+    sync_service: Arc<sc_network_sync::SyncingService<Block>>,
     keystore: KeystorePtr,
     para_id: ParaId,
     collator_key: CollatorPair,
@@ -511,8 +512,8 @@ fn start_aura_consensus(
         .map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 
     let announce_block = {
-        let sync_service = sync_oracle.clone();
-        Arc::new(move |hash, data| sync_service.announce_block(hash, data))
+        let sync = sync_service.clone();
+        Arc::new(move |hash, data| sync.announce_block(hash, data))
     };
 
     let collator_service = cumulus_client_collator::service::CollatorService::new(
@@ -522,33 +523,31 @@ fn start_aura_consensus(
         client.clone(),
     );
 
-    let fut =
-        aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _, _>(
-            AuraParams {
-                create_inherent_data_providers: move |_, ()| async move { Ok(()) },
-                block_import: block_import.clone(),
-                para_client: client.clone(),
-                para_backend: backend.clone(),
-                relay_client: relay_chain_interface.clone(),
-                code_hash_provider: move |block_hash| {
-                    client
-                        .code_at(block_hash)
-                        .ok()
-                        .map(|c| ValidationCode::from(c).hash())
-                },
-                sync_oracle: sync_oracle.clone(),
-                keystore,
-                collator_key,
-                para_id,
-                overseer_handle,
-                relay_chain_slot_duration: Duration::from_secs(6),
-                proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
-                collator_service,
-                // We got around 500ms for proposing
-                authoring_duration: Duration::from_millis(1500),
-                reinitialize: false,
+    let fut = aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _>(
+        AuraParams {
+            create_inherent_data_providers: move |_, ()| async move { Ok(()) },
+            block_import: block_import.clone(),
+            para_client: client.clone(),
+            para_backend: backend.clone(),
+            relay_client: relay_chain_interface.clone(),
+            code_hash_provider: move |block_hash| {
+                client
+                    .code_at(block_hash)
+                    .ok()
+                    .map(|c| ValidationCode::from(c).hash())
             },
-        );
+            keystore,
+            collator_key,
+            para_id,
+            overseer_handle,
+            relay_chain_slot_duration: Duration::from_secs(6),
+            proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
+            collator_service,
+            // We got around 500ms for proposing
+            authoring_duration: Duration::from_millis(1500),
+            reinitialize: false,
+        },
+    );
 
     task_manager
         .spawn_essential_handle()

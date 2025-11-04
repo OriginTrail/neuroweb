@@ -111,7 +111,7 @@ impl pallet_assets::Config for Test {
 }
 
 parameter_types! {
-    pub const WrapperPalletId: PalletId = PalletId(*b"pwrapper");
+    pub const WrapperPalletId: PalletId = PalletId(*b"p/wrpper");
     pub const LocalTracAssetId: AssetId = 1;
     pub const ForeignTracAssetId: AssetId = 2;
 }
@@ -165,6 +165,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             // Give BOB some foreign TRAC
             (ForeignTracAssetId::get(), BOB, 500000),
         ],
+        next_asset_id: None,
     }
     .assimilate_storage(&mut t)
     .unwrap();

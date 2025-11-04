@@ -58,7 +58,7 @@ pub mod pallet {
     use frame_support::{pallet_prelude::*, traits::EnsureOrigin};
     use frame_system::pallet_prelude::*;
     use sp_std::boxed::Box;
-    use xcm::{v3::MultiLocation, VersionedLocation};
+    use xcm::{v4::Location, VersionedLocation};
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
@@ -85,30 +85,30 @@ pub mod pallet {
     /// Defines conversion between asset Id and cross-chain asset location
     pub trait XcAssetLocation<AssetId> {
         /// Get asset type from assetId
-        fn get_xc_asset_location(asset_id: AssetId) -> Option<MultiLocation>;
+        fn get_xc_asset_location(asset_id: AssetId) -> Option<Location>;
 
         /// Get local asset Id from asset location
-        fn get_asset_id(xc_asset_location: MultiLocation) -> Option<AssetId>;
+        fn get_asset_id(xc_asset_location: Location) -> Option<AssetId>;
     }
 
     /// Used to fetch `units per second` if cross-chain asset is applicable for local execution payment.
     pub trait ExecutionPaymentRate {
         /// returns units per second from asset type or `None` if asset type isn't a supported payment asset.
-        fn get_units_per_second(asset_location: MultiLocation) -> Option<u128>;
+        fn get_units_per_second(asset_location: Location) -> Option<u128>;
     }
 
     impl<T: Config> XcAssetLocation<T::AssetId> for Pallet<T> {
-        fn get_xc_asset_location(asset_id: T::AssetId) -> Option<MultiLocation> {
+        fn get_xc_asset_location(asset_id: T::AssetId) -> Option<Location> {
             AssetIdToLocation::<T>::get(asset_id).and_then(|x| x.try_into().ok())
         }
 
-        fn get_asset_id(asset_location: MultiLocation) -> Option<T::AssetId> {
+        fn get_asset_id(asset_location: Location) -> Option<T::AssetId> {
             AssetLocationToId::<T>::get(asset_location.into_versioned())
         }
     }
 
     impl<T: Config> ExecutionPaymentRate for Pallet<T> {
-        fn get_units_per_second(asset_location: MultiLocation) -> Option<u128> {
+        fn get_units_per_second(asset_location: Location) -> Option<u128> {
             AssetLocationUnitsPerSecond::<T>::get(asset_location.into_versioned())
         }
     }
@@ -215,9 +215,9 @@ pub mod pallet {
                 Error::<T>::AssetAlreadyRegistered
             );
 
-            let v3_asset_loc = MultiLocation::try_from(*asset_location)
+            let v4_asset_loc = Location::try_from(*asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let asset_location = VersionedLocation::V3(v3_asset_loc);
+            let asset_location = VersionedLocation::V4(v4_asset_loc);
 
             AssetIdToLocation::<T>::insert(&asset_id, asset_location.clone());
             AssetLocationToId::<T>::insert(&asset_location, asset_id);
@@ -242,9 +242,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let v3_asset_loc = MultiLocation::try_from(*asset_location)
+            let v4_asset_loc = Location::try_from(*asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let asset_location = VersionedLocation::V3(v3_asset_loc);
+            let asset_location = VersionedLocation::V4(v4_asset_loc);
 
             ensure!(
                 AssetLocationToId::<T>::contains_key(&asset_location),
@@ -271,9 +271,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let v3_asset_loc = MultiLocation::try_from(*new_asset_location)
+            let v4_asset_loc = Location::try_from(*new_asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let new_asset_location = VersionedLocation::V3(v3_asset_loc);
+            let new_asset_location = VersionedLocation::V4(v4_asset_loc);
 
             let previous_asset_location =
                 AssetIdToLocation::<T>::get(&asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
@@ -309,9 +309,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let v3_asset_loc = MultiLocation::try_from(*asset_location)
+            let v4_asset_loc = Location::try_from(*asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let asset_location = VersionedLocation::V3(v3_asset_loc);
+            let asset_location = VersionedLocation::V4(v4_asset_loc);
 
             AssetLocationUnitsPerSecond::<T>::remove(&asset_location);
 

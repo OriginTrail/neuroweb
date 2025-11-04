@@ -233,6 +233,7 @@ pub mod pallet {
                 local_trac_asset_id,
                 &who,
                 amount,
+                frame_support::traits::tokens::Preservation::Expendable,
                 frame_support::traits::tokens::Precision::Exact,
                 frame_support::traits::tokens::Fortitude::Polite,
             )
@@ -281,6 +282,7 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         /// Get the account ID of the pallet
+        /// Translates to gJpDhAL2bdaamftxXHXTbNxL6EZcXrgSmeLJzn2ficD3n4oWV
         pub fn pallet_account_id() -> T::AccountId {
             T::PalletId::get().into_account_truncating()
         }
